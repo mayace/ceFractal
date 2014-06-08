@@ -5,13 +5,21 @@
  */
 package com.github.ceFractal.gui;
 
+import com.github.ceFractal.compiler.pj.Parser;
+import com.github.ceFractal.compiler.pj.Scanner;
+import com.github.gg.Dict;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Reader;
-import java.io.Writer;
-import java.nio.file.FileSystem;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,18 +29,25 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java_cup.runtime.Symbol;
 import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTree;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
+import javax.swing.SwingUtilities;
+import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
 import javax.swing.text.BoxView;
 import javax.swing.text.ComponentView;
 import javax.swing.text.DefaultStyledDocument;
@@ -46,7 +61,11 @@ import javax.swing.text.StyledEditorKit;
 import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
 
 /**
  *
@@ -71,6 +90,8 @@ public class Win extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jpumenu_pumenu = new javax.swing.JPopupMenu();
+        jmitem_setactive = new javax.swing.JMenuItem();
         jsplitp_base1 = new javax.swing.JSplitPane();
         jsplitp_base2 = new javax.swing.JSplitPane();
         jtabbedp_tab = new javax.swing.JTabbedPane();
@@ -83,6 +104,7 @@ public class Win extends javax.swing.JFrame {
         newProMenuItem = new javax.swing.JMenuItem();
         newMenuItem = new javax.swing.JMenuItem();
         jSeparator1 = new javax.swing.JPopupMenu.Separator();
+        openProMenuItem = new javax.swing.JMenuItem();
         openMenuItem = new javax.swing.JMenuItem();
         jSeparator3 = new javax.swing.JPopupMenu.Separator();
         saveMenuItem = new javax.swing.JMenuItem();
@@ -109,6 +131,14 @@ public class Win extends javax.swing.JFrame {
         pasteMenuItem = new javax.swing.JMenuItem();
         deleteMenuItem = new javax.swing.JMenuItem();
 
+        jmitem_setactive.setText("SET ACTIVE");
+        jmitem_setactive.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jmitem_setactiveActionPerformed(evt);
+            }
+        });
+        jpumenu_pumenu.add(jmitem_setactive);
+
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
         jsplitp_base2.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
@@ -120,7 +150,7 @@ public class Win extends javax.swing.JFrame {
 
         jsplitp_base1.setRightComponent(jsplitp_base2);
 
-        javax.swing.tree.DefaultMutableTreeNode treeNode1 = new javax.swing.tree.DefaultMutableTreeNode("root");
+        javax.swing.tree.DefaultMutableTreeNode treeNode1 = new javax.swing.tree.DefaultMutableTreeNode("PJ");
         jtree_tree.setModel(new javax.swing.tree.DefaultTreeModel(treeNode1));
         jsp_tree_scroll.setViewportView(jtree_tree);
 
@@ -142,8 +172,23 @@ public class Win extends javax.swing.JFrame {
 
         newMenuItem.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_N, java.awt.event.InputEvent.CTRL_MASK));
         newMenuItem.setText("New");
+        newMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                newMenuItemActionPerformed(evt);
+            }
+        });
         fileMenu.add(newMenuItem);
         fileMenu.add(jSeparator1);
+
+        openProMenuItem.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
+        openProMenuItem.setMnemonic('o');
+        openProMenuItem.setText("Open Project");
+        openProMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                openProMenuItemActionPerformed(evt);
+            }
+        });
+        fileMenu.add(openProMenuItem);
 
         openMenuItem.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.CTRL_MASK));
         openMenuItem.setMnemonic('o');
@@ -154,6 +199,11 @@ public class Win extends javax.swing.JFrame {
         saveMenuItem.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.CTRL_MASK));
         saveMenuItem.setMnemonic('s');
         saveMenuItem.setText("Save");
+        saveMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                saveMenuItemActionPerformed(evt);
+            }
+        });
         fileMenu.add(saveMenuItem);
 
         saveAsMenuItem.setMnemonic('a');
@@ -275,8 +325,7 @@ public class Win extends javax.swing.JFrame {
     }//GEN-LAST:event_jMenuItem5ActionPerformed
 
     private void newProMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newProMenuItemActionPerformed
-        // TODO add your handling code here:
-        JFileChooser fchooser = new JFileChooser();
+        JFileChooser fchooser = getFChooser();
         fchooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         fchooser.setSelectedFile(null);
 
@@ -295,75 +344,85 @@ public class Win extends javax.swing.JFrame {
                     Files.createDirectory(dselected);
 
                     // Crear dir watch
-                    new Thread(() -> {
-                        //??
-//                        DefaultTreeModel model = (DefaultTreeModel) jtree_tree.getModel();
-//                        synchronized (model) {
-//                            DefaultMutableTreeNode root = (DefaultMutableTreeNode) model.getRoot();
-//                            DefaultMutableTreeNode child = new DefaultMutableTreeNode(dselected.getFileName());
-//                            root.add(child);
-//                            model.reload();
+                    //<editor-fold defaultstate="collapsed" desc="thread">
+//                    new Thread(() -> {
+//                        //??
+////                        DefaultTreeModel model = (DefaultTreeModel) jtree_tree.getModel();
+////                        synchronized (model) {
+////                            DefaultMutableTreeNode root = (DefaultMutableTreeNode) model.getRoot();
+////                            DefaultMutableTreeNode child = new DefaultMutableTreeNode(dselected.getFileName());
+////                            root.add(child);
+////                            model.reload();
+////                        }
+//
+//                        // crear watch
+//                        try {
+//                            WatchService watcher = FileSystems.getDefault().newWatchService();
+//                            dselected.register(watcher, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
+//
+//                            for (;;) {
+//                                // 1.
+//                                // wait for key to be signaled
+//                                WatchKey key = watcher.take();
+//
+//                                // 2.
+//                                // process
+//                                for (WatchEvent<?> event : key.pollEvents()) {
+//                                    WatchEvent.Kind<?> kind = event.kind();
+//
+//                                    // The filename is the
+//                                    // context of the event.
+//                                    WatchEvent<Path> pevent = (WatchEvent<Path>) event;
+//                                    Path p = pevent.context();
+//
+//                                    boolean endsWith_pj = p.toString().endsWith(".pj");
+//                                    boolean endsWith_frc = p.endsWith(".frc");
+//
+//                                    if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
+////                                        if (endsWith_pj) {
+////                                            pj_compile(dselected.resolve(p));
+////                                        } else if (endsWith_frc) {
+////                                        } else {
+////                                        }
+//                                    } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
+//                                    } else if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
+//                                        if (endsWith_pj) {
+//                                            pj_compile(dselected.resolve(p));
+//                                        } else if (endsWith_frc) {
+//                                        } else {
+//                                        }
+//                                    } else {
+//                                        // operation not supported...
+//                                        System.err.println(p.toAbsolutePath().toString());
+//                                        System.err.println(kind.name());
+//                                        continue;
+//                                    }
+//
+//                                }
+//
+//                                // 3.
+//                                // Reset the key -- this step is critical if you want to
+//                                // receive further watch events.  If the key is no longer valid,
+//                                // the directory is inaccessible so exit the loop.
+//                                boolean valid = key.reset();
+//                                if (!valid) {
+//                                    break;
+//                                }
+//                            }
+//                        } catch (IOException ex) {//compiler
+//                            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+//                        } catch (InterruptedException ex) {//watch takekey
+//                            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+//                        } catch (Exception ex) {
+//                            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
 //                        }
-
-                        // crear watch
-                        try {
-                            WatchService watcher = FileSystems.getDefault().newWatchService();
-                            dselected.register(watcher, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
-
-                            for (;;) {
-                                // 1.
-                                // wait for key to be signaled
-                                WatchKey key = watcher.take();
-
-                                // 2.
-                                // process
-                                for (WatchEvent<?> event : key.pollEvents()) {
-                                    WatchEvent.Kind<?> kind = event.kind();
-
-                                    // The filename is the
-                                    // context of the event.
-                                    WatchEvent<Path> pevent = (WatchEvent<Path>) event;
-                                    Path p = pevent.context();
-
-                                    boolean endsWith_pj = p.endsWith(".pj");
-                                    boolean endsWith_frc = p.endsWith(".frc");
-
-                                    if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
-                                        if (endsWith_pj) {
-                                            pj_compile(p);
-                                        } else if (endsWith_frc) {
-                                        } else {
-                                        }
-                                    } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
-                                    } else if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
-                                    } else {
-                                        // operation not supported...
-                                        System.err.println(p.toAbsolutePath().toString());
-                                        System.err.println(kind.name());
-                                        continue;
-                                    }
-
-                                }
-
-                                // 3.
-                                // Reset the key -- this step is critical if you want to
-                                // receive further watch events.  If the key is no longer valid,
-                                // the directory is inaccessible so exit the loop.
-                                boolean valid = key.reset();
-                                if (!valid) {
-                                    break;
-                                }
-                            }
-                        } catch (IOException ex) {
-                            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
-                        } catch (InterruptedException ex) {
-                            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
-                        }
-
-                    }).start();
-
+//
+//                    }).start();
+                    //</editor-fold>
                     try {
-                        Thread.sleep(1000);
+                        System.out.println("Project - creating...");
+                        Thread.sleep(500);
+                        System.out.println("Project - created...");
                     } catch (InterruptedException ex) {
                         Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -375,7 +434,11 @@ public class Win extends javax.swing.JFrame {
                     // Escribir en .pj file
                     Files.write(fproyecto, fproject_str.getBytes("utf8"));
 
+                    pj_open(fproyecto);
+
                 } catch (IOException ex) {
+                    Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (Exception ex) {
                     Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
@@ -383,6 +446,118 @@ public class Win extends javax.swing.JFrame {
 
 
     }//GEN-LAST:event_newProMenuItemActionPerformed
+
+    private static JFileChooser getFChooser() {
+        return new JFileChooser();
+    }
+
+    private void openProMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openProMenuItemActionPerformed
+        // TODO add your handling code here:
+        JFileChooser fChooser = getFChooser();
+
+        fChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        fChooser.setFileFilter(new FileNameExtensionFilter("Project File", "pj"));
+        fChooser.setMultiSelectionEnabled(true);
+        int res = fChooser.showOpenDialog(this);
+
+        if (res == JFileChooser.APPROVE_OPTION) {
+            File[] fselected = fChooser.getSelectedFiles();
+            for (File f : fselected) {
+                try {
+                    pj_open(f.toPath());
+                } catch (Exception ex) {
+                    Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+    }//GEN-LAST:event_openProMenuItemActionPerformed
+
+    private void jmitem_setactiveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jmitem_setactiveActionPerformed
+        TreeModel model = getTreeModel();
+        synchronized (model) {
+            try {
+                model.getClass().getField("active").set(model, jtree_tree.getLastSelectedPathComponent());
+            } catch (NoSuchFieldException ex) {
+                Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (SecurityException ex) {
+                Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IllegalArgumentException ex) {
+                Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IllegalAccessException ex) {
+                Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+        }
+    }//GEN-LAST:event_jmitem_setactiveActionPerformed
+
+    private void newMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newMenuItemActionPerformed
+        DefaultTreeModel model = getTreeModel();
+        // TODO add your handling code here:
+        try {
+            final Object obj = model.getClass().getField("active").get(model);
+            if (obj == null) {
+                throw new UnsupportedOperationException("No hay proyecto activo...");
+            }
+
+            DefaultMutableTreeNode nodo = (DefaultMutableTreeNode) obj;
+            String res = JOptionPane.showInputDialog("Nombre del archivo .frc:");
+            if (!res.trim().isEmpty()) {
+                //crear archivo
+                Pj pj = (Pj) nodo.getUserObject();
+                Path pnew = Paths.get(pj.getRuta(), res + ".frc");
+//                System.err.println(pnew.toString());
+                pj.getArchivos().add(pnew.toString());
+                Files.createFile(pnew);
+                Files.write(Paths.get(pj.getSource()), pj.getXml().getBytes("utf8"));
+
+                synchronized (model) {
+
+                    nodo.add(new DefaultMutableTreeNode(pnew.getFileName().toString()));
+                    model.reload(nodo);
+                }
+
+            }
+
+        } catch (NoSuchFieldException ex) {
+            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (SecurityException ex) {
+            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalArgumentException ex) {
+            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_newMenuItemActionPerformed
+
+    private void saveMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveMenuItemActionPerformed
+        // TODO add your handling code here:
+        int index = jtabbedp_tab.getSelectedIndex();
+
+        if (index >= 0) {
+            String tip = jtabbedp_tab.getToolTipTextAt(index);
+
+            JScrollPane spane = (JScrollPane) jtabbedp_tab.getComponentAt(index);
+
+            JEditorPane editor = (JEditorPane) spane.getViewport().getView();
+            String text = editor.getText();
+
+            try {
+                Files.write(Paths.get(tip), text.getBytes("utf8"));
+                System.out.println("Saved..");
+            } catch (UnsupportedEncodingException ex) {
+                Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+    }//GEN-LAST:event_saveMenuItemActionPerformed
+
+    private DefaultTreeModel getTreeModel() {
+        return (DefaultTreeModel) jtree_tree.getModel();
+    }
 
     /**
      * @param args the command line arguments
@@ -445,6 +620,8 @@ public class Win extends javax.swing.JFrame {
     private javax.swing.JPopupMenu.Separator jSeparator3;
     private javax.swing.JPopupMenu.Separator jSeparator4;
     private javax.swing.JPopupMenu.Separator jSeparator5;
+    private javax.swing.JMenuItem jmitem_setactive;
+    private javax.swing.JPopupMenu jpumenu_pumenu;
     private javax.swing.JScrollPane jsp_tree_scroll;
     private javax.swing.JSplitPane jsplitp_base1;
     private javax.swing.JSplitPane jsplitp_base2;
@@ -454,6 +631,7 @@ public class Win extends javax.swing.JFrame {
     private javax.swing.JMenuItem newMenuItem;
     private javax.swing.JMenuItem newProMenuItem;
     private javax.swing.JMenuItem openMenuItem;
+    private javax.swing.JMenuItem openProMenuItem;
     private javax.swing.JMenuItem pasteMenuItem;
     private javax.swing.JMenuItem saveAsMenuItem;
     private javax.swing.JMenuItem saveMenuItem;
@@ -469,10 +647,263 @@ public class Win extends javax.swing.JFrame {
 
 //        jscrollp_tab_scroll.setViewportView(editor);
 //        jscrollp_tab_scroll.setRowHeaderView(lines);
+        jtree_tree.addMouseListener(new MouseAdapter() {
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                final int x = e.getX();
+                final int y = e.getY();
+                if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 2) {
+                    TreePath tpath = jtree_tree.getPathForLocation(x, y);
+                    if (tpath != null && tpath.getPathCount() == 3) {
+                        Object obj = tpath.getLastPathComponent();
+                        DefaultMutableTreeNode node = (DefaultMutableTreeNode) tpath.getParentPath().getLastPathComponent();
+
+                        Pj pj = (Pj) node.getUserObject();
+                        Path fpath = Paths.get(pj.getRuta(), obj.toString());
+
+                        try {
+                            List<String> lines = Files.readAllLines(fpath, Charset.forName("utf8"));
+
+                            StringBuilder builder = new StringBuilder();
+                            for (String l : lines) {
+                                builder.append(l);
+                                builder.append("\n");
+                            }
+
+                            final JEditorPane editor = new JEditorPane();
+                            editor.setText(builder.toString());
+//                            jtabbedp_tab.add(fpath.getFileName().toString(), new JScrollPane(editor));
+                            jtabbedp_tab.addTab(fpath.getFileName().toString(), null, new JScrollPane(editor), fpath.toString());
+                        } catch (IOException ex) {
+                            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+
+                        System.err.println(fpath.toString());
+                    }
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                final int x = e.getX();
+                final int y = e.getY();
+
+                if (e.isPopupTrigger()) {
+                    TreePath tpath = jtree_tree.getPathForLocation(x, y);
+
+                    if (tpath != null && tpath.getPathCount() == 2) {
+                        jtree_tree.setSelectionPath(tpath);
+                        jpumenu_pumenu.show(e.getComponent(), e.getX(), e.getY());
+                    }
+
+                }
+            }
+
+        });
+
+        jtree_tree.setModel(new DefaultTreeModel(new DefaultMutableTreeNode("PROYECTOS")) {
+            public DefaultMutableTreeNode active = null;
+
+        });
+
+        jtree_tree.setCellRenderer(new DefaultTreeCellRenderer() {
+
+            @Override
+            public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
+
+                JLabel label = (JLabel) super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus); //To change body of generated methods, choose Tools | Templates.
+
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
+
+                TreeModel model = tree.getModel();
+
+                try {
+                    Object get = model.getClass().getField("active").get(model);
+                    if (get != null && get.equals(node)) {
+                        label.setOpaque(true);
+                        label.setBackground(Color.GRAY);
+                    } else {
+                        label.setOpaque(false);
+                        setBackgroundNonSelectionColor(Color.CYAN);
+                    }
+                } catch (NoSuchFieldException ex) {
+                    Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (SecurityException ex) {
+                    Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (IllegalArgumentException ex) {
+                    Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (IllegalAccessException ex) {
+                    Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+                }
+
+                return label;
+            }
+
+        });
     }
 
-    private void pj_compile(Path p) {
-        
+    private Symbol pj_compile(Path path) throws FileNotFoundException, Exception {
+
+        FileReader freader = new FileReader(path.toString());
+        BufferedReader breader = new BufferedReader(freader);
+
+        Scanner s = new Scanner(breader);
+        Parser p = new Parser(s);
+
+        return p.parse();
+
+//        System.out.println("Stmts -> " + ((Dict) res.value).getDictArrayList("list").size());
+//        pj_process(res);
+    }
+
+    private Pj symbol2pj(Symbol res) {
+        Dict val = (Dict) res.value;
+
+        for (Object obj : val.getDictArrayList("list")) {
+            Dict stmt = (Dict) obj;
+
+            String tag = stmt.getString("tag");
+            String tagname = stmt.getString("tagname");
+            ArrayList<Dict> attr_list = stmt.getDict("attrs").getDictArrayList("list");
+            ArrayList<Dict> body_stmt_list = stmt.getDict("body").getDictArrayList("list");
+
+            Dict attrs = attrlist2Dict(attr_list);
+
+//            if (!tag.equalsIgnoreCase("normal")) {
+//                throw new UnsupportedOperationException("Etiqueta -> '" + tag + "' no es soportada...");
+//            }
+            if (!tagname.equalsIgnoreCase("proyecto")) {
+                throw new UnsupportedOperationException("El nombre de la etiqueta -> '" + tagname + "' no es valida...");
+            }
+//
+//            if (attr_dict.isEmpty() || !attr_dict.containsKey("nombre") || !attr_dict.containsKey("ruta")) {
+//                System.err.println("La de la etiqueta -> '" + tagname + "' no contiene nombre o ruta del proyecto ...");
+//                return null;
+//            }
+
+            // Procesar stmts de la etiqueta...
+            Dict body_dict = unificarTags(body_stmt_list);
+//            HashSet<String> body_dict_files, body_dict_main;
+//            if (!body_dict.isEmpty()) {
+//                //procesar etiqueta archivos
+//                body_dict_files = taglist2set(body_dict.getDictArrayList("archivos"), "nombre");
+//
+//                //procesar etiqueta principal
+//                body_dict_main = taglist2set(body_dict.getDictArrayList("principal"), "nombre");
+//            }
+
+//            String nombre = attrs.getDict("nombre").getString("val");
+//            String ruta = attrs.getDict("ruta").getString("val");
+//            pjman.put(attr_dict.getDict("ruta"), pjman.new Pj(nombre, ruta, null, null));
+            // updating jtree...
+            // Solo se procesara la primera etiqueta...
+            return new Pj(
+                    (attrs.containsKey("nombre") ? attrs.getString("nombre") : null),
+                    (attrs.containsKey("ruta") ? attrs.getString("ruta") : null),
+                    (body_dict.containsKey("archivos") ? taglist2set(body_dict.getDictArrayList("archivos"), "nombre") : null),
+                    (body_dict.containsKey("principal") ? (taglist2set(body_dict.getDictArrayList("principal"), "nombre").isEmpty() ? null : taglist2set(body_dict.getDictArrayList("principal"), "nombre").iterator().next().toString()) : null)
+            );
+        }
+
+        return null;
+    }
+
+    private Dict attrlist2Dict(ArrayList<Dict> attrlist) {
+        Dict ret = new Dict();
+
+        for (Dict attr : attrlist) {
+            if (attr.getBoolean("is_attr")) {
+                ret.put(attr.getDict("id").get("val"), attr.getDict("val").get("val"));
+            }
+        }
+
+        return ret;
+    }
+
+    private Dict unificarTags(ArrayList<Dict> taglist) {
+        Dict ret = new Dict();
+
+        // for each to  this 
+//        taglist.stream().filter((tag) -> (tag.getBoolean("is_tag"))).forEach((tag) -> {
+//            final String tagname = tag.getString("name");
+//            final ArrayList tagbodylist = tag.getDict("body").getDictArrayList("list");
+//
+//            if (ret.containsKey(tagname)) {
+//                ret.getDictArrayList(tagname).addAll(tagbodylist);
+//            } else {
+//                ret.put(tagname, tagbodylist);
+//            }
+//        });
+        for (Dict tag : taglist) {
+            if (tag.getBoolean("is_tag")) {
+                final String tagname = tag.getString("tagname").toLowerCase();
+                final ArrayList tagbodylist = tag.getDict("body").getDictArrayList("list");
+
+                if (ret.containsKey(tagname)) {
+                    ret.getDictArrayList(tagname).addAll(tagbodylist);
+                } else {
+                    ret.put(tagname, tagbodylist);
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    private HashSet<String> taglist2set(ArrayList<Dict> taglist, String attrname) {
+        HashSet<String> ret = new HashSet();
+
+        for (Dict tag : taglist) {
+            if (tag.getBoolean("is_tag")) {
+                Dict attrdict = attrlist2Dict(tag.getDict("attrs").getDictArrayList("list"));
+                if (attrdict.containsKey(attrname)) {
+                    ret.add(attrdict.getString(attrname));
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    private void pj_open(Path p) throws Exception {
+        Symbol sym = pj_compile(p);
+        Pj pj = symbol2pj(sym);
+        pj.setSource(p.toString());
+
+        if (pj == null) {
+            throw new UnsupportedOperationException("No existe estructura de proyect en el archivo .pj...");
+        }
+        if (!pj.isOk()) {
+            throw new UnsupportedOperationException("El archivo .pj no contienen información del nombre o ruta del proyecto...");
+        }
+        Path pruta = Paths.get(pj.getRuta());
+        if (!Files.exists(pruta)) {
+            throw new UnsupportedOperationException("No existe la ruta -> '" + pj.getRuta() + "'...");
+        }
+        if (!Files.isDirectory(pruta)) {
+            throw new UnsupportedOperationException("No es un directorio la ruta -> '" + pj.getRuta() + "'...");
+        }
+//        if (pjman.containsKey(pj.getRuta())) {
+//            throw new UnsupportedOperationException("Ya existe un proyecto con la ruta -> '" + pj.getRuta() + "'...");
+//        }
+
+//        pjman.put(pj.getRuta(), pj);
+        System.err.println("ok");
+
+        DefaultTreeModel model = (DefaultTreeModel) getTreeModel();
+
+        synchronized (model) {
+            DefaultMutableTreeNode pj_node = new DefaultMutableTreeNode(pj);
+
+            pj.getArchivos().stream().forEach((f) -> {
+                DefaultMutableTreeNode f_node = new DefaultMutableTreeNode(Paths.get(f).getFileName());
+                pj_node.add(f_node);
+            });
+
+            ((DefaultMutableTreeNode) model.getRoot()).add(pj_node);
+            model.reload();
+        }
     }
 
 }
