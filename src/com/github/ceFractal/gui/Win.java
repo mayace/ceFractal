@@ -5,9 +5,18 @@
  */
 package com.github.ceFractal.gui;
 
+import com.github.ceFractal.compiler.fractal.Scanner.SSymbol;
+import com.github.ceFractal.compiler.fractal.Sym;
 import com.github.ceFractal.compiler.pj.Parser;
 import com.github.ceFractal.compiler.pj.Scanner;
+import com.github.gg.CC;
 import com.github.gg.Dict;
+import com.github.gg.Err;
+import com.github.gg.Node;
+import com.github.gg.Operation;
+import com.github.gg.TErr;
+import com.github.gg.TModifier;
+import com.github.gg.TOperation;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.event.MouseAdapter;
@@ -16,20 +25,16 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardWatchEventKinds;
-import java.nio.file.WatchEvent;
-import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.logging.Level;
@@ -40,14 +45,18 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.JTextArea;
+import javax.swing.JTextPane;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
-import javax.swing.event.TreeModelEvent;
-import javax.swing.event.TreeModelListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.BoxView;
 import javax.swing.text.ComponentView;
 import javax.swing.text.DefaultStyledDocument;
@@ -56,7 +65,9 @@ import javax.swing.text.Element;
 import javax.swing.text.IconView;
 import javax.swing.text.LabelView;
 import javax.swing.text.ParagraphView;
+import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 import javax.swing.text.StyledEditorKit;
 import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
@@ -64,7 +75,6 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
-import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
 /**
@@ -96,7 +106,7 @@ public class Win extends javax.swing.JFrame {
         jsplitp_base2 = new javax.swing.JSplitPane();
         jtabbedp_tab = new javax.swing.JTabbedPane();
         jScrollPane1 = new javax.swing.JScrollPane();
-        jEditorPane1 = new javax.swing.JEditorPane();
+        jepane_console = new javax.swing.JEditorPane();
         jsp_tree_scroll = new javax.swing.JScrollPane();
         jtree_tree = new javax.swing.JTree();
         menuBar = new javax.swing.JMenuBar();
@@ -112,11 +122,11 @@ public class Win extends javax.swing.JFrame {
         jSeparator2 = new javax.swing.JPopupMenu.Separator();
         exitMenuItem = new javax.swing.JMenuItem();
         comilerMenu = new javax.swing.JMenu();
-        jMenuItem8 = new javax.swing.JMenuItem();
-        jMenuItem1 = new javax.swing.JMenuItem();
+        jmitem_compile = new javax.swing.JMenuItem();
+        jmitem_tabsim = new javax.swing.JMenuItem();
         jSeparator5 = new javax.swing.JPopupMenu.Separator();
+        jmitem_exec = new javax.swing.JMenuItem();
         jMenuItem2 = new javax.swing.JMenuItem();
-        jMenuItem3 = new javax.swing.JMenuItem();
         jMenuItem4 = new javax.swing.JMenuItem();
         jSeparator4 = new javax.swing.JPopupMenu.Separator();
         jMenuItem5 = new javax.swing.JMenuItem();
@@ -144,7 +154,7 @@ public class Win extends javax.swing.JFrame {
         jsplitp_base2.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
         jsplitp_base2.setTopComponent(jtabbedp_tab);
 
-        jScrollPane1.setViewportView(jEditorPane1);
+        jScrollPane1.setViewportView(jepane_console);
 
         jsplitp_base2.setRightComponent(jScrollPane1);
 
@@ -193,6 +203,11 @@ public class Win extends javax.swing.JFrame {
         openMenuItem.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.CTRL_MASK));
         openMenuItem.setMnemonic('o');
         openMenuItem.setText("Open");
+        openMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                openMenuItemActionPerformed(evt);
+            }
+        });
         fileMenu.add(openMenuItem);
         fileMenu.add(jSeparator3);
 
@@ -226,17 +241,27 @@ public class Win extends javax.swing.JFrame {
 
         comilerMenu.setText("Compiler");
 
-        jMenuItem8.setText("Compilar");
-        comilerMenu.add(jMenuItem8);
-
-        jMenuItem1.setText("Tabla de Simbolos");
-        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+        jmitem_compile.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_E, java.awt.event.InputEvent.CTRL_MASK));
+        jmitem_compile.setText("Compilar");
+        jmitem_compile.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem1ActionPerformed(evt);
+                jmitem_compileActionPerformed(evt);
             }
         });
-        comilerMenu.add(jMenuItem1);
+        comilerMenu.add(jmitem_compile);
+
+        jmitem_tabsim.setText("Tabla de Simbolos");
+        jmitem_tabsim.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jmitem_tabsimActionPerformed(evt);
+            }
+        });
+        comilerMenu.add(jmitem_tabsim);
         comilerMenu.add(jSeparator5);
+
+        jmitem_exec.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_R, java.awt.event.InputEvent.CTRL_MASK));
+        jmitem_exec.setText("Ejecutar");
+        comilerMenu.add(jmitem_exec);
 
         jMenuItem2.setText("Generar Codigo");
         jMenuItem2.addActionListener(new java.awt.event.ActionListener() {
@@ -245,9 +270,6 @@ public class Win extends javax.swing.JFrame {
             }
         });
         comilerMenu.add(jMenuItem2);
-
-        jMenuItem3.setText("Ejecutar");
-        comilerMenu.add(jMenuItem3);
 
         jMenuItem4.setText("Optimizar");
         comilerMenu.add(jMenuItem4);
@@ -312,9 +334,26 @@ public class Win extends javax.swing.JFrame {
         System.exit(0);
     }//GEN-LAST:event_exitMenuItemActionPerformed
 
-    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
+    private void jmitem_tabsimActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jmitem_tabsimActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_jMenuItem1ActionPerformed
+
+        Object[][] data = getSimData();
+        Object[] headers = getSimHeaders();
+//        Object[] headers = getSimHeaders();
+
+        System.err.println(data.length);
+//        System.out.println(Arrays.toString(headers));
+        WinTableDialog wintable = new WinTableDialog(this, false);
+
+        DefaultTableModel model = (DefaultTableModel) wintable.getJtable_table().getModel();
+        
+        model.setDataVector(data, headers);
+        
+//        wintable.setJtable_table(new JTable(data, headers));
+        wintable.setVisible(true);
+
+
+    }//GEN-LAST:event_jmitem_tabsimActionPerformed
 
     private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
         // TODO add your handling code here:
@@ -511,13 +550,10 @@ public class Win extends javax.swing.JFrame {
                 Files.write(Paths.get(pj.getSource()), pj.getXml().getBytes("utf8"));
 
                 synchronized (model) {
-
                     nodo.add(new DefaultMutableTreeNode(pnew.getFileName().toString()));
                     model.reload(nodo);
                 }
-
             }
-
         } catch (NoSuchFieldException ex) {
             Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
         } catch (SecurityException ex) {
@@ -533,19 +569,13 @@ public class Win extends javax.swing.JFrame {
 
     private void saveMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveMenuItemActionPerformed
         // TODO add your handling code here:
-        int index = jtabbedp_tab.getSelectedIndex();
 
-        if (index >= 0) {
-            String tip = jtabbedp_tab.getToolTipTextAt(index);
+        Dict info = getSelectedTabInfo();
 
-            JScrollPane spane = (JScrollPane) jtabbedp_tab.getComponentAt(index);
-
-            JEditorPane editor = (JEditorPane) spane.getViewport().getView();
-            String text = editor.getText();
-
+        if (info != null) {
             try {
-                Files.write(Paths.get(tip), text.getBytes("utf8"));
-                System.out.println("Saved..");
+                Files.write(Paths.get(info.getString("tooltip")), info.getString("text").getBytes("utf8"));
+                System.out.println("File Saved..");
             } catch (UnsupportedEncodingException ex) {
                 Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IOException ex) {
@@ -554,6 +584,72 @@ public class Win extends javax.swing.JFrame {
         }
 
     }//GEN-LAST:event_saveMenuItemActionPerformed
+
+    private Dict getSelectedTabInfo() {
+        int index = jtabbedp_tab.getSelectedIndex();
+        if (index >= 0) {
+            String tip = jtabbedp_tab.getToolTipTextAt(index);
+
+            JScrollPane spane = (JScrollPane) jtabbedp_tab.getComponentAt(index);
+
+            JEditorPane editor = (JEditorPane) spane.getViewport().getView();
+            return new Dict() {
+                {
+                    put("text", editor.getText());
+                    put("tooltip", tip);
+                }
+            };
+        }
+        return null;
+    }
+
+    private void jmitem_compileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jmitem_compileActionPerformed
+        // TODO add your handling code here:
+        Dict tinfo = getSelectedTabInfo();
+
+        if (tinfo != null) {
+            com.github.ceFractal.compiler.fractal.Scanner s = new com.github.ceFractal.compiler.fractal.Scanner(new StringReader(tinfo.getString("text")));
+            com.github.ceFractal.compiler.fractal.Parser p = new com.github.ceFractal.compiler.fractal.Parser(s);
+
+            try {
+                Symbol sym = p.parse();
+                final Dict dict = (Dict) sym.value;
+                notify("File compiled... [%d]", dict.getDictArrayList("list").size());
+                stmts_exec(dict);
+            } catch (Exception ex) {
+                error(ex);
+            }
+        }
+    }//GEN-LAST:event_jmitem_compileActionPerformed
+
+    private void error(Exception ex) {
+        Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+    }
+
+    private void notify(Object msg) {
+        notify("%s", msg);
+    }
+
+    private void notify(String format, Object... msgs) {
+        System.err.format(format, msgs);
+        System.err.println();
+
+    }
+
+    private void openMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openMenuItemActionPerformed
+        // TODO add your handling code here:
+        JFileChooser fchooser = getFChooser();
+
+        fchooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        fchooser.setFileFilter(new FileNameExtensionFilter("Frc Files", "frc"));
+
+        int res = fchooser.showOpenDialog(this);
+        if (res == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fchooser.getSelectedFile();
+            file_open(selectedFile.toPath());
+        }
+
+    }//GEN-LAST:event_openMenuItemActionPerformed
 
     private DefaultTreeModel getTreeModel() {
         return (DefaultTreeModel) jtree_tree.getModel();
@@ -605,22 +701,22 @@ public class Win extends javax.swing.JFrame {
     private javax.swing.JMenuItem exitMenuItem;
     private javax.swing.JMenu fileMenu;
     private javax.swing.JMenu helpMenu;
-    private javax.swing.JEditorPane jEditorPane1;
-    private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JMenuItem jMenuItem2;
-    private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JMenuItem jMenuItem4;
     private javax.swing.JMenuItem jMenuItem5;
     private javax.swing.JMenuItem jMenuItem6;
     private javax.swing.JMenuItem jMenuItem7;
-    private javax.swing.JMenuItem jMenuItem8;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JPopupMenu.Separator jSeparator2;
     private javax.swing.JPopupMenu.Separator jSeparator3;
     private javax.swing.JPopupMenu.Separator jSeparator4;
     private javax.swing.JPopupMenu.Separator jSeparator5;
+    private javax.swing.JEditorPane jepane_console;
+    private javax.swing.JMenuItem jmitem_compile;
+    private javax.swing.JMenuItem jmitem_exec;
     private javax.swing.JMenuItem jmitem_setactive;
+    private javax.swing.JMenuItem jmitem_tabsim;
     private javax.swing.JPopupMenu jpumenu_pumenu;
     private javax.swing.JScrollPane jsp_tree_scroll;
     private javax.swing.JSplitPane jsplitp_base1;
@@ -662,24 +758,7 @@ public class Win extends javax.swing.JFrame {
                         Pj pj = (Pj) node.getUserObject();
                         Path fpath = Paths.get(pj.getRuta(), obj.toString());
 
-                        try {
-                            List<String> lines = Files.readAllLines(fpath, Charset.forName("utf8"));
-
-                            StringBuilder builder = new StringBuilder();
-                            for (String l : lines) {
-                                builder.append(l);
-                                builder.append("\n");
-                            }
-
-                            final JEditorPane editor = new JEditorPane();
-                            editor.setText(builder.toString());
-//                            jtabbedp_tab.add(fpath.getFileName().toString(), new JScrollPane(editor));
-                            jtabbedp_tab.addTab(fpath.getFileName().toString(), null, new JScrollPane(editor), fpath.toString());
-                        } catch (IOException ex) {
-                            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
-                        }
-
-                        System.err.println(fpath.toString());
+                        file_open(fpath);
                     }
                 }
             }
@@ -755,6 +834,210 @@ public class Win extends javax.swing.JFrame {
 
 //        System.out.println("Stmts -> " + ((Dict) res.value).getDictArrayList("list").size());
 //        pj_process(res);
+    }
+
+    private void file_open(Path fpath) {
+        try {
+            List<String> lines = Files.readAllLines(fpath, Charset.forName("utf8"));
+
+            StringBuilder builder = new StringBuilder();
+            for (String l : lines) {
+                builder.append(l);
+                builder.append("\n");
+            }
+
+            final JTextPane editor = new JTextPane();
+//            editor.setDocument(new DefaultStyledDocument());
+
+            editor.setText(builder.toString());
+            jtabbedp_tab.addTab(fpath.getFileName().toString(), null, new JScrollPane(editor), fpath.toString());
+            System.err.println("File opened...");
+
+            if (isFRCFile(fpath)) {
+                editor.getDocument().addDocumentListener(new DocumentListener() {
+
+                    @Override
+                    public void insertUpdate(DocumentEvent e) {
+
+                        try {
+                            DefaultStyledDocument doc = (DefaultStyledDocument) (StyledDocument) e.getDocument();
+
+                            com.github.ceFractal.compiler.fractal.Scanner s = new com.github.ceFractal.compiler.fractal.Scanner(new StringReader(e.getDocument().getText(0, e.getDocument().getLength() - 1)));
+
+                            SSymbol token;
+                            while ((token = s.next_token()) != null) {
+                                if (token.sym == Sym.EOF) {
+                                    break;
+                                }
+                                SimpleAttributeSet attrs = getTokenStyle(token.sym);
+
+                                final int offset = token.offset;
+                                final int length = token.length;
+
+                                SwingUtilities.invokeLater(() -> {
+                                    doc.setCharacterAttributes(offset, length, attrs, false);
+                                });
+                            }
+
+                        } catch (IOException ex) {
+                            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+                        } catch (BadLocationException ex) {
+                            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+
+//                        DefaultStyledDocument doc = (DefaultStyledDocument) (StyledDocument) e.getDocument();
+//
+//                        try {
+//                            StringBuilder builder = new StringBuilder();
+//                            int toffset = 0;
+//                            int tlength = 0;
+//
+//                            for (int i = offset; i >= 0; i--) {
+//                                String c = doc.getText(i, 1);
+//
+//                                if (c.endsWith(" ") || c.endsWith("\t") || c.endsWith("\n")) {
+//                                    toffset = i;
+//                                    break;
+//                                }
+//                                builder.append(c);
+//
+//                            }
+//
+//                            builder = builder.reverse();
+//
+//                            for (int i = offset + 1; i < doc.getLength(); i++) {
+//                                String c = doc.getText(i, 1);
+//
+//                                if (c.endsWith(" ") || c.endsWith("\t") || c.endsWith("\n")) {
+//                                    break;
+//                                }
+//                                builder.append(c);
+//                            }
+//
+//                            System.err.println(builder.toString());
+//                            com.github.ceFractal.compiler.fractal.Scanner s = new com.github.ceFractal.compiler.fractal.Scanner(new StringReader(builder.toString()));
+//
+//                            ESymbol token;
+//                            while ((token = s.next_token()) != null) {
+//                                if (token.sym == Sym.EOF) {
+//                                    break;
+//                                }
+//                                SimpleAttributeSet attrs = new SimpleAttributeSet();
+//                                if (token.sym == Sym.ID) {
+//                                    StyleConstants.setBold(attrs, true);
+//                                    StyleConstants.setForeground(attrs, Color.black);
+//
+//                                } else if (token.sym == Sym.STRING) {
+//                                    StyleConstants.setBold(attrs, false);
+//                                    StyleConstants.setForeground(attrs, Color.orange);
+//                                } else if (token.sym == Sym.INT) {
+//                                    StyleConstants.setBold(attrs, false);
+//                                    StyleConstants.setForeground(attrs, Color.blue);
+//                                } else {
+//                                    StyleConstants.setBold(attrs, false);
+//                                    StyleConstants.setForeground(attrs, Color.black);
+//                                }
+//
+//                                SwingUtilities.invokeLater(() -> {
+////                                    doc.setCharacterAttributes(roffset, rlength, attrs, false);
+//                                });
+//                            }
+//                        } catch (BadLocationException ex) {
+//                            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+//                        } catch (IOException ex) {
+//                            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+//                        }
+                    }
+
+                    @Override
+
+                    public void removeUpdate(DocumentEvent e) {
+                        int offset = e.getOffset();
+                        int length = e.getLength();
+                    }
+
+                    @Override
+                    public void changedUpdate(DocumentEvent e) {
+                        int offset = e.getOffset();
+                        int length = e.getLength();
+
+//                        try {
+//                            String text = e.getDocument().getText(offset, length);
+//                            System.err.println(text);
+//                        } catch (BadLocationException ex) {
+//                            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+//                        }
+                    }
+
+                    private SimpleAttributeSet getTokenStyle(int sym) {
+                        SimpleAttributeSet attrs = new SimpleAttributeSet();
+                        switch (sym) {
+                            case Sym.INT:
+                                getStyle(attrs, Color.BLUE, false, false, false);
+                                break;
+                            case Sym.FLOAT:
+                                getStyle(attrs, Color.BLUE, false, false, false);
+                                break;
+                            case Sym.CHAR:
+                                getStyle(attrs, Color.GREEN, false, false, false);
+                                break;
+                            case Sym.STRING:
+                                getStyle(attrs, Color.GREEN, false, false, false);
+                                break;
+                            case Sym.BOOL:
+                                getStyle(attrs, Color.CYAN, false, false, false);
+                                break;
+                            case Sym.ID:
+                                getStyle(attrs, Color.BLACK, true, false, false);
+                                break;
+                            case Sym.error:
+                                getStyle(attrs, Color.RED, false, false, true);
+                                break;
+                            case Sym.KW_INT:
+                                getKWStyle(attrs);
+                                break;
+                            case Sym.KW_FLOAT:
+                                getKWStyle(attrs);
+                                break;
+                            case Sym.KW_CHAR:
+                                getKWStyle(attrs);
+                                break;
+                            case Sym.KW_STRING:
+                                getKWStyle(attrs);
+                                break;
+                            case Sym.KW_BOOL:
+                                getKWStyle(attrs);
+                                break;
+                            default:
+                                getStyle(attrs, Color.BLACK, false, false, false);
+                        }
+
+                        return attrs;
+                    }
+
+                    private void getKWStyle(SimpleAttributeSet attrs) {
+                        getStyle(attrs, Color.ORANGE, false, false, false);
+                    }
+
+                    private void getStyle(SimpleAttributeSet attrs, Color foreground, boolean bold, boolean italic, boolean underline) {
+                        StyleConstants.setForeground(attrs, foreground);
+                        StyleConstants.setBold(attrs, bold);
+                        StyleConstants.setItalic(attrs, italic);
+                        StyleConstants.setUnderline(attrs, underline);
+                    }
+                }
+                );
+
+            }
+
+        } catch (IOException ex) {
+            Logger.getLogger(Win.class
+                    .getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    private static boolean isFRCFile(Path fpath) {
+        return fpath.toString().trim().toLowerCase().endsWith(".frc");
     }
 
     private Pj symbol2pj(Symbol res) {
@@ -903,7 +1186,73 @@ public class Win extends javax.swing.JFrame {
 
             ((DefaultMutableTreeNode) model.getRoot()).add(pj_node);
             model.reload();
+
         }
+    }
+
+    private void stmts_exec(Dict app) {
+        ArrayList<Dict> stmts = app.getDictArrayList("list");
+
+        stmts.stream().forEach((stmt) -> {
+            ((CC) compiler_actions.get("cc")).clear();
+            stmt.getNode("nodo").exec(compiler_actions);
+        });
+    }
+
+    Dict compiler_actions = new Dict(
+            "cc", new com.github.gg.CC(),
+            "operations", new HashMap<TOperation, Operation>() {
+                {
+                    put(TOperation.DEF_CLASS, (Operation) (Node node, Object cc) -> {
+
+                        CC ccompiler = (CC) cc;
+
+                        Dict _modifiers = node.getDictRef().getDict("modifiers");
+                        Dict _name = node.getDictRef().getDict("name");
+                        Dict _extends = node.getDictRef().getDict("extends");
+                        Dict _stmts = node.getDictRef().getDict("stmt");
+
+                        final String _name_val = _name.getString("val");
+                        final String _extends_val = (_extends == null ? null : _extends.getString("val"));
+                        final HashSet<TModifier> _modifiers_val = (_modifiers == null ? new HashSet<>() : getSetModifiers(_modifiers));
+
+                        System.err.format("[Name -> %s][Extends -> %s][Modifiers -> %s]\n", _name_val, _extends_val, _modifiers_val.toString());
+
+                        try {
+                            ccompiler.getSims().addClass(_name_val, _extends_val, _modifiers_val);
+                        } catch (UnsupportedOperationException exc) {
+                            System.err.println(new Err(TErr.SEMANTICO, exc.getMessage(), _name.get("info")));
+//                            error(exc);
+                        }
+
+                        return null;
+                    });
+                    put(TOperation.DEF_METHOD, (Operation) (Node node, Object actions) -> {
+                        return null;
+                    });
+                    put(TOperation.DEF_VAR, (Operation) (Node node, Object actions) -> {
+                        return null;
+                    });
+                }
+            });
+
+    private HashSet getSetModifiers(Dict mod) {
+        HashSet<TModifier> ret = new HashSet();
+        final ArrayList<Dict> list = mod.getDictArrayList("list");
+
+        for (Dict i : list) {
+            ret.add((TModifier) i.get("val"));
+        }
+
+        return ret;
+    }
+
+    private Object[][] getSimData() {
+        return ((CC) compiler_actions.get("cc")).getSims().toArray2D();
+    }
+
+    private Object[] getSimHeaders() {
+        return ((CC) compiler_actions.get("cc")).getSims().getArrayHeader();
     }
 
 }

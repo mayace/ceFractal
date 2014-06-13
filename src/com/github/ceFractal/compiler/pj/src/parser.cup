@@ -1,12 +1,19 @@
-package com.github.gg.tres;
+package com.github.ceFractal.compiler.pj;
 
 import com.github.gg.Dict;
+import java.util.ArrayList;
 
 //===============================================================================================//
 //===============================================================================================//
 
 parser code {: 
-        
+	public void report_error(String message, Object info){
+        System.err.println(message);
+    }
+
+    public void report_fatal_error(String message,Object info){
+        report_error(message,info);
+    }
 :};
 
 action code{:
@@ -15,88 +22,122 @@ action code{:
    
 //===============================================================================================//
 //===============================================================================================//
-terminal        String 		ID,INT,PCOMA,DPUNTOS,EQUAL,DEQUAL,LTHAN,LETHAN,BTHAN,BETHAN,NEQUAL,
-							OR,AND,NOT,PLUS,MINUS,MULT,DIV,LP,RP,GOTO,LL,RL,IF,THEN,LS,RS,PRINT,
-							PRINTLN
+terminal        String 		ID,STRING,EQUAL,TAGi,TAGf,TAGe,TAGi2
 							;
-non terminal    Dict        app,stmt,stmt_list,stmt_label,stmt_assign,id,int,expr,expr1,expr2,expr3,
-							expr4,expr5,expr6,expr7,stmt_goto,stmt_if,stmt_print
+non terminal    Dict        app,stmt,stmt_list,string,stmt_tag,tag_attr_list,tag_attrs,tag_attr,
+							tag_body,tag_body_stmt,tag_body_stmt_list,id
 							;
 //===============================================================================================//
 //===============================================================================================//
 
-app			::=	stmt_list
-				|
+app			::=	stmt_list:l {:RESULT = l;:}	
+				|			{:RESULT = new Dict(){{put("list",new ArrayList<Dict>());}};:}
 				;
-stmt_list	::=	stmt_list stmt
-				|stmt
-				;
-
-stmt 		::=	stmt_label
-				|stmt_assign
-				|stmt_goto
-				|stmt_if
-				|stmt_print
-				;
-
-stmt_label	::=	id DPUNTOS
-				;
-
-stmt_assign ::=	id EQUAL expr PCOMA
-				|id LS expr RS EQUAL expr PCOMA
+stmt_list	::=	stmt_list:l stmt:x
+				{:
+					l.getDictArrayList("list").add(x);
+					RESULT = l;
+				:}
+				|stmt:x
+				{:
+					RESULT = new Dict(){{
+						put("list",new ArrayList<Dict>(){{add(x);}});
+					}};
+				:}
 				;
 
-stmt_goto 	::=	GOTO id PCOMA
+stmt 		::=	stmt_tag:x	{:RESULT = x;:}
 				;
 
-stmt_if 	::=	IF expr THEN stmt_goto
+stmt_tag	::=	TAGi:t1 tag_attrs:x TAGi2 tag_body:b TAGf:t2
+				{:
+					String name = t1.substring(1);
+					if(name.equalsIgnoreCase(t2.substring(2,t2.lastIndexOf('>')))){
+						System.err.println("Normal Tag Name -> " + name);
+					}
+
+					RESULT = new Dict(){{
+						put("is_tag",true);
+						put("tag","normal");
+						put("tagname",name);
+						put("attrs",x);
+						put("body",b);
+					}};
+				:}
+				|TAGi:t1 tag_attrs:x TAGe:t2
+				{:
+					String name = t1.substring(1);
+					System.err.println("Short Tag Name -> " + name);
+
+					RESULT = new Dict(){{
+						put("is_tag",true);
+						put("tag","short");
+						put("tagname",name);
+						put("attrs",x);
+						put("body",new Dict(){{put("list",new ArrayList<Dict>());}});
+					}};
+				:}
 				;
 
-stmt_print 	::=	PRINT LP expr RP
+
+tag_attrs		::=	tag_attr_list:l {:RESULT = l;:}
+					| 				{:RESULT = new Dict(){{put("list",new ArrayList<Dict>());}};:}
+					;
+tag_attr_list	::=	tag_attr_list:l tag_attr:x
+					{:
+						l.getDictArrayList("list").add(x);
+						RESULT = l;
+					:}
+					|tag_attr:x
+					{:
+						RESULT = new Dict(){{
+							put("list",new ArrayList<Dict>(){{add(x);}});
+						}};
+					:}
+					;
+
+tag_attr 		::= id:x EQUAL string:v
+					{:
+						RESULT = new Dict(){{
+							put("is_attr",true);
+							put("id",x);
+							put("val",v);
+						}};
+					:}
+					;
+
+tag_body 	::= tag_body_stmt_list:l 	{:RESULT = l;:}
+				|						{:RESULT = new Dict(){{put("list",new ArrayList<Dict>());}};:}
 				;
 
-expr 		::=	expr OR expr1
-				|expr1
-				;
+tag_body_stmt_list 	::=	tag_body_stmt_list:l tag_body_stmt:x
+						{:
+							l.getDictArrayList("list").add(x);
+							RESULT = l;
+						:}
+						|tag_body_stmt:x 
+						{:
+							RESULT = new Dict(){{
+								put("list",new ArrayList<Dict>(){{add(x);}});
+							}};
+						:}
+						;
 
-expr1		::= expr1 AND expr2
-				|expr2
-				;
+tag_body_stmt 		::= stmt_tag:x	
+						{:RESULT = x;:}
+						;
 
-expr2 		::=	NOT expr3
-				|expr3
+id 			::= ID:x
+				{:
+					RESULT = new Dict(){{
+						put("val",x);
+					}};
+				:}
 				;
-
-expr3 		::=	expr3 BTHAN expr4
-				|expr3 LTHAN expr4
-				|expr3 BETHAN expr4
-				|expr3 LETHAN expr4
-				|expr3 DEQUAL expr4
-				|expr3 NEQUAL expr4
-				|expr4
-				;
-
-expr4 		::=	expr4 PLUS expr5
-				|expr4 MINUS expr5
-				|expr5
-				;
-
-expr5 		::=	expr5 MULT expr6
-				|expr5 DIV expr6
-				|expr6
-				;
-
-expr6 		::=	MINUS expr7
-				|expr7
-				;
-
-expr7 		::=	id
-				|id LS expr RS
-				|int
-				|LP expr RP
-				;
-
-id 			::= ID
-				;
-int 		::=	INT
+string 		::= STRING:x
+				{:
+					RESULT = new Dict(){{
+						put("val",x);
+					}};
+				:}
 				;
