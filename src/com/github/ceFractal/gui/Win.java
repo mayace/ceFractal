@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.github.ceFractal.gui;
 
 import com.github.ceFractal.compiler.fractal.Scanner.SSymbol;
@@ -19,6 +14,8 @@ import com.github.gg.TModifier;
 import com.github.gg.TOperation;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
@@ -129,6 +126,7 @@ public class Win extends javax.swing.JFrame {
         jMenuItem2 = new javax.swing.JMenuItem();
         jMenuItem4 = new javax.swing.JMenuItem();
         jSeparator4 = new javax.swing.JPopupMenu.Separator();
+        jmitem_errores = new javax.swing.JMenuItem();
         jMenuItem5 = new javax.swing.JMenuItem();
         jMenuItem6 = new javax.swing.JMenuItem();
         jMenuItem7 = new javax.swing.JMenuItem();
@@ -275,6 +273,14 @@ public class Win extends javax.swing.JFrame {
         comilerMenu.add(jMenuItem4);
         comilerMenu.add(jSeparator4);
 
+        jmitem_errores.setText("Errores");
+        jmitem_errores.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jmitem_erroresActionPerformed(evt);
+            }
+        });
+        comilerMenu.add(jmitem_errores);
+
         jMenuItem5.setText("Errores Lexicos");
         jMenuItem5.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -337,23 +343,32 @@ public class Win extends javax.swing.JFrame {
     private void jmitem_tabsimActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jmitem_tabsimActionPerformed
         // TODO add your handling code here:
 
-        Object[][] data = getSimData();
-        Object[] headers = getSimHeaders();
-//        Object[] headers = getSimHeaders();
-
-        System.err.println(data.length);
-//        System.out.println(Arrays.toString(headers));
         WinTableDialog wintable = new WinTableDialog(this, false);
+        final JTable table = wintable.getJtable_table();
 
-        DefaultTableModel model = (DefaultTableModel) wintable.getJtable_table().getModel();
-        
-        model.setDataVector(data, headers);
-        
+        wintable.getJbutton_refresh().addActionListener((ActionEvent e) -> {
+            refresh_symtable(table);
+        });
+
+        refresh_symtable(table);
+
 //        wintable.setJtable_table(new JTable(data, headers));
         wintable.setVisible(true);
 
 
     }//GEN-LAST:event_jmitem_tabsimActionPerformed
+
+    private void refresh_symtable(final JTable table) {
+        Object[][] data = getSimData();
+        Object[] headers = getSimHeaders();
+
+        refresh_table(table, data, headers);
+    }
+
+    private void refresh_table(final JTable table, Object[][] data, Object[] headers) {
+        DefaultTableModel model = (DefaultTableModel) table.getModel();
+        model.setDataVector(data, headers);
+    }
 
     private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
         // TODO add your handling code here:
@@ -533,16 +548,13 @@ public class Win extends javax.swing.JFrame {
         DefaultTreeModel model = getTreeModel();
         // TODO add your handling code here:
         try {
-            final Object obj = model.getClass().getField("active").get(model);
-            if (obj == null) {
-                throw new UnsupportedOperationException("No hay proyecto activo...");
-            }
 
-            DefaultMutableTreeNode nodo = (DefaultMutableTreeNode) obj;
+            DefaultMutableTreeNode nodo = tree_project_nodo_active(jtree_tree);
+            Pj pj = nodo_project(nodo);
+
             String res = JOptionPane.showInputDialog("Nombre del archivo .frc:");
             if (!res.trim().isEmpty()) {
                 //crear archivo
-                Pj pj = (Pj) nodo.getUserObject();
                 Path pnew = Paths.get(pj.getRuta(), res + ".frc");
 //                System.err.println(pnew.toString());
                 pj.getArchivos().add(pnew.toString());
@@ -554,6 +566,28 @@ public class Win extends javax.swing.JFrame {
                     model.reload(nodo);
                 }
             }
+        } catch (SecurityException ex) {
+            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalArgumentException ex) {
+            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_newMenuItemActionPerformed
+
+    private static Pj nodo_project(DefaultMutableTreeNode nodo) {
+        return (Pj) nodo.getUserObject();
+    }
+
+    private DefaultMutableTreeNode tree_project_nodo_active(JTree tree) {
+        DefaultMutableTreeNode nodo = null;
+        try {
+            TreeModel model = tree.getModel();
+            final Object obj = model.getClass().getField("active").get(model);
+            if (obj == null) {
+                throw new UnsupportedOperationException("No hay proyecto activo...");
+            }
+            nodo = (DefaultMutableTreeNode) obj;
         } catch (NoSuchFieldException ex) {
             Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
         } catch (SecurityException ex) {
@@ -562,10 +596,10 @@ public class Win extends javax.swing.JFrame {
             Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
             Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
         }
-    }//GEN-LAST:event_newMenuItemActionPerformed
+        return nodo;
+
+    }
 
     private void saveMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveMenuItemActionPerformed
         // TODO add your handling code here:
@@ -608,19 +642,27 @@ public class Win extends javax.swing.JFrame {
         Dict tinfo = getSelectedTabInfo();
 
         if (tinfo != null) {
-            com.github.ceFractal.compiler.fractal.Scanner s = new com.github.ceFractal.compiler.fractal.Scanner(new StringReader(tinfo.getString("text")));
-            com.github.ceFractal.compiler.fractal.Parser p = new com.github.ceFractal.compiler.fractal.Parser(s);
-
-            try {
-                Symbol sym = p.parse();
-                final Dict dict = (Dict) sym.value;
-                notify("File compiled... [%d]", dict.getDictArrayList("list").size());
-                stmts_exec(dict);
-            } catch (Exception ex) {
-                error(ex);
-            }
+            frc_compile(tinfo.getString("text"), compiler_actions, true);
         }
     }//GEN-LAST:event_jmitem_compileActionPerformed
+
+    private void frc_compile(String input, Dict actions, boolean clear) {
+        com.github.ceFractal.compiler.fractal.Scanner s = new com.github.ceFractal.compiler.fractal.Scanner(new StringReader(input));
+        com.github.ceFractal.compiler.fractal.Parser p = new com.github.ceFractal.compiler.fractal.Parser(s);
+
+        try {
+            if (clear) {
+                frc_compiler_clear(actions);
+            }
+
+            Symbol sym = p.parse();
+            final Dict app = (Dict) sym.value;
+            notify("File compiled... [Stmts -> %d]", app.getDictArrayList("list").size());
+            frc_compiler_stmts_exec(app, actions);
+        } catch (Exception ex) {
+            error(ex);
+        }
+    }
 
     private void error(Exception ex) {
         Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
@@ -650,6 +692,21 @@ public class Win extends javax.swing.JFrame {
         }
 
     }//GEN-LAST:event_openMenuItemActionPerformed
+
+    private void jmitem_erroresActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jmitem_erroresActionPerformed
+        // TODO add your handling code here:
+        WinTableDialog wintable = new WinTableDialog(this, false);
+        final JTable table = wintable.getJtable_table();
+
+        wintable.getJbutton_refresh().addActionListener((ActionEvent e) -> {
+            refresh_errtable(table);
+        });
+
+        refresh_errtable(table);
+
+//        wintable.setJtable_table(new JTable(data, headers));
+        wintable.setVisible(true);
+    }//GEN-LAST:event_jmitem_erroresActionPerformed
 
     private DefaultTreeModel getTreeModel() {
         return (DefaultTreeModel) jtree_tree.getModel();
@@ -714,6 +771,7 @@ public class Win extends javax.swing.JFrame {
     private javax.swing.JPopupMenu.Separator jSeparator5;
     private javax.swing.JEditorPane jepane_console;
     private javax.swing.JMenuItem jmitem_compile;
+    private javax.swing.JMenuItem jmitem_errores;
     private javax.swing.JMenuItem jmitem_exec;
     private javax.swing.JMenuItem jmitem_setactive;
     private javax.swing.JMenuItem jmitem_tabsim;
@@ -755,7 +813,7 @@ public class Win extends javax.swing.JFrame {
                         Object obj = tpath.getLastPathComponent();
                         DefaultMutableTreeNode node = (DefaultMutableTreeNode) tpath.getParentPath().getLastPathComponent();
 
-                        Pj pj = (Pj) node.getUserObject();
+                        Pj pj = nodo_project(node);
                         Path fpath = Paths.get(pj.getRuta(), obj.toString());
 
                         file_open(fpath);
@@ -837,53 +895,42 @@ public class Win extends javax.swing.JFrame {
     }
 
     private void file_open(Path fpath) {
-        try {
-            List<String> lines = Files.readAllLines(fpath, Charset.forName("utf8"));
+        String file_text = file_text(fpath);
+        final JTextPane editor = new JTextPane();
+        editor.setText(file_text);
+        jtabbedp_tab.addTab(fpath.getFileName().toString(), null, new JScrollPane(editor), fpath.toString());
+        System.err.println("File opened...");
+        if (isFRCFile(fpath)) {
+            editor.getDocument().addDocumentListener(new DocumentListener() {
 
-            StringBuilder builder = new StringBuilder();
-            for (String l : lines) {
-                builder.append(l);
-                builder.append("\n");
-            }
+                @Override
+                public void insertUpdate(DocumentEvent e) {
 
-            final JTextPane editor = new JTextPane();
-//            editor.setDocument(new DefaultStyledDocument());
+                    try {
+                        DefaultStyledDocument doc = (DefaultStyledDocument) (StyledDocument) e.getDocument();
 
-            editor.setText(builder.toString());
-            jtabbedp_tab.addTab(fpath.getFileName().toString(), null, new JScrollPane(editor), fpath.toString());
-            System.err.println("File opened...");
+                        com.github.ceFractal.compiler.fractal.Scanner s = new com.github.ceFractal.compiler.fractal.Scanner(new StringReader(e.getDocument().getText(0, e.getDocument().getLength() - 1)));
 
-            if (isFRCFile(fpath)) {
-                editor.getDocument().addDocumentListener(new DocumentListener() {
-
-                    @Override
-                    public void insertUpdate(DocumentEvent e) {
-
-                        try {
-                            DefaultStyledDocument doc = (DefaultStyledDocument) (StyledDocument) e.getDocument();
-
-                            com.github.ceFractal.compiler.fractal.Scanner s = new com.github.ceFractal.compiler.fractal.Scanner(new StringReader(e.getDocument().getText(0, e.getDocument().getLength() - 1)));
-
-                            SSymbol token;
-                            while ((token = s.next_token()) != null) {
-                                if (token.sym == Sym.EOF) {
-                                    break;
-                                }
-                                SimpleAttributeSet attrs = getTokenStyle(token.sym);
-
-                                final int offset = token.offset;
-                                final int length = token.length;
-
-                                SwingUtilities.invokeLater(() -> {
-                                    doc.setCharacterAttributes(offset, length, attrs, false);
-                                });
+                        SSymbol token;
+                        while ((token = s.next_token()) != null) {
+                            if (token.sym == Sym.EOF) {
+                                break;
                             }
+                            SimpleAttributeSet attrs = getTokenStyle(token.sym);
 
-                        } catch (IOException ex) {
-                            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
-                        } catch (BadLocationException ex) {
-                            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+                            final int offset = token.offset;
+                            final int length = token.length;
+
+                            SwingUtilities.invokeLater(() -> {
+                                doc.setCharacterAttributes(offset, length, attrs, false);
+                            });
                         }
+
+                    } catch (IOException ex) {
+                        Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (BadLocationException ex) {
+                        Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+                    }
 
 //                        DefaultStyledDocument doc = (DefaultStyledDocument) (StyledDocument) e.getDocument();
 //
@@ -947,19 +994,19 @@ public class Win extends javax.swing.JFrame {
 //                        } catch (IOException ex) {
 //                            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
 //                        }
-                    }
+                }
 
-                    @Override
+                @Override
 
-                    public void removeUpdate(DocumentEvent e) {
-                        int offset = e.getOffset();
-                        int length = e.getLength();
-                    }
+                public void removeUpdate(DocumentEvent e) {
+                    int offset = e.getOffset();
+                    int length = e.getLength();
+                }
 
-                    @Override
-                    public void changedUpdate(DocumentEvent e) {
-                        int offset = e.getOffset();
-                        int length = e.getLength();
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    int offset = e.getOffset();
+                    int length = e.getLength();
 
 //                        try {
 //                            String text = e.getDocument().getText(offset, length);
@@ -967,73 +1014,84 @@ public class Win extends javax.swing.JFrame {
 //                        } catch (BadLocationException ex) {
 //                            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
 //                        }
-                    }
-
-                    private SimpleAttributeSet getTokenStyle(int sym) {
-                        SimpleAttributeSet attrs = new SimpleAttributeSet();
-                        switch (sym) {
-                            case Sym.INT:
-                                getStyle(attrs, Color.BLUE, false, false, false);
-                                break;
-                            case Sym.FLOAT:
-                                getStyle(attrs, Color.BLUE, false, false, false);
-                                break;
-                            case Sym.CHAR:
-                                getStyle(attrs, Color.GREEN, false, false, false);
-                                break;
-                            case Sym.STRING:
-                                getStyle(attrs, Color.GREEN, false, false, false);
-                                break;
-                            case Sym.BOOL:
-                                getStyle(attrs, Color.CYAN, false, false, false);
-                                break;
-                            case Sym.ID:
-                                getStyle(attrs, Color.BLACK, true, false, false);
-                                break;
-                            case Sym.error:
-                                getStyle(attrs, Color.RED, false, false, true);
-                                break;
-                            case Sym.KW_INT:
-                                getKWStyle(attrs);
-                                break;
-                            case Sym.KW_FLOAT:
-                                getKWStyle(attrs);
-                                break;
-                            case Sym.KW_CHAR:
-                                getKWStyle(attrs);
-                                break;
-                            case Sym.KW_STRING:
-                                getKWStyle(attrs);
-                                break;
-                            case Sym.KW_BOOL:
-                                getKWStyle(attrs);
-                                break;
-                            default:
-                                getStyle(attrs, Color.BLACK, false, false, false);
-                        }
-
-                        return attrs;
-                    }
-
-                    private void getKWStyle(SimpleAttributeSet attrs) {
-                        getStyle(attrs, Color.ORANGE, false, false, false);
-                    }
-
-                    private void getStyle(SimpleAttributeSet attrs, Color foreground, boolean bold, boolean italic, boolean underline) {
-                        StyleConstants.setForeground(attrs, foreground);
-                        StyleConstants.setBold(attrs, bold);
-                        StyleConstants.setItalic(attrs, italic);
-                        StyleConstants.setUnderline(attrs, underline);
-                    }
                 }
-                );
 
+                private SimpleAttributeSet getTokenStyle(int sym) {
+                    SimpleAttributeSet attrs = new SimpleAttributeSet();
+                    switch (sym) {
+                        case Sym.INT:
+                            getStyle(attrs, Color.BLUE, false, false, false);
+                            break;
+                        case Sym.FLOAT:
+                            getStyle(attrs, Color.BLUE, false, false, false);
+                            break;
+                        case Sym.CHAR:
+                            getStyle(attrs, Color.GREEN, false, false, false);
+                            break;
+                        case Sym.STRING:
+                            getStyle(attrs, Color.GREEN, false, false, false);
+                            break;
+                        case Sym.BOOL:
+                            getStyle(attrs, Color.CYAN, false, false, false);
+                            break;
+                        case Sym.ID:
+                            getStyle(attrs, Color.BLACK, true, false, false);
+                            break;
+                        case Sym.ERROR:
+                            getStyle(attrs, Color.RED, false, false, true);
+                            break;
+                        case Sym.KW_INT:
+                            getKWStyle(attrs);
+                            break;
+                        case Sym.KW_FLOAT:
+                            getKWStyle(attrs);
+                            break;
+                        case Sym.KW_CHAR:
+                            getKWStyle(attrs);
+                            break;
+                        case Sym.KW_STRING:
+                            getKWStyle(attrs);
+                            break;
+                        case Sym.KW_BOOL:
+                            getKWStyle(attrs);
+                            break;
+                        default:
+                            getStyle(attrs, Color.BLACK, false, false, false);
+                    }
+
+                    return attrs;
+                }
+
+                private void getKWStyle(SimpleAttributeSet attrs) {
+                    getStyle(attrs, Color.ORANGE, false, false, false);
+                }
+
+                private void getStyle(SimpleAttributeSet attrs, Color foreground, boolean bold, boolean italic, boolean underline) {
+                    StyleConstants.setForeground(attrs, foreground);
+                    StyleConstants.setBold(attrs, bold);
+                    StyleConstants.setItalic(attrs, italic);
+                    StyleConstants.setUnderline(attrs, underline);
+                }
             }
+            );
 
-        } catch (IOException ex) {
-            Logger.getLogger(Win.class
-                    .getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    private String file_text(Path fpath) {
+        StringBuilder builder = new StringBuilder();
+
+        try {
+            List<String> lines = Files.readAllLines(fpath, Charset.forName("utf8"));
+            for (String l : lines) {
+                builder.append(l);
+                builder.append("\n");
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return builder.toString();
+
     }
 
     private static boolean isFRCFile(Path fpath) {
@@ -1190,49 +1248,108 @@ public class Win extends javax.swing.JFrame {
         }
     }
 
-    private void stmts_exec(Dict app) {
+    private void frc_compiler_stmts_exec(Dict app, Dict cactions) {
         ArrayList<Dict> stmts = app.getDictArrayList("list");
 
         stmts.stream().forEach((stmt) -> {
-            ((CC) compiler_actions.get("cc")).clear();
-            stmt.getNode("nodo").exec(compiler_actions);
+            stmt.getNode("nodo").exec(cactions);
         });
+    }
+
+    private void frc_compiler_clear(Dict cactions) {
+        ((CC) cactions.get("cc")).clear();
     }
 
     Dict compiler_actions = new Dict(
             "cc", new com.github.gg.CC(),
             "operations", new HashMap<TOperation, Operation>() {
                 {
-                    put(TOperation.DEF_CLASS, (Operation) (Node node, Object cc) -> {
+                    put(TOperation.IMPORT, (Operation) (Node node, Object actions) -> {
+                        Dict cactions = (Dict) actions;
 
-                        CC ccompiler = (CC) cc;
+                        final Dict path = node.getDictRef().getDict("path");
+                        final String path_val = path.getString("val");
+                        Path path_val_path = Paths.get(path_val);
+
+//                        System.err.println("import -> " + path_val);
+                        if (!path_val_path.isAbsolute()) {
+                            DefaultMutableTreeNode treenode = tree_project_nodo_active(jtree_tree);
+                            if (treenode == null) {
+                                System.err.println("Not imported...");
+                                return null;
+                            }
+
+                            Pj pj = nodo_project(treenode);
+
+                            path_val_path = Paths.get(pj.getRuta(), path_val_path.toString());
+//                            System.out.println(Paths.get(pj.getRuta(), path_val_path.toString()));                            
+                        }
+
+                        frc_compile(file_text(path_val_path), cactions, false);
+
+                        return null;
+                    });
+                    put(TOperation.DEF_CLASS, (Operation) (Node node, Object actions) -> {
+
+                        Dict cactions = (Dict) actions;
+                        CC ccompiler = (CC) cactions.get("cc");
 
                         Dict _modifiers = node.getDictRef().getDict("modifiers");
                         Dict _name = node.getDictRef().getDict("name");
                         Dict _extends = node.getDictRef().getDict("extends");
-                        Dict _stmts = node.getDictRef().getDict("stmt");
+                        Dict _stmts = node.getDictRef().getDict("stmts");
 
                         final String _name_val = _name.getString("val");
                         final String _extends_val = (_extends == null ? null : _extends.getString("val"));
                         final HashSet<TModifier> _modifiers_val = (_modifiers == null ? new HashSet<>() : getSetModifiers(_modifiers));
 
-                        System.err.format("[Name -> %s][Extends -> %s][Modifiers -> %s]\n", _name_val, _extends_val, _modifiers_val.toString());
-
+//                        System.err.format("[Name -> %s][Extends -> %s][Modifiers -> %s]\n", _name_val, _extends_val, _modifiers_val.toString());
                         try {
                             ccompiler.getSims().addClass(_name_val, _extends_val, _modifiers_val);
                         } catch (UnsupportedOperationException exc) {
-                            System.err.println(new Err(TErr.SEMANTICO, exc.getMessage(), _name.get("info")));
-//                            error(exc);
+                            compiler_error(exc, TErr.SEMANTICO, _name.get("info"), ccompiler);
                         }
 
+                        //ejecutar stmts
+                        frc_compiler_stmts_exec(_stmts, cactions);
+
+                        return null;
+                    });
+                    put(TOperation.DEF_VAR, (Operation) (Node node, Object actions) -> {
+                        Dict cactions = (Dict) actions;
+                        CC ccompiler = (CC) cactions.get("cc");
+
+                        Dict _modifiers = node.getDictRef().getDict("modifiers");
+                        Dict _array = node.getDictRef().getDict("array");
+
+                        Dict _type = node.getDictRef().getDict("type");
+                        Dict _name = node.getDictRef().getDict("name");
+                        
+                        
+                        
                         return null;
                     });
                     put(TOperation.DEF_METHOD, (Operation) (Node node, Object actions) -> {
                         return null;
                     });
-                    put(TOperation.DEF_VAR, (Operation) (Node node, Object actions) -> {
+                    put(TOperation.ERROR_LEXICO, (Operation) (Node node, Object cc) -> {
+                        compiler_error(new UnsupportedOperationException("Caracter no reconocido..."), TErr.LEXICO, node.getDictRef().get("info"), cc);
                         return null;
                     });
+                    put(TOperation.ERROR_SINTACTICO, (Operation) (Node node, Object cc) -> {
+                        compiler_error(new UnsupportedOperationException("Error de sintaxis..."), TErr.SINTACTICO, node.getDictRef().get("info"), cc);
+                        return null;
+                    });
+                }
+
+                private void compiler_error(Exception exc, TErr terr, Object info, Object cc) {
+                    CC ccompiler = (CC) cc;
+                    Symbol sym = (Symbol) info;
+                    final Err err = new Err(terr, exc.getMessage(), info);
+                    ccompiler.getErrs().add(err);
+
+                    System.out.println(err);
+//                            error(exc);
                 }
             });
 
@@ -1253,6 +1370,21 @@ public class Win extends javax.swing.JFrame {
 
     private Object[] getSimHeaders() {
         return ((CC) compiler_actions.get("cc")).getSims().getArrayHeader();
+    }
+
+    private void refresh_errtable(JTable table) {
+        Object[][] data = getErrData();
+        Object[] headers = getErrHeaders();
+
+        refresh_table(table, data, headers);
+    }
+
+    private Object[][] getErrData() {
+        return ((CC) compiler_actions.get("cc")).getErrs().toArray2D();
+    }
+
+    private Object[] getErrHeaders() {
+        return ((CC) compiler_actions.get("cc")).getErrs().getArrayHeader();
     }
 
 }

@@ -11,6 +11,7 @@ import java.awt.event.KeyEvent;
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
@@ -70,6 +71,7 @@ public class WinTableDialog extends javax.swing.JDialog {
         jpanel_base = new javax.swing.JPanel();
         jspane_table = new javax.swing.JScrollPane();
         jtable_table = new javax.swing.JTable();
+        jbutton_refresh = new javax.swing.JButton();
 
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosing(java.awt.event.WindowEvent evt) {
@@ -109,17 +111,21 @@ public class WinTableDialog extends javax.swing.JDialog {
 
         jpanel_base.add(jspane_table, java.awt.BorderLayout.CENTER);
 
+        jbutton_refresh.setText("Refresh");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(492, Short.MAX_VALUE)
+                .addContainerGap()
+                .addComponent(jbutton_refresh)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(okButton, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(cancelButton)
                 .addContainerGap())
-            .addComponent(jpanel_base, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jpanel_base, javax.swing.GroupLayout.DEFAULT_SIZE, 653, Short.MAX_VALUE)
         );
 
         layout.linkSize(javax.swing.SwingConstants.HORIZONTAL, new java.awt.Component[] {cancelButton, okButton});
@@ -131,7 +137,8 @@ public class WinTableDialog extends javax.swing.JDialog {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(cancelButton)
-                    .addComponent(okButton))
+                    .addComponent(okButton)
+                    .addComponent(jbutton_refresh))
                 .addContainerGap())
         );
 
@@ -205,6 +212,7 @@ public class WinTableDialog extends javax.swing.JDialog {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton cancelButton;
+    private javax.swing.JButton jbutton_refresh;
     private javax.swing.JPanel jpanel_base;
     private javax.swing.JScrollPane jspane_table;
     private javax.swing.JTable jtable_table;
@@ -215,6 +223,10 @@ public class WinTableDialog extends javax.swing.JDialog {
 
     public JTable getJtable_table() {
         return jtable_table;
+    }
+
+    public JButton getJbutton_refresh() {
+        return jbutton_refresh;
     }
 
    

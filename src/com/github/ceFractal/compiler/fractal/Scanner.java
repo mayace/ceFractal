@@ -876,7 +876,7 @@ public class Scanner implements java_cup.runtime.Scanner {
 
       switch (zzAction < 0 ? zzAction : ZZ_ACTION[zzAction]) {
         case 1: 
-          { return symbol(Sym.error,yytext());
+          { return symbol(Sym.ERROR,yytext());
           }
         case 73: break;
         case 2: 

@@ -157,6 +157,6 @@ BOOL    = "true"|"false"
 
 
 // [^]             {process_error();}
-[^]             {return symbol(Sym.error,yytext());}
+[^]             {return symbol(Sym.ERROR,yytext());}
 
 <<EOF>>         {return symbol(Sym.EOF);}

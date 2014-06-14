@@ -14,14 +14,18 @@ import java.util.ArrayList;
 
 parser code {: 
 
+	Object info = null;
+
 	public void report_error(String message, Object info){
-		Err err = new Err(TErr.SINTACTICO,message,info);
-        System.err.println(err);
+		// Err err = new Err(TErr.SINTACTICO,message,info);
+		this.info = info;
     }
 
     public void report_fatal_error(String message,Object info){
         report_error(message,info);
     }
+
+
 :};
 
 action code{:
@@ -35,7 +39,7 @@ terminal        String 		KW_INT,KW_FLOAT,KW_CHAR,KW_STRING,KW_BOOL,KW_NEW,KW_WHI
 							KW_PUBLIC,KW_PRIVATE,KW_EXTENDS,KW_IMPORT,EQUAL,PEQUAL,MIEQUAL,MUEQUAL,DIEQUAL,
 							DEQUAL,BTHAN,BETHAN,LTHAN,LETHAN,NEQUAL,AND,OR,NOT,DPLUS,PLUS,DMINUS,MINUS,MULT,
 							DIV,EXP,QL,QR,PL,PR,COMA,DPUNTOS,PUNTO,REF,INT,FLOAT,CHAR,BOOL,
-							ID,STRING,LL,LR,KW_VOID,KW_RETURN,Q,KW_STATIC,NEWLINE
+							ID,STRING,LL,LR,KW_VOID,KW_RETURN,Q,KW_STATIC,NEWLINE,ERROR
 							;
 non terminal    Dict        app,stmt,stmt_list,imports,id,stmt_class,class_stmt,class_stmts,class_stmt_list,
 							method_param,method_stmt,method_params,method_stmts,method_stmt_list,def_var,modifiers,type,
@@ -45,7 +49,7 @@ non terminal    Dict        app,stmt,stmt_list,imports,id,stmt_class,class_stmt,
 							method_return,method_call_obj,method_call_obj_list,loops,conds,cond_if_else_list,
 							cond_if_else,cond_if,switch_stmts,switch_stmt_list,switch_stmt,new_obj,modifier,
 							nl_list,cond_switch,loop_while,loop_for,cond_if_if,switch_default,switch_case,
-							for_def,def_var_array,modifier_list,stmts,var
+							for_def,def_var_array,modifier_list,stmts,var,error_lexico,error_sintactico
 							;
 //===============================================================================================//
 //===============================================================================================//
@@ -68,7 +72,7 @@ stmt_list 	::=	stmt_list:l stmt:x
 						add(x);
 					}});
 				:}
-				|imports:x
+				|imports:x nl_list
 				{:
 					RESULT = new Dict("list",new ArrayList<Dict>(){{
 						add(x);
@@ -78,12 +82,19 @@ stmt_list 	::=	stmt_list:l stmt:x
 
 imports 	::=	KW_IMPORT LTHAN string:x BTHAN
 				{:
-					RESULT = new Dict("nodo",new Node(TOperation.IMPORT,null,null,x,null));
+					RESULT = new Dict("nodo",new Node(TOperation.IMPORT,null,null,new Dict("path",x),null));
 				:}
 				;
 
 stmt 		::= stmt_class:x nl_list	{:RESULT = x;:}
-				|error 					{:RESULT = new Dict();:}
+				|error_lexico:x nl_list
+				{:
+					RESULT = new Dict("nodo",new Node(TOperation.ERROR_LEXICO,null,null,x,null));
+				:}
+				|error_sintactico:x nl_list
+				{:
+					RESULT = new Dict("nodo",new Node(TOperation.ERROR_SINTACTICO,null,null,x,null));
+				:}
 				;
 
 // CLASE 
@@ -126,6 +137,8 @@ class_stmt_list	::=	class_stmt_list:l class_stmt:x
 
 class_stmt 	::=	class_def_var:x nl_list		{:RESULT=x;:}
 				|def_method:x nl_list		{:RESULT=x;:}
+				|error_lexico:x nl_list 	{:RESULT=x;:}
+				|error_sintactico:x nl_list	{:RESULT=x;:}
 				;
 
 class_def_var 	::=	 modifiers:l def_var:x
@@ -415,32 +428,32 @@ method_def_var 	::=	def_var:x 	{:RESULT=x;:}
 def_var 		::= type:t id_list:x
 					{:
 						RESULT = new Dict(){{
-							set("tipo",t);
-							set("var",x);
+							set("type",t);
+							set("name",x);
 						}};
 					:}
 					|type:t id:x EQUAL expr:e
 					{:
 						RESULT = new Dict(){{
-							set("tipo",t);
-							set("var",x);
+							set("type",t);
+							set("name",x);
 							set("expr",e);
 						}};
 					:}
 					|type:t LTHAN type:t2 BTHAN id_list:x
 					{:
 						RESULT = new Dict(){{
-							set("tipo",t);
-							set("tipo2",t2);
-							set("var",x);
+							set("type",t);
+							set("array",t2);
+							set("name",x);
 						}};
 					:}
 					|type:t LTHAN type:t2 BTHAN id:x EQUAL expr:e
 					{:
 						RESULT = new Dict(){{
-							set("tipo",t);
-							set("tipo2",t2);
-							set("var",x);
+							set("type",t);
+							set("array",t2);
+							set("name",x);
 							set("expr",e);
 						}};
 					:}
@@ -713,3 +726,26 @@ bool 		::=	BOOL:x
 					}};
 				:}
 				;
+
+
+error_lexico	::=	ERROR:x
+					{:
+						RESULT = new Dict(){{
+							put("nodo",new Node(Sym.ERROR,null,null,this));
+							put("info",(CUP$Parser$stack.peek()));
+							put("tipo",Sym.ERROR);
+							put("val",x);
+						}};
+					:}
+					;
+
+error_sintactico 	::=	error:x
+						{:
+							RESULT = new Dict(
+								"nodo",new Node(Sym.error,null,null,null),
+								"info",parser.info,
+								"type",Sym.error
+								);
+						
+						:}
+						;
