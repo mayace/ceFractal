@@ -79,7 +79,7 @@ BOOL    = "true"|"false"
     "string"    {return symbol(Sym.KW_STRING);}
     "bool"      {return symbol(Sym.KW_BOOL);}
 
-    // "array"     {return symbol(Sym.KW_ARRAY);}
+    "array"     {return symbol(Sym.KW_ARRAY);}
     "new"       {return symbol(Sym.KW_NEW);}
     "while"     {return symbol(Sym.KW_WHILE);}
     "do"        {return symbol(Sym.KW_DO);}

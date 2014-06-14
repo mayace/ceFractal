@@ -27,6 +27,9 @@ public class F1 {
         
         System.out.println(Arrays.toString(Sim.class.getDeclaredFields()));
         
+        int i = 0;
+        
+        System.err.println(i++ -1);
     }
     
 }

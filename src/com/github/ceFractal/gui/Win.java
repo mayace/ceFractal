@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java_cup.runtime.Symbol;
@@ -1155,7 +1156,7 @@ public class Win extends javax.swing.JFrame {
 
         for (Dict attr : attrlist) {
             if (attr.getBoolean("is_attr")) {
-                ret.put(attr.getDict("id").get("val"), attr.getDict("val").get("val"));
+                ret.put(attr.getDict("id").get("val").toString(), attr.getDict("val").get("val"));
             }
         }
 
@@ -1310,23 +1311,40 @@ public class Win extends javax.swing.JFrame {
                             compiler_error(exc, TErr.SEMANTICO, _name.get("info"), ccompiler);
                         }
 
+                        //SCOPE
+                        final Stack<String> stack_scope = new Stack<>();
+                        cactions.set("scope", stack_scope);
                         //ejecutar stmts
+                        stack_scope.push(_name_val);
                         frc_compiler_stmts_exec(_stmts, cactions);
+                        stack_scope.pop();
 
                         return null;
                     });
-                    put(TOperation.DEF_VAR, (Operation) (Node node, Object actions) -> {
+                    put(TOperation.DEF_FIELD, (Operation) (Node node, Object actions) -> {
                         Dict cactions = (Dict) actions;
                         CC ccompiler = (CC) cactions.get("cc");
+                        Stack<String> stack_scope = cactions.getStack("scope");
 
                         Dict _modifiers = node.getDictRef().getDict("modifiers");
                         Dict _array = node.getDictRef().getDict("array");
-
                         Dict _type = node.getDictRef().getDict("type");
                         Dict _name = node.getDictRef().getDict("name");
-                        
-                        
-                        
+
+                        final HashSet<TModifier> _modifiers_val = (_modifiers == null ? new HashSet<>() : getSetModifiers(_modifiers));
+                        String _type_val = _type.getString("val");
+                        for (Dict n : (ArrayList<Dict>) _name.getDictArrayList("list")) {
+                            final String n_val = n.getString("val");
+//                            System.err.println("var-> " + n_val);
+
+//                            System.err.println(_modifiers_val);
+                            try {
+                                ccompiler.getSims().addField(stack_scope.peek(), _modifiers_val, _type_val, n_val);
+                            } catch (Exception exc) {
+                                compiler_error(exc, TErr.SEMANTICO, n.get("info"), ccompiler);
+                            }
+                        }
+
                         return null;
                     });
                     put(TOperation.DEF_METHOD, (Operation) (Node node, Object actions) -> {

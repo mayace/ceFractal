@@ -39,7 +39,7 @@ terminal        String 		KW_INT,KW_FLOAT,KW_CHAR,KW_STRING,KW_BOOL,KW_NEW,KW_WHI
 							KW_PUBLIC,KW_PRIVATE,KW_EXTENDS,KW_IMPORT,EQUAL,PEQUAL,MIEQUAL,MUEQUAL,DIEQUAL,
 							DEQUAL,BTHAN,BETHAN,LTHAN,LETHAN,NEQUAL,AND,OR,NOT,DPLUS,PLUS,DMINUS,MINUS,MULT,
 							DIV,EXP,QL,QR,PL,PR,COMA,DPUNTOS,PUNTO,REF,INT,FLOAT,CHAR,BOOL,
-							ID,STRING,LL,LR,KW_VOID,KW_RETURN,Q,KW_STATIC,NEWLINE,ERROR
+							ID,STRING,LL,LR,KW_VOID,KW_RETURN,Q,KW_STATIC,NEWLINE,ERROR,KW_ARRAY
 							;
 non terminal    Dict        app,stmt,stmt_list,imports,id,stmt_class,class_stmt,class_stmts,class_stmt_list,
 							method_param,method_stmt,method_params,method_stmts,method_stmt_list,def_var,modifiers,type,
@@ -144,7 +144,7 @@ class_stmt 	::=	class_def_var:x nl_list		{:RESULT=x;:}
 class_def_var 	::=	 modifiers:l def_var:x
 					{:
 						x.set("modifiers",l);
-						RESULT = new Dict("nodo",new Node(TOperation.DEF_VAR,null,null,x,null));
+						RESULT = new Dict("nodo",new Node(TOperation.DEF_FIELD,null,null,x,null));
 					:}
 					;
 
@@ -436,25 +436,23 @@ def_var 		::= type:t id_list:x
 					{:
 						RESULT = new Dict(){{
 							set("type",t);
-							set("name",x);
-							set("expr",e);
+							set("name",new Dict("list",new ArrayList<Dict>(){{add(x);}}));
+							set("val",e);
 						}};
 					:}
-					|type:t LTHAN type:t2 BTHAN id_list:x
+					|KW_ARRAY LTHAN type:t BTHAN id_list:x
 					{:
 						RESULT = new Dict(){{
 							set("type",t);
-							set("array",t2);
 							set("name",x);
 						}};
 					:}
-					|type:t LTHAN type:t2 BTHAN id:x EQUAL expr:e
+					|KW_ARRAY LTHAN type:t BTHAN id:x EQUAL expr:e
 					{:
 						RESULT = new Dict(){{
 							set("type",t);
-							set("array",t2);
-							set("name",x);
-							set("expr",e);
+							set("name",new Dict("list",new ArrayList<Dict>(){{add(x);}}));
+							set("val",e);
 						}};
 					:}
 					
