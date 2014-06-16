@@ -96,6 +96,7 @@ public class WinTableDialog extends javax.swing.JDialog {
         jpanel_base.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "[Title]", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 0, 24))); // NOI18N
         jpanel_base.setLayout(new java.awt.BorderLayout());
 
+        jtable_table.setAutoCreateRowSorter(true);
         jtable_table.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null},

@@ -9,9 +9,11 @@ import com.github.gg.Dict;
 import com.github.gg.Err;
 import com.github.gg.Node;
 import com.github.gg.Operation;
+import com.github.gg.Sim;
 import com.github.gg.TErr;
 import com.github.gg.TModifier;
 import com.github.gg.TOperation;
+import com.github.gg.TType;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
@@ -69,6 +71,7 @@ import javax.swing.text.StyledDocument;
 import javax.swing.text.StyledEditorKit;
 import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
+import javax.swing.text.html.HTML;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
@@ -793,15 +796,7 @@ public class Win extends javax.swing.JFrame {
     // End of variables declaration//GEN-END:variables
 
     private void myinit() {
-        final JTextArea lines = new JTextArea("1");
-        final JEditorPane editor = new JEditorPane();
 
-        editor.setEditorKit(new EKit());
-
-        editor.setText("dsjlfskjdlg");
-
-//        jscrollp_tab_scroll.setViewportView(editor);
-//        jscrollp_tab_scroll.setRowHeaderView(lines);
         jtree_tree.addMouseListener(new MouseAdapter() {
 
             @Override
@@ -1088,6 +1083,7 @@ public class Win extends javax.swing.JFrame {
                 builder.append(l);
                 builder.append("\n");
             }
+            builder.append("\n");
         } catch (IOException ex) {
             Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -1252,9 +1248,9 @@ public class Win extends javax.swing.JFrame {
     private void frc_compiler_stmts_exec(Dict app, Dict cactions) {
         ArrayList<Dict> stmts = app.getDictArrayList("list");
 
-        stmts.stream().forEach((stmt) -> {
+        for (Dict stmt : stmts) {
             stmt.getNode("nodo").exec(cactions);
-        });
+        }
     }
 
     private void frc_compiler_clear(Dict cactions) {
@@ -1266,13 +1262,18 @@ public class Win extends javax.swing.JFrame {
             "operations", new HashMap<TOperation, Operation>() {
                 {
                     put(TOperation.IMPORT, (Operation) (Node node, Object actions) -> {
+                        //======================================================
+                        // Inicializacion...
+                        //======================================================
                         Dict cactions = (Dict) actions;
 
+                        //======================================================
+                        // Recopilando informacion necesaria...
+                        //======================================================
                         final Dict path = node.getDictRef().getDict("path");
                         final String path_val = path.getString("val");
                         Path path_val_path = Paths.get(path_val);
 
-//                        System.err.println("import -> " + path_val);
                         if (!path_val_path.isAbsolute()) {
                             DefaultMutableTreeNode treenode = tree_project_nodo_active(jtree_tree);
                             if (treenode == null) {
@@ -1281,20 +1282,26 @@ public class Win extends javax.swing.JFrame {
                             }
 
                             Pj pj = nodo_project(treenode);
-
                             path_val_path = Paths.get(pj.getRuta(), path_val_path.toString());
-//                            System.out.println(Paths.get(pj.getRuta(), path_val_path.toString()));                            
                         }
 
+                        //======================================================
+                        // Compilar archivo import
+                        //======================================================
                         frc_compile(file_text(path_val_path), cactions, false);
 
                         return null;
                     });
                     put(TOperation.DEF_CLASS, (Operation) (Node node, Object actions) -> {
-
+                        //======================================================
+                        // Inicializacion...
+                        //======================================================
                         Dict cactions = (Dict) actions;
                         CC ccompiler = (CC) cactions.get("cc");
 
+                        //======================================================
+                        // Recopilando informacion necesaria...
+                        //======================================================
                         Dict _modifiers = node.getDictRef().getDict("modifiers");
                         Dict _name = node.getDictRef().getDict("name");
                         Dict _extends = node.getDictRef().getDict("extends");
@@ -1305,16 +1312,30 @@ public class Win extends javax.swing.JFrame {
                         final HashSet<TModifier> _modifiers_val = (_modifiers == null ? new HashSet<>() : getSetModifiers(_modifiers));
 
 //                        System.err.format("[Name -> %s][Extends -> %s][Modifiers -> %s]\n", _name_val, _extends_val, _modifiers_val.toString());
+                        //======================================================
+                        //Agregar simbolos
+                        //======================================================
                         try {
+                            //agregar clase
                             ccompiler.getSims().addClass(_name_val, _extends_val, _modifiers_val);
+                            //agregar variable this
+                            ccompiler.getSims().addField(_name_val, new HashSet<TModifier>() {
+                                {
+                                    add(TModifier.PRIVATE);
+                                }
+                            }, _name_val, "this");
                         } catch (UnsupportedOperationException exc) {
-                            compiler_error(exc, TErr.SEMANTICO, _name.get("info"), ccompiler);
+                            compiler_error(exc, TErr.SEMANTICO, _name.get("info"), actions);
+                        } catch (CloneNotSupportedException ex) {
+                            compiler_error(ex, TErr.SEMANTICO, _name.get("info"), actions);
+//                            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
                         }
 
-                        //SCOPE
+                        //======================================================
+                        //Ejecutar sentencias de clase y manejo de ambito...
+                        //======================================================
                         final Stack<String> stack_scope = new Stack<>();
                         cactions.set("scope", stack_scope);
-                        //ejecutar stmts
                         stack_scope.push(_name_val);
                         frc_compiler_stmts_exec(_stmts, cactions);
                         stack_scope.pop();
@@ -1322,10 +1343,16 @@ public class Win extends javax.swing.JFrame {
                         return null;
                     });
                     put(TOperation.DEF_FIELD, (Operation) (Node node, Object actions) -> {
+                        //======================================================
+                        // Inicializacion...
+                        //======================================================
                         Dict cactions = (Dict) actions;
                         CC ccompiler = (CC) cactions.get("cc");
                         Stack<String> stack_scope = cactions.getStack("scope");
 
+                        //======================================================
+                        // Recopilando informacion necesaria...
+                        //======================================================
                         Dict _modifiers = node.getDictRef().getDict("modifiers");
                         Dict _array = node.getDictRef().getDict("array");
                         Dict _type = node.getDictRef().getDict("type");
@@ -1333,21 +1360,125 @@ public class Win extends javax.swing.JFrame {
 
                         final HashSet<TModifier> _modifiers_val = (_modifiers == null ? new HashSet<>() : getSetModifiers(_modifiers));
                         String _type_val = _type.getString("val");
+
+                        //======================================================
+                        // Agregando simbolos...
+                        //======================================================
                         for (Dict n : (ArrayList<Dict>) _name.getDictArrayList("list")) {
                             final String n_val = n.getString("val");
-//                            System.err.println("var-> " + n_val);
-
-//                            System.err.println(_modifiers_val);
                             try {
                                 ccompiler.getSims().addField(stack_scope.peek(), _modifiers_val, _type_val, n_val);
                             } catch (Exception exc) {
-                                compiler_error(exc, TErr.SEMANTICO, n.get("info"), ccompiler);
+                                compiler_error(exc, TErr.SEMANTICO, n.get("info"), actions);
                             }
                         }
 
                         return null;
                     });
                     put(TOperation.DEF_METHOD, (Operation) (Node node, Object actions) -> {
+                        Dict cactions = (Dict) actions;
+                        CC ccompiler = (CC) cactions.get("cc");
+                        Stack<String> stack_scope = cactions.getStack("scope");
+
+                        Dict _modifiers = node.getDictRef().getDict("modifiers");
+                        Dict _type = node.getDictRef().getDict("type");
+                        Dict _name = node.getDictRef().getDict("name");
+                        Dict _params = node.getDictRef().getDict("params");
+                        Dict _stmts = node.getDictRef().getDict("stmts");
+
+                        final HashSet<TModifier> _modifiers_val = (_modifiers == null ? new HashSet<>() : getSetModifiers(_modifiers));
+                        String _type_val = _type.getString("val");
+                        String _name_val = _name.getString("val");
+                        Object[] _params_type_array = getArrayType(_params);
+
+//                        System.err.println(_modifiers_val);
+//                        System.err.println(_type_val);
+//                        System.err.println(_name_val);
+//                        System.err.println(Arrays.toString(_params_type_array));
+                        try {
+                            Sim method_sim = ccompiler.getSims().addMethod(stack_scope.peek(), _modifiers_val, _type_val, _name_val, _params_type_array);
+                            ccompiler.getSims().addVariable(method_sim, method_sim.scope, "this");
+                            cactions.put("method_sim", method_sim);
+                        } catch (Exception exc) {
+                            compiler_error(exc, TErr.SEMANTICO, _name.get("info"), ccompiler);
+                        }
+
+                        //======================================================
+                        //Ejecutar sentencias de metodo y manejo de ambito...
+                        //======================================================
+                        stack_scope.push(_name_val);
+                        // ejecutar parametros
+                        frc_compiler_stmts_exec(_params, cactions);
+                        // ejecutar sentencias
+                        frc_compiler_stmts_exec(_stmts, cactions);
+                        stack_scope.pop();
+
+                        if (!_type_val.equals(TType.VOID.toString())) {
+                        }
+                        return null;
+                    });
+                    put(TOperation.DEF_CONSTRUCT, (Operation) (Node node, Object actions) -> {
+                        Dict cactions = (Dict) actions;
+                        CC ccompiler = (CC) cactions.get("cc");
+                        Stack<String> stack_scope = cactions.getStack("scope");
+
+                        Dict _modifiers = node.getDictRef().getDict("modifiers");
+                        Dict _name = node.getDictRef().getDict("name");
+                        Dict _params = node.getDictRef().getDict("params");
+                        Dict _stmts = node.getDictRef().getDict("stmts");
+
+                        final HashSet<TModifier> _modifiers_val = (_modifiers == null ? new HashSet<>() : getSetModifiers(_modifiers));
+                        String _name_val = _name.getString("val");
+                        Object[] _params_type_array = getArrayType(_params);
+
+                        System.err.format("Constructor ->[[Modificadores->%1$s][nombre->%2$s][parametros->%3$s]]\n", _modifiers_val, _name_val, Arrays.toString(_params_type_array));
+
+                        return null;
+                    });
+                    put(TOperation.DEF_PARAMETER, (Operation) (Node node, Object actions) -> {
+                        Dict cactions = (Dict) actions;
+                        CC ccompiler = (CC) cactions.get("cc");
+                        Stack<String> stack_scope = cactions.getStack("scope");
+                        Sim method_sim = cactions.getSim("method_sim");
+
+                        Dict _ref = node.getDictRef().getDict("ref");
+                        Dict _type = node.getDictRef().getDict("type");
+                        Dict _name = node.getDictRef().getDict("name");
+
+                        String _ref_val = _ref.getString("val");
+                        String _type_val = _type.getString("val");
+                        String _name_val = _name.getString("val");
+
+//                        System.err.format("Parametro ->[[ref->%1$s][tipo->%2$s][nombre->%3$s]]\n", _ref_val, _type_val, _name_val);
+                        ccompiler.getSims().addParameter(method_sim, Boolean.getBoolean(_ref_val), _type_val, _name_val);
+
+                        return null;
+                    });
+                    put(TOperation.DEF_VAR, (Operation) (Node node, Object actions) -> {
+
+                        Dict cactions = (Dict) actions;
+                        CC ccompiler = (CC) cactions.get("cc");
+                        Stack<String> stack_scope = cactions.getStack("scope");
+                        Sim method_sim = cactions.getSim("method_sim");
+
+                        Dict _type = node.getDictRef().getDict("type");
+                        Dict _name = node.getDictRef().getDict("name");
+
+                        String _type_val = _type.getString("val");
+
+                        //======================================================
+                        // Agregando simbolos...
+                        //======================================================
+                        for (Dict n : (ArrayList<Dict>) _name.getDictArrayList("list")) {
+                            final String n_val = n.getString("val");
+                            try {
+//                                System.err.format("Variable ->[[tipo->%2$s][nombre->%2$s]]\n", _type_val, n_val);
+                                ccompiler.getSims().addVariable(cactions.getSim("method_sim"), _type_val, n_val);
+                            } catch (Exception exc) {
+                                compiler_error(exc, TErr.SEMANTICO, n.get("info"), actions);
+                            }
+                        }
+
                         return null;
                     });
                     put(TOperation.ERROR_LEXICO, (Operation) (Node node, Object cc) -> {
@@ -1361,7 +1492,7 @@ public class Win extends javax.swing.JFrame {
                 }
 
                 private void compiler_error(Exception exc, TErr terr, Object info, Object cc) {
-                    CC ccompiler = (CC) cc;
+                    CC ccompiler = (CC) ((Dict) cc).get("cc");
                     Symbol sym = (Symbol) info;
                     final Err err = new Err(terr, exc.getMessage(), info);
                     ccompiler.getErrs().add(err);
@@ -1379,6 +1510,16 @@ public class Win extends javax.swing.JFrame {
             ret.add((TModifier) i.get("val"));
         }
 
+        return ret;
+    }
+
+    private Object[] getArrayType(Dict params) {
+        final ArrayList<Dict> list = (ArrayList<Dict>) params.getDictArrayList("list");
+        Object[] ret = new Object[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            Dict param = list.get(i);
+            ret[i] = param.getDict("type").get("val");
+        }
         return ret;
     }
 
@@ -1403,86 +1544,6 @@ public class Win extends javax.swing.JFrame {
 
     private Object[] getErrHeaders() {
         return ((CC) compiler_actions.get("cc")).getErrs().getArrayHeader();
-    }
-
-}
-
-class EKit extends StyledEditorKit {
-
-    @Override
-    public Document createDefaultDocument() {
-        return new Doc();
-    }
-
-    @Override
-    public ViewFactory getViewFactory() {
-        return new StyledViewFactory();
-    }
-
-    static class StyledViewFactory implements ViewFactory {
-
-        public View create(Element elem) {
-            String kind = elem.getName();
-            if (kind != null) {
-                if (kind.equals(AbstractDocument.ContentElementName)) {
-                    return new LabelView(elem);
-                } else if (kind.equals(AbstractDocument.ParagraphElementName)) {
-                    return new ParagraphView(elem);
-                } else if (kind.equals(AbstractDocument.SectionElementName)) {
-                    return new BoxView(elem, View.Y_AXIS);
-                } else if (kind.equals(StyleConstants.ComponentElementName)) {
-                    return new ComponentView(elem);
-                } else if (kind.equals(StyleConstants.IconElementName)) {
-                    return new IconView(elem);
-                }
-            }
-
-            // default to text display
-            return new LabelView(elem);
-        }
-
-        private ArrayList<ViewListener> listViewListener = new ArrayList<>();
-
-        public void addViewListener() {
-        }
-    }
-
-}
-
-interface ViewListener {
-
-    public void created();
-
-    public void removed();
-}
-
-interface ViewEvent {
-}
-
-class Doc extends DefaultStyledDocument {
-
-    @Override
-    protected Element createLeafElement(Element parent, AttributeSet a, int p0, int p1) {
-
-        Element e = super.createLeafElement(parent, a, p0, p1); //To change body of generated methods, choose Tools | Templates.
-        System.err.println(e.getName());
-
-        return e;
-    }
-
-    @Override
-    protected Element createBranchElement(Element parent, AttributeSet a) {
-        final Element e = super.createBranchElement(parent, a); //To change body of generated methods, choose Tools | Templates.
-        if (e.getName().equalsIgnoreCase(AbstractDocument.ParagraphElementName)) {
-            System.err.println(e.getName());
-        }
-        return e; //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    protected void create(ElementSpec[] data) {
-        System.err.println("wtf");
-        super.create(data); //To change body of generated methods, choose Tools | Templates.
     }
 
 }

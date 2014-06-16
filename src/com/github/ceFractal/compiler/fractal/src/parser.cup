@@ -23,6 +23,8 @@ parser code {:
 
     public void report_fatal_error(String message,Object info){
         report_error(message,info);
+        Err err = new Err(TErr.SINTACTICO,message,info);
+        System.err.println(err);
     }
 
 
@@ -151,7 +153,7 @@ class_def_var 	::=	 modifiers:l def_var:x
 
 def_method 	::= modifiers:l id:x PL method_params:l2 PR LL nl_list method_stmts:ss LR 
 				{:
-					RESULT = new Dict("nodo",new Node(TOperation.DEF_METHOD,null,null,new Dict(){{
+					RESULT = new Dict("nodo",new Node(TOperation.DEF_CONSTRUCT,null,null,new Dict(){{
 						set("modifiers",l);
 						// set("type",t);
 						set("name",x);
@@ -192,17 +194,19 @@ method_param_list ::=	method_param_list:l COMA method_param:x
 method_param 	::=	type:t id:x
 					{:
 						RESULT = new Dict(){{
-							set("ref",true);
+							set("ref",new Dict("val",false));
 							set("type",t);
 							set("name",x);
+							set("nodo",new Node(TOperation.DEF_PARAMETER,null,null,this,null));
 						}};
 					:}
 					|REF type:t id:x 	
 					{:
 						RESULT = new Dict(){{
-							set("ref",true);
+							set("ref",new Dict("val",true));
 							set("type",t);
 							set("name",x);
+							set("nodo",new Node(TOperation.DEF_PARAMETER,null,null,this,null));
 						}};
 					:}
 					;
@@ -210,6 +214,10 @@ method_param 	::=	type:t id:x
 method_stmts 	::=	method_stmt_list:l method_return:x 	
 					{:
 						l.set("return",x );
+						RESULT = l;
+					:}
+					|method_stmt_list:l
+					{:
 						RESULT = l;
 					:}
 					|method_return:x
@@ -251,6 +259,8 @@ method_stmt 	::=	method_def_var:x nl_list	{:RESULT = x;:}
 					|conds:x nl_list 			{:RESULT = x;:}
 					|KW_BREAK nl_list			{:RESULT = new Dict("nodo",new Node(TOperation.BREAK,null,null,null,null));:}
 					|KW_CONTINUE nl_list		{:RESULT = new Dict("nodo",new Node(TOperation.BREAK,null,null,null,null));:}
+					|error_sintactico:x nl_list	{:RESULT = x;:}
+					|error_lexico:x nl_list		{:RESULT = x;:}
 					;
 
 loops 			::= loop_while:x 	{:RESULT = x;:}
@@ -310,6 +320,7 @@ switch_stmts 	::=	switch_stmt_list:l switch_default:x
 						l.set("default",x);
 						RESULT = l;
 					:}
+					|switch_stmt_list:x {:RESULT = x;:}
 					|switch_default:x 	{:RESULT = new Dict("default",x,"list",new ArrayList<Dict>());:}
 					|					{:RESULT = new Dict("list",new ArrayList<Dict>());:}
 					;
@@ -385,15 +396,15 @@ method_call		::= method_call_obj_list:x 	{:RESULT = x;:}
 					|id:x DMINUS 			{:RESULT = x;:}
 					;
 
-method_call_obj_list 	::=	method_call_obj_list:l PUNTO method_call_obj:x
-							|method_call_obj:x
-							|new_obj:x
-							|PL expr:e PR Q LL expr:e2 LR DPUNTOS LL expr:e3 LR
-							|PL KW_INT PR
+method_call_obj_list 	::=	method_call_obj_list:l PUNTO method_call_obj:x 		{:RESULT = new Dict();:}
+							|method_call_obj:x 									{:RESULT = new Dict();:}
+							|new_obj:x 											{:RESULT = new Dict();:}
+							|PL expr:e PR Q LL expr:e2 LR DPUNTOS LL expr:e3 LR {:RESULT = new Dict();:}
+							|PL KW_INT PR 										{:RESULT = new Dict();:}
 							;
 
 
-method_call_obj 	::=	id:x
+method_call_obj 	::=	id:x 										{:RESULT = x;:}
 						|id:x di_list:l
 						|id:x PL method_call_params:l PR 
 						|id:x PL method_call_params:l PR di_list:l2
@@ -422,7 +433,10 @@ method_call_param_list 	::=	method_call_param_list:l COMA method_call_param:x
 method_call_param 	::=	expr:x
 						;
 
-method_def_var 	::=	def_var:x 	{:RESULT=x;:}
+method_def_var 	::=	def_var:x 	
+					{:
+						RESULT=new Dict("nodo",new Node(TOperation.DEF_VAR,null,null,x,null));
+					:}
 					;
 
 def_var 		::= type:t id_list:x
@@ -440,14 +454,14 @@ def_var 		::= type:t id_list:x
 							set("val",e);
 						}};
 					:}
-					|KW_ARRAY LTHAN type:t BTHAN id_list:x
+					|id LTHAN type:t BTHAN id_list:x
 					{:
 						RESULT = new Dict(){{
 							set("type",t);
 							set("name",x);
 						}};
 					:}
-					|KW_ARRAY LTHAN type:t BTHAN id:x EQUAL expr:e
+					|id LTHAN type:t BTHAN id:x EQUAL expr:e
 					{:
 						RESULT = new Dict(){{
 							set("type",t);
@@ -729,7 +743,7 @@ bool 		::=	BOOL:x
 error_lexico	::=	ERROR:x
 					{:
 						RESULT = new Dict(){{
-							put("nodo",new Node(Sym.ERROR,null,null,this));
+							put("nodo",new Node(TOperation.ERROR_LEXICO,null,null,this));
 							put("info",(CUP$Parser$stack.peek()));
 							put("tipo",Sym.ERROR);
 							put("val",x);
@@ -740,7 +754,7 @@ error_lexico	::=	ERROR:x
 error_sintactico 	::=	error:x
 						{:
 							RESULT = new Dict(
-								"nodo",new Node(Sym.error,null,null,null),
+								"nodo",new Node(TOperation.ERROR_SINTACTICO,null,null,null),
 								"info",parser.info,
 								"type",Sym.error
 								);
