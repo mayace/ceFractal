@@ -1,0 +1,396 @@
+package com.github.ceFractal.compiler.fractal;
+
+import com.github.gg.Dict;
+import com.github.gg.TOperation;
+import com.github.gg.Node;
+import com.github.gg.Err;
+import com.github.gg.TErr;
+import com.github.gg.TType;
+import com.github.gg.TModifier;
+import java.util.ArrayList;
+
+//===============================================================================================//
+//===============================================================================================//
+
+parser code{::}
+
+action code{::}
+   
+//===============================================================================================//
+//===============================================================================================//
+terminal        String 		KW_INT,KW_FLOAT,KW_CHAR,KW_STRING,KW_BOOL,KW_NEW,KW_WHILE,KW_DO,
+							KW_FOR,KW_CONTINUE,KW_BREAK,KW_IF,KW_ELSE,KW_SWITCH,KW_CASE,KW_DEFAULT,KW_CLASS,
+							KW_PUBLIC,KW_PRIVATE,KW_EXTENDS,KW_IMPORT,EQUAL,PEQUAL,MIEQUAL,MUEQUAL,DIEQUAL,
+							DEQUAL,BTHAN,BETHAN,LTHAN,LETHAN,NEQUAL,AND,OR,NOT,DPLUS,PLUS,DMINUS,MINUS,MULT,
+							DIV,EXP,QL,QR,PL,PR,COMA,DPUNTOS,PUNTO,REF,INT,FLOAT,CHAR,BOOL,
+							ID,STRING,LL,LR,KW_VOID,KW_RETURN,Q,KW_STATIC,NEWLINE,ERROR,KW_ARRAY
+							;
+non terminal    Dict        app,stmt,stmt_list,imports,id,stmt_class,class_stmt,class_stmts,class_stmt_list,
+							method_param,method_stmt,method_params,method_stmts,method_stmt_list,def_var,modifiers,type,
+							int,float,char,string,bool,expr,expr2,expr3,expr4,expr5,expr6,expr7,expr8,expr9,
+							def_method,id_list,method_param_list,di,di_list,method_def_var,class_def_var,
+							method_call,method_call_params,method_call_param_list,method_call_param,set_var,
+							method_return,method_call_obj,method_call_obj_list,loops,conds,cond_if_else_list,
+							cond_if_else,cond_if,switch_stmts,switch_stmt_list,switch_stmt,new_obj,modifier,
+							nl_list,cond_switch,loop_while,loop_for,cond_if_if,switch_default,switch_case,
+							for_def,def_var_array,modifier_list,stmts,var,error_lexico,error_sintactico,err,
+							import_list,importar,type_primitive
+							;
+//===============================================================================================//
+//===============================================================================================//
+app 		::=	stmts:x 			
+				|nl_list stmts:x 	
+				;
+
+stmts		::=	stmt_list:x 	
+				| 				
+				;
+
+stmt_list 	::=	stmt_list:l stmt:x
+				|stmt:x
+				|import_list:x
+				;
+
+stmt 		::= stmt_class:x nl_list	
+				|err:x nl_list
+				;
+
+// ****************************
+// IMPORTS
+// ****************************
+import_list	::=	import_list importar
+				|importar
+				;
+
+importar 	::=	KW_IMPORT LTHAN string:x BTHAN nl_list
+				;
+
+// ****************************
+// CLASE 
+// ****************************
+stmt_class	::=	modifiers:l KW_CLASS id:x LL nl_list class_stmts:ss LR 
+				|modifiers:l KW_CLASS id:x KW_EXTENDS id:x2 LL nl_list class_stmts:ss LR
+				;
+
+class_stmts	::=	class_stmt_list:x 	
+				| 					
+				;
+
+class_stmt_list	::=	class_stmt_list:l class_stmt:x
+					|class_stmt:x
+					;
+
+class_stmt 	::=	class_def_var:x nl_list		
+				|def_method:x nl_list		
+				|err:x nl_list
+				;
+
+class_def_var 	::=	modifiers:l def_var:x
+					;
+
+
+def_method 	::= modifiers:l id:x PL method_params:l2 PR LL nl_list method_stmts:ss LR 
+				|modifiers:l type:t id:x PL method_params:l2 PR LL nl_list method_stmts:ss LR
+				;
+
+method_params 	::=	method_param_list:x 	 
+					|						
+					;
+
+method_param_list ::=	method_param_list:l COMA method_param:x
+						|method_param:x
+						;
+
+
+method_param 	::=	type:t id:x
+					|REF type:t id:x 	
+					;
+
+method_stmts 	::=	method_stmt_list:l method_return:x 	
+					|method_stmt_list:l
+					|method_return:x
+					|
+					;
+
+method_return 	::=	KW_RETURN expr:e nl_list
+					;
+
+method_stmt_list 	::=	method_stmt_list:l method_stmt:x
+						|method_stmt:x
+						;
+
+method_stmt 	::=	//method_def_var:x nl_list	
+					method_call:x nl_list		
+					// |set_var:x nl_list 			
+					// |loops:x nl_list 			
+					// |conds:x nl_list 			
+					// |KW_BREAK nl_list			
+					// |KW_CONTINUE nl_list		
+					|err:x nl_list	
+					;
+
+loops 			::= loop_while:x 	
+					|loop_for:x 	
+					;
+
+
+loop_while 		::=	KW_WHILE PL expr:e PR LL nl_list method_stmts:ss LR
+					
+					|KW_DO LL nl_list method_stmts:ss LR KW_WHILE PL expr:e PR
+					
+					;
+
+loop_for 		::= KW_FOR PL for_def:x PR LL nl_list method_stmts:ss LR
+					;
+
+for_def 		::=	id:x EQUAL expr:e COMA expr:e2 COMA id:x2 DPLUS
+					|KW_INT id:x EQUAL expr:e COMA expr:e2 COMA id:x2 DPLUS
+					;
+
+conds 			::=	cond_if:x 		
+					|cond_switch:x 	
+					;
+
+cond_switch 	::=	KW_SWITCH PL expr:e PR LL nl_list switch_stmts:ss LR
+					;
+
+cond_if 		::=	cond_if_else_list:x
+					|cond_if_else_list:x cond_if_else:x2
+					;
+
+switch_stmts 	::=	switch_stmt_list:l switch_default:x
+					|switch_stmt_list:x 
+					|switch_default:x 	
+					|					
+					;
+
+switch_default 	::=	KW_DEFAULT DPUNTOS nl_list method_stmts:ss 	
+					;
+
+switch_stmt_list 	::=	switch_stmt_list:l switch_stmt:x
+						|switch_stmt:x
+						;
+
+switch_stmt ::=	switch_case:x 	
+				;
+
+switch_case 	::=	KW_CASE expr:e DPUNTOS nl_list method_stmts:ss //KW_BREAK  // BREAK -> LO MISMO QUE EL DO-WHILE, YA VIENE EN method_stmts
+					;
+
+cond_if_else_list 	::=	cond_if_else_list:l KW_ELSE cond_if_if:x
+						|cond_if_if:x
+						;
+cond_if_if 		::=	KW_IF PL expr:e PR LL nl_list method_stmts:ss LR
+					;
+
+cond_if_else 	::= KW_ELSE LL nl_list method_stmts:ss LR
+					;
+
+set_var 		::= var:x EQUAL expr:e 		
+					|var:x PEQUAL expr:e 	
+					|var:x MIEQUAL expr:e 	
+					|var:x MUEQUAL expr:e 	
+					|var:x DIEQUAL expr:e 	
+					;
+
+var 			::=	id:x 			
+					|id:x di_list:l 
+					;
+
+new_obj 		::=	KW_NEW id:x PL method_call_params:l PR
+					
+					;
+
+method_call		::= method_call_obj_list:x 	
+					|id:x DPLUS 			
+					|id:x DMINUS 			
+					;
+
+method_call_obj_list 	::=	method_call_obj_list:l PUNTO method_call_obj:x 		
+							|method_call_obj:x 									
+							|new_obj:x 											
+							|PL expr:e  Q  expr:e2  DPUNTOS  expr:e3  PR
+							|PL PL type PR expr PR								
+							;
+
+
+method_call_obj 	::=	id:x 										
+						|id:x di_list:l
+						|id:x PL method_call_params:l PR 
+						|id:x PL method_call_params:l PR di_list:l2
+						;
+
+method_call_params 	::=	method_call_param_list:x
+						|
+						;
+method_call_param_list 	::=	method_call_param_list:l COMA method_call_param:x
+							|method_call_param:x
+							;
+method_call_param 	::=	expr:x
+						;
+
+method_def_var 	::=	def_var:x 	
+					;
+
+def_var 		::= type:t id_list:x
+					|type:t id:x EQUAL expr:e
+					|id LTHAN type:t BTHAN id_list:x
+					|id LTHAN type:t BTHAN id:x EQUAL expr:e
+					;
+
+def_var_array 	::=	LTHAN type:t BTHAN
+					|
+					;
+
+modifiers 	::=	modifier_list:x 	
+				|					
+				;
+
+
+modifier_list 	::=	modifier_list:l modifier:x
+					
+					|modifier:x
+					
+					;
+
+modifier	::=	KW_PRIVATE:x	
+				|KW_PUBLIC:x	
+				|KW_STATIC:x	
+				;
+
+type 		::=	type_primitive:x	
+				|id:x			
+				;
+
+type_primitive	::=	KW_INT:x		
+					|KW_FLOAT:x		
+					|KW_CHAR:x		
+					|KW_STRING:x	
+					|KW_BOOL:x		
+					|KW_VOID:x	
+					;
+
+// Expr
+
+expr 		::=	expr:l OR expr2:x
+				
+				|expr2:x	
+				;
+
+expr2 		::=	expr2:l AND expr3:x
+				
+				|expr3:x	
+				;
+expr3 		::=	NOT expr4:x
+				
+				|expr4:x 	
+				;
+
+expr4 		::=	expr4:l DEQUAL expr5:x
+				
+				|expr4:l NEQUAL expr5:x
+				
+				|expr4:l BTHAN expr5:x
+				
+				|expr4:l BETHAN expr5:x
+				
+				|expr4:l LTHAN expr5:x
+				
+				|expr4:l LETHAN expr5:x
+				
+				|expr5:x	
+				;
+
+expr5 		::=	expr5:l PLUS expr6:x
+				
+				|expr5:l MINUS expr6:x
+				
+				|expr6:x	
+				;
+
+expr6 		::=	expr6:l MULT expr7:x
+				
+				|expr6:l DIV expr7:x
+				
+				|expr7:x	
+				;
+
+expr7 		::=	expr7:l EXP expr8:x
+				
+				|expr8:x	
+				;
+
+expr8 		::=	MINUS expr9:x
+				
+				|expr9:x
+				
+				;
+
+expr9 		::= int:x			
+				|float:x		
+				|char:x			
+				|string:x		
+				|bool:x			
+				//aqui puede traer llamadas a objetos, metodos,identificadores, ternarios...
+				|method_call:x	
+				//|PL expr:x PR	
+				;
+//
+id_list 	::= id_list:l COMA id:x
+				
+				|id:x
+				
+				;
+
+di_list 	::=	di_list:l di:x
+				
+				|di:x
+				
+				;
+
+
+nl_list 	::=	nl_list NEWLINE
+				|NEWLINE
+				;
+
+di 			::=	QL expr5:x QR
+				
+				;
+
+id 			::= ID:x
+				
+				;
+
+int 		::=	INT:x
+				
+				;
+
+float 		::=	FLOAT:x
+				
+				;
+
+char 		::= CHAR:x
+				
+				;
+
+string 		::=	STRING:x
+				
+				;
+
+bool 		::=	BOOL:x
+				
+				;
+
+
+error_lexico	::=	ERROR:x
+					
+					;
+
+error_sintactico 	::=	error:x
+						
+						;
+
+
+err 	::=	error_sintactico:x
+			|error_lexico:x
+			;

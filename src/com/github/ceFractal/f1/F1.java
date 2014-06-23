@@ -4,6 +4,7 @@ import com.github.gg.Dict;
 import com.github.gg.Sim;
 import com.github.gg.TModifier;
 import com.github.gg.TRol;
+import com.github.gg.TType;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -47,19 +48,16 @@ public class F1 {
 //            }
 //        } 
         
-        class a extends Sim{
-
-            public a(TRol rol, String scope, int position, int size, HashSet<TModifier> modifiers, Object type, String name, Sim parent) {
-                super(rol, scope, position, size, modifiers, type, name, parent);
-            }
-        }
-        class b extends a{
-
-            public b(TRol rol, String scope, int position, int size, HashSet<TModifier> modifiers, Object type, String name, Sim parent) {
-                super(rol, scope, position, size, modifiers, type, name, parent);
-                
-            }
-        }
+        int i = 1;
+        
+        int j = i=2;
+        Object d = new Dict("array",true,"type",TType.BOOLEAN.toString());
+        System.err.println(d);
+        
+    }
+    
+    public static Dict gg(){
+        return null;
     }
     
 }

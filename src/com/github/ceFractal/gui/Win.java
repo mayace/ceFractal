@@ -16,6 +16,7 @@ import com.github.gg.TOperation;
 import com.github.gg.TType;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -45,6 +46,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextPane;
@@ -67,8 +69,11 @@ import javax.swing.text.LabelView;
 import javax.swing.text.ParagraphView;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
 import javax.swing.text.StyledEditorKit;
+import javax.swing.text.TabSet;
+import javax.swing.text.TabStop;
 import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
 import javax.swing.text.html.HTML;
@@ -659,10 +664,13 @@ public class Win extends javax.swing.JFrame {
                 frc_compiler_clear(actions);
             }
 
-            Symbol sym = p.parse();
-            final Dict app = (Dict) sym.value;
-            notify("File compiled... [Stmts -> %d]", app.getDictArrayList("list").size());
-            frc_compiler_stmts_exec(app, actions);
+            final Symbol sym = p.parse();
+            notify("File compiled...");
+
+            if (sym.value != null) {
+                final Dict app = (Dict) sym.value;
+                frc_compiler_stmts_exec(app, actions);
+            }
         } catch (Exception ex) {
             error(ex);
         }
@@ -692,7 +700,7 @@ public class Win extends javax.swing.JFrame {
         int res = fchooser.showOpenDialog(this);
         if (res == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fchooser.getSelectedFile();
-            file_open(selectedFile.toPath());
+            file_open(selectedFile.toPath(), jtabbedp_tab);
         }
 
     }//GEN-LAST:event_openMenuItemActionPerformed
@@ -746,7 +754,11 @@ public class Win extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new Win().setVisible(true);
+                final Win win = new Win();
+                win.setVisible(true);
+                win.setSize(800, 600);
+                win.jepane_console.setVisible(false);
+                win.setLocationRelativeTo(null);
             }
         });
     }
@@ -812,7 +824,7 @@ public class Win extends javax.swing.JFrame {
                         Pj pj = nodo_project(node);
                         Path fpath = Paths.get(pj.getRuta(), obj.toString());
 
-                        file_open(fpath);
+                        file_open(fpath, jtabbedp_tab);
                     }
                 }
             }
@@ -890,12 +902,22 @@ public class Win extends javax.swing.JFrame {
 //        pj_process(res);
     }
 
-    private void file_open(Path fpath) {
-        String file_text = file_text(fpath);
+    private void file_open(Path fpath, JTabbedPane panel) {
+
         final JTextPane editor = new JTextPane();
+        final JScrollPane scroll = new JScrollPane(editor);
+        final JTextArea lines = new JTextArea("1");
+        scroll.setRowHeaderView(lines);
+        editor.setFont(new Font("consolas", Font.PLAIN, 16));
+//        setTabSize(editor, 4);
+        lines.setBackground(Color.LIGHT_GRAY);
+        lines.setFont(editor.getFont());
+
+        String file_text = file_text(fpath);
         editor.setText(file_text);
-        jtabbedp_tab.addTab(fpath.getFileName().toString(), null, new JScrollPane(editor), fpath.toString());
-        System.err.println("File opened...");
+
+        panel.addTab(fpath.getFileName().toString(), null, scroll, fpath.toString());
+        notify("File opened...");
         if (isFRCFile(fpath)) {
             editor.getDocument().addDocumentListener(new DocumentListener() {
 
@@ -1022,13 +1044,13 @@ public class Win extends javax.swing.JFrame {
                             getStyle(attrs, Color.BLUE, false, false, false);
                             break;
                         case Sym.CHAR:
-                            getStyle(attrs, Color.GREEN, false, false, false);
+                            getStyle(attrs, Color.decode("#90EE90"), false, false, false);
                             break;
                         case Sym.STRING:
-                            getStyle(attrs, Color.GREEN, false, false, false);
+                            getStyle(attrs, Color.decode("#006400"), false, false, false);
                             break;
                         case Sym.BOOL:
-                            getStyle(attrs, Color.CYAN, false, false, false);
+                            getStyle(attrs, Color.BLUE, false, false, false);
                             break;
                         case Sym.ID:
                             getStyle(attrs, Color.BLACK, true, false, false);
@@ -1051,6 +1073,75 @@ public class Win extends javax.swing.JFrame {
                         case Sym.KW_BOOL:
                             getKWStyle(attrs);
                             break;
+                        case Sym.KW_VOID:
+                            getKWStyle(attrs);
+                            break;
+                        case Sym.KW_IMPORT:
+                            getKWStyle2(attrs);
+                            break;
+                        case Sym.KW_CLASS:
+                            getKWStyle2(attrs);
+                            break;
+                        case Sym.KW_EXTENDS:
+                            getKWStyle2(attrs);
+                            break;
+                        case Sym.KW_PUBLIC:
+                            getKWStyle2(attrs);
+                            break;
+                        case Sym.KW_PRIVATE:
+                            getKWStyle2(attrs);
+                            break;
+                        case Sym.KW_STATIC:
+                            getKWStyle2(attrs);
+                            break;
+                        case Sym.KW_NEW:
+                            getKWStyle2(attrs);
+                            break;
+                        case Sym.KW_THIS:
+                            getKWStyle2(attrs);
+                            break;
+                        case Sym.KW_SUPER:
+                            getKWStyle2(attrs);
+                            break;
+                        case Sym.KW_ARRAY:
+                            getKWStyle2(attrs);
+                            break;
+                        case Sym.NULL:
+                            getKWStyle2(attrs);
+                            break;
+                        case Sym.KW_CONTINUE:
+                            getKWStyle2(attrs);
+                            break;
+                        case Sym.KW_BREAK:
+                            getKWStyle2(attrs);
+                            break;
+                        case Sym.KW_RETURN:
+                            getKWStyle2(attrs);
+                            break;
+                        case Sym.KW_FOR:
+                            getKWStyle2(attrs);
+                            break;
+                        case Sym.KW_WHILE:
+                            getKWStyle2(attrs);
+                            break;
+                        case Sym.KW_IF:
+                            getKWStyle2(attrs);
+                            break;
+                        case Sym.KW_ELSE:
+                            getKWStyle2(attrs);
+                            break;
+                        case Sym.KW_DO:
+                            getKWStyle2(attrs);
+                            break;
+                        case Sym.KW_SWITCH:
+                            getKWStyle2(attrs);
+                            break;
+                        case Sym.KW_CASE:
+                            getKWStyle2(attrs);
+                            break;
+                        case Sym.KW_DEFAULT:
+                            getKWStyle2(attrs);
+                            break;
                         default:
                             getStyle(attrs, Color.BLACK, false, false, false);
                     }
@@ -1058,8 +1149,12 @@ public class Win extends javax.swing.JFrame {
                     return attrs;
                 }
 
+                private void getKWStyle2(SimpleAttributeSet attrs) {
+                    getStyle(attrs, Color.decode("#00008B"), false, false, false);
+                }
+
                 private void getKWStyle(SimpleAttributeSet attrs) {
-                    getStyle(attrs, Color.ORANGE, false, false, false);
+                    getStyle(attrs, Color.decode("#FF8C00"), false, false, false);
                 }
 
                 private void getStyle(SimpleAttributeSet attrs, Color foreground, boolean bold, boolean italic, boolean underline) {
@@ -1083,7 +1178,7 @@ public class Win extends javax.swing.JFrame {
                 builder.append(l);
                 builder.append("\n");
             }
-            builder.append("\n");
+//            builder.appsend("\n");
         } catch (IOException ex) {
             Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -1249,7 +1344,12 @@ public class Win extends javax.swing.JFrame {
         ArrayList<Dict> stmts = app.getDictArrayList("list");
 
         for (Dict stmt : stmts) {
-            stmt.getNode("nodo").exec(cactions);
+            Node nodo = stmt.getNode("nodo");
+            if (nodo == null) {
+                System.err.println("No Nodo..." + stmt);
+                continue;
+            }
+            nodo.exec(cactions);
         }
     }
 
@@ -1304,7 +1404,7 @@ public class Win extends javax.swing.JFrame {
                         //======================================================
                         Dict _modifiers = node.getDictRef().getDict("modifiers");
                         Dict _name = node.getDictRef().getDict("name");
-                        Dict _extends = node.getDictRef().getDict("extends");
+                        Dict _extends = node.getDictRef().getDict("super");
                         Dict _stmts = node.getDictRef().getDict("stmts");
 
                         final String _name_val = _name.getString("val");
@@ -1319,11 +1419,11 @@ public class Win extends javax.swing.JFrame {
                             //agregar clase
                             ccompiler.getSims().addClass(_name_val, _extends_val, _modifiers_val);
                             //agregar variable this
-                            ccompiler.getSims().addField(_name_val, new HashSet<TModifier>() {
-                                {
-                                    add(TModifier.PRIVATE);
-                                }
-                            }, _name_val, "this");
+//                            ccompiler.getSims().addField(_name_val, new HashSet<TModifier>() {
+//                                {
+//                                    add(TModifier.PRIVATE);
+//                                }
+//                            }, _name_val, "this");
                         } catch (UnsupportedOperationException exc) {
                             compiler_error(exc, TErr.SEMANTICO, _name.get("info"), actions);
                         } catch (CloneNotSupportedException ex) {
@@ -1334,11 +1434,17 @@ public class Win extends javax.swing.JFrame {
                         //======================================================
                         //Ejecutar sentencias de clase y manejo de ambito...
                         //======================================================
-                        final Stack<String> stack_scope = new Stack<>();
-                        cactions.set("scope", stack_scope);
-                        stack_scope.push(_name_val);
+                        /**
+                         * scope: Cuando se esta en def_field y def_method es
+                         * string Cuando se encuentra dentro de un metodo es el
+                         * simbolo del metodo... Mejor que sea solo simbolos que
+                         * se maneje... pero si da tiempo...
+                         */
+                        final Stack scope = new Stack<>();
+                        cactions.set("scope", scope);
+                        scope.push(_name_val);
                         frc_compiler_stmts_exec(_stmts, cactions);
-                        stack_scope.pop();
+                        scope.pop();
 
                         return null;
                     });
@@ -1354,7 +1460,7 @@ public class Win extends javax.swing.JFrame {
                         // Recopilando informacion necesaria...
                         //======================================================
                         Dict _modifiers = node.getDictRef().getDict("modifiers");
-                        Dict _array = node.getDictRef().getDict("array");
+                        Boolean _array = node.getDictRef().getBoolean("array");
                         Dict _type = node.getDictRef().getDict("type");
                         Dict _name = node.getDictRef().getDict("name");
 
@@ -1367,7 +1473,7 @@ public class Win extends javax.swing.JFrame {
                         for (Dict n : (ArrayList<Dict>) _name.getDictArrayList("list")) {
                             final String n_val = n.getString("val");
                             try {
-                                ccompiler.getSims().addField(stack_scope.peek(), _modifiers_val, _type_val, n_val);
+                                ccompiler.getSims().addField(stack_scope.peek(), _modifiers_val, _type_val, n_val, new Dict("array", (_array == null ? false : _array)));
                             } catch (Exception exc) {
                                 compiler_error(exc, TErr.SEMANTICO, n.get("info"), actions);
                             }
@@ -1378,7 +1484,7 @@ public class Win extends javax.swing.JFrame {
                     put(TOperation.DEF_METHOD, (Operation) (Node node, Object actions) -> {
                         Dict cactions = (Dict) actions;
                         CC ccompiler = (CC) cactions.get("cc");
-                        Stack<String> stack_scope = cactions.getStack("scope");
+                        Stack scope = cactions.getStack("scope");
 
                         Dict _modifiers = node.getDictRef().getDict("modifiers");
                         Dict _type = node.getDictRef().getDict("type");
@@ -1396,22 +1502,22 @@ public class Win extends javax.swing.JFrame {
 //                        System.err.println(_name_val);
 //                        System.err.println(Arrays.toString(_params_type_array));
                         try {
-                            Sim method_sim = ccompiler.getSims().addMethod(stack_scope.peek(), _modifiers_val, _type_val, _name_val, _params_type_array);
+                            Sim method_sim = ccompiler.getSims().addMethod(scope.peek().toString(), _modifiers_val, _type_val, _name_val, _params_type_array);
                             ccompiler.getSims().addVariable(method_sim, method_sim.scope, "this");
                             cactions.put("method_sim", method_sim);
                         } catch (Exception exc) {
-                            compiler_error(exc, TErr.SEMANTICO, _name.get("info"), ccompiler);
+                            compiler_error(exc, TErr.SEMANTICO, _name.get("info"), actions);
                         }
 
                         //======================================================
                         //Ejecutar sentencias de metodo y manejo de ambito...
                         //======================================================
-                        stack_scope.push(_name_val);
+                        scope.push(_name_val);
                         // ejecutar parametros
                         frc_compiler_stmts_exec(_params, cactions);
                         // ejecutar sentencias
                         frc_compiler_stmts_exec(_stmts, cactions);
-                        stack_scope.pop();
+                        scope.pop();
 
                         if (!_type_val.equals(TType.VOID.toString())) {
                         }
@@ -1420,7 +1526,7 @@ public class Win extends javax.swing.JFrame {
                     put(TOperation.DEF_CONSTRUCT, (Operation) (Node node, Object actions) -> {
                         Dict cactions = (Dict) actions;
                         CC ccompiler = (CC) cactions.get("cc");
-                        Stack<String> stack_scope = cactions.getStack("scope");
+                        Stack scope = cactions.getStack("scope");
 
                         Dict _modifiers = node.getDictRef().getDict("modifiers");
                         Dict _name = node.getDictRef().getDict("name");
@@ -1431,16 +1537,35 @@ public class Win extends javax.swing.JFrame {
                         String _name_val = _name.getString("val");
                         Object[] _params_type_array = getArrayType(_params);
 
-                        System.err.format("Constructor ->[[Modificadores->%1$s][nombre->%2$s][parametros->%3$s]]\n", _modifiers_val, _name_val, Arrays.toString(_params_type_array));
+//                        System.err.format("Constructor ->[[Modificadores->%1$s][nombre->%2$s][parametros->%3$s]]\n", _modifiers_val, _name_val, Arrays.toString(_params_type_array));
+                        try {
+                            Sim method_sim = ccompiler.getSims().addConstruct(scope.peek().toString(), _modifiers_val, _name_val, _params_type_array);
+                            ccompiler.getSims().addVariable(method_sim, method_sim.scope, "this");
+//                            cactions.put("method_sim", method_sim);
+
+                            //======================================================
+                            //Ejecutar sentencias de metodo y manejo de ambito...
+                            //======================================================
+                            scope.push(method_sim);
+                            // ejecutar parametros
+                            frc_compiler_stmts_exec(_params, cactions);
+                            // ejecutar sentencias
+                            frc_compiler_stmts_exec(_stmts, cactions);
+                            scope.pop();
+
+                        } catch (Exception exc) {
+                            compiler_error(exc, TErr.SEMANTICO, _name.get("info"), actions);
+                        }
 
                         return null;
                     });
                     put(TOperation.DEF_PARAMETER, (Operation) (Node node, Object actions) -> {
                         Dict cactions = (Dict) actions;
                         CC ccompiler = (CC) cactions.get("cc");
-                        Stack<String> stack_scope = cactions.getStack("scope");
-                        Sim method_sim = cactions.getSim("method_sim");
+                        Stack scope = cactions.getStack("scope");
+                        Sim method_sim = (Sim) scope.peek();
 
+                        Boolean _array_val = node.getDictRef().containsKey("array") ? node.getDictRef().getBoolean("array") : false;
                         Dict _ref = node.getDictRef().getDict("ref");
                         Dict _type = node.getDictRef().getDict("type");
                         Dict _name = node.getDictRef().getDict("name");
@@ -1450,11 +1575,15 @@ public class Win extends javax.swing.JFrame {
                         String _name_val = _name.getString("val");
 
 //                        System.err.format("Parametro ->[[ref->%1$s][tipo->%2$s][nombre->%3$s]]\n", _ref_val, _type_val, _name_val);
-                        ccompiler.getSims().addParameter(method_sim, Boolean.getBoolean(_ref_val), _type_val, _name_val);
+                        try {
+                            ccompiler.getSims().addParameter(method_sim, Boolean.parseBoolean(_ref_val), _type_val, _name_val, new Dict("array", _array_val));
+                        } catch (Exception exc) {
+                            compiler_error(exc, TErr.SEMANTICO, _name.get("info"), actions);
+                        }
 
                         return null;
                     });
-                    put(TOperation.DEF_VAR, (Operation) (Node node, Object actions) -> {
+                    put(TOperation.DEF_LOCALVAR, (Operation) (Node node, Object actions) -> {
 
                         Dict cactions = (Dict) actions;
                         CC ccompiler = (CC) cactions.get("cc");
@@ -1471,12 +1600,13 @@ public class Win extends javax.swing.JFrame {
                         //======================================================
                         for (Dict n : (ArrayList<Dict>) _name.getDictArrayList("list")) {
                             final String n_val = n.getString("val");
-                            try {
-//                                System.err.format("Variable ->[[tipo->%2$s][nombre->%2$s]]\n", _type_val, n_val);
-                                ccompiler.getSims().addVariable(cactions.getSim("method_sim"), _type_val, n_val);
-                            } catch (Exception exc) {
-                                compiler_error(exc, TErr.SEMANTICO, n.get("info"), actions);
-                            }
+                            System.err.format("Variable ->[[tipo->%2$s][nombre->%2$s]]\n", _type_val, n_val);
+
+//                            try {
+//                                ccompiler.getSims().addVariable(cactions.getSim("method_sim"), _type_val, n_val);
+//                            } catch (Exception exc) {
+//                                compiler_error(exc, TErr.SEMANTICO, n.get("info"), actions);
+//                            }
                         }
 
                         return null;
@@ -1544,6 +1674,20 @@ public class Win extends javax.swing.JFrame {
 
     private Object[] getErrHeaders() {
         return ((CC) compiler_actions.get("cc")).getErrs().getArrayHeader();
+    }
+
+    private void setTabSize(JTextPane pane, int i) {
+        TabStop[] tabs = new TabStop[i];
+        tabs[0] = new TabStop(60, TabStop.ALIGN_LEFT, TabStop.LEAD_NONE);
+        tabs[1] = new TabStop(100, TabStop.ALIGN_LEFT, TabStop.LEAD_NONE);
+        tabs[2] = new TabStop(200, TabStop.ALIGN_LEFT, TabStop.LEAD_NONE);
+        tabs[3] = new TabStop(300, TabStop.ALIGN_LEFT, TabStop.LEAD_NONE);
+        TabSet tabset = new TabSet(tabs);
+
+        StyleContext sc = StyleContext.getDefaultStyleContext();
+        AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY,
+                StyleConstants.TabSet, tabset);
+        pane.setParagraphAttributes(aset, false);
     }
 
 }

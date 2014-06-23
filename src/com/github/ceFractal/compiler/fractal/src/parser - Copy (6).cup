@@ -1,0 +1,763 @@
+package com.github.ceFractal.compiler.fractal;
+
+import com.github.gg.Dict;
+import com.github.gg.TOperation;
+import com.github.gg.Node;
+import com.github.gg.Err;
+import com.github.gg.TErr;
+import com.github.gg.TType;
+import com.github.gg.TModifier;
+import java.util.ArrayList;
+
+//===============================================================================================//
+//===============================================================================================//
+
+parser code {: 
+
+	Object info = null;
+
+	public void report_error(String message, Object info){
+		// Err err = new Err(TErr.SINTACTICO,message,info);
+		this.info = info;
+    }
+
+    public void report_fatal_error(String message,Object info){
+        report_error(message,info);
+        Err err = new Err(TErr.SINTACTICO,message,info);
+        System.err.println(err);
+    }
+
+
+:};
+
+action code{:
+
+:}
+   
+//===============================================================================================//
+//===============================================================================================//
+terminal        String 		KW_INT,KW_FLOAT,KW_CHAR,KW_STRING,KW_BOOL,KW_NEW,KW_WHILE,KW_DO,
+							KW_FOR,KW_CONTINUE,KW_BREAK,KW_IF,KW_ELSE,KW_SWITCH,KW_CASE,KW_DEFAULT,KW_CLASS,
+							KW_PUBLIC,KW_PRIVATE,KW_EXTENDS,KW_IMPORT,EQUAL,PEQUAL,MIEQUAL,MUEQUAL,DIEQUAL,
+							DEQUAL,BTHAN,BETHAN,LTHAN,LETHAN,NEQUAL,AND,OR,NOT,DPLUS,PLUS,DMINUS,MINUS,MULT,
+							DIV,EXP,QL,QR,PL,PR,COMA,DPUNTOS,PUNTO,REF,INT,FLOAT,CHAR,BOOL,
+							ID,STRING,LL,LR,KW_VOID,KW_RETURN,Q,KW_STATIC,NEWLINE,ERROR,KW_ARRAY
+							;
+non terminal    Dict        app,stmt,stmt_list,imports,id,stmt_class,class_stmt,class_stmts,class_stmt_list,
+							method_param,method_stmt,method_params,method_stmts,method_stmt_list,def_var,modifiers,type,
+							int,float,char,string,bool,expr,expr2,expr3,expr4,expr5,expr6,expr7,expr8,expr9,
+							def_method,id_list,method_param_list,di,di_list,method_def_var,class_def_var,
+							method_call,method_call_params,method_call_param_list,method_call_param,set_var,
+							method_return,method_call_obj,method_call_obj_list,loops,conds,cond_if_else_list,
+							cond_if_else,cond_if,switch_stmts,switch_stmt_list,switch_stmt,new_obj,modifier,
+							nl_list,cond_switch,loop_while,loop_for,cond_if_if,switch_default,switch_case,
+							for_def,def_var_array,modifier_list,stmts,var,error_lexico,error_sintactico
+							;
+//===============================================================================================//
+//===============================================================================================//
+app 		::=	stmts:x 			{:RESULT = x;:}
+				|nl_list stmts:x 	{:RESULT = x;:}
+				;
+
+stmts		::=	stmt_list:x 	{:RESULT = x;:}
+				| 				{:RESULT = new Dict("list",new ArrayList<Dict>());:}
+				;
+
+stmt_list 	::=	stmt_list:l stmt:x
+				{:
+					l.getDictArrayList("list").add(x);
+					RESULT = l;
+				:}
+				|stmt:x
+				{:
+					RESULT = new Dict("list",new ArrayList<Dict>(){{
+						add(x);
+					}});
+				:}
+				|imports:x nl_list
+				{:
+					RESULT = new Dict("list",new ArrayList<Dict>(){{
+						add(x);
+					}});
+				:}
+				;
+
+imports 	::=	KW_IMPORT LTHAN string:x BTHAN
+				{:
+					RESULT = new Dict("nodo",new Node(TOperation.IMPORT,null,null,new Dict("path",x),null));
+				:}
+				;
+
+stmt 		::= stmt_class:x nl_list	{:RESULT = x;:}
+				|error_lexico:x nl_list
+				{:
+					RESULT = new Dict("nodo",new Node(TOperation.ERROR_LEXICO,null,null,x,null));
+				:}
+				|error_sintactico:x nl_list
+				{:
+					RESULT = new Dict("nodo",new Node(TOperation.ERROR_SINTACTICO,null,null,x,null));
+				:}
+				;
+
+// CLASE 
+stmt_class	::=	modifiers:l KW_CLASS id:x LL nl_list class_stmts:ss LR 
+				{:
+					RESULT = new Dict("nodo", new Node(TOperation.DEF_CLASS,null,null,new Dict(){{
+						set("modifiers",l);
+						set("name",x);
+						set("stmts",ss);
+					}},null));
+				:}
+				|modifiers:l KW_CLASS id:x KW_EXTENDS id:x2 LL nl_list class_stmts:ss LR
+				{:
+					RESULT = new Dict("nodo", new Node(TOperation.DEF_CLASS,null,null,new Dict(){{
+						set("modifiers",l);
+						set("name",x);
+						set("extends",x2);
+						set("stmts",ss);
+					}},null));
+				:}
+				;
+
+class_stmts	::=	class_stmt_list:x 	{:RESULT = x;:}
+				| 					{:RESULT = new Dict("list",new ArrayList<Dict>());:}
+				;
+
+class_stmt_list	::=	class_stmt_list:l class_stmt:x
+					{:
+						l.getDictArrayList("list").add(x);
+						RESULT = l;
+					:}
+					|class_stmt:x
+					{:
+						RESULT = new Dict("list",new ArrayList<Dict>(){{
+							add(x);
+						}});
+					:}
+					;
+
+
+class_stmt 	::=	class_def_var:x nl_list		{:RESULT=x;:}
+				|def_method:x nl_list		{:RESULT=x;:}
+				|error_lexico:x nl_list 	{:RESULT=x;:}
+				|error_sintactico:x nl_list	{:RESULT=x;:}
+				;
+
+class_def_var 	::=	 modifiers:l def_var:x
+					{:
+						x.set("modifiers",l);
+						RESULT = new Dict("nodo",new Node(TOperation.DEF_FIELD,null,null,x,null));
+					:}
+					;
+
+
+def_method 	::= modifiers:l id:x PL method_params:l2 PR LL nl_list method_stmts:ss LR 
+				{:
+					RESULT = new Dict("nodo",new Node(TOperation.DEF_CONSTRUCT,null,null,new Dict(){{
+						set("modifiers",l);
+						// set("type",t);
+						set("name",x);
+						set("params",l2);
+						set("stmts",ss);
+					}},null));
+				:}
+				|modifiers:l type:t id:x PL method_params:l2 PR LL nl_list method_stmts:ss LR
+				{:
+					RESULT = new Dict("nodo",new Node(TOperation.DEF_METHOD,null,null,new Dict(){{
+						set("modifiers",l);
+						set("type",t);
+						set("name",x);
+						set("params",l2);
+						set("stmts",ss);
+					}},null));
+				:}
+				;
+
+method_params 	::=	method_param_list:x 	{:RESULT = x;:} 
+					|						{:RESULT = new Dict("list",new ArrayList<Dict>());:}
+					;
+
+method_param_list ::=	method_param_list:l COMA method_param:x
+						{:
+							l.getDictArrayList("list").add(x);
+							RESULT = l;
+						:}
+						|method_param:x
+						{:
+							RESULT = new Dict("list",new ArrayList<Dict>(){{
+								add(x);
+							}});
+						:}
+						;
+
+
+method_param 	::=	type:t id:x
+					{:
+						RESULT = new Dict(){{
+							set("ref",new Dict("val",false));
+							set("type",t);
+							set("name",x);
+							set("nodo",new Node(TOperation.DEF_PARAMETER,null,null,this,null));
+						}};
+					:}
+					|REF type:t id:x 	
+					{:
+						RESULT = new Dict(){{
+							set("ref",new Dict("val",true));
+							set("type",t);
+							set("name",x);
+							set("nodo",new Node(TOperation.DEF_PARAMETER,null,null,this,null));
+						}};
+					:}
+					;
+
+method_stmts 	::=	method_stmt_list:l method_return:x 	
+					{:
+						l.set("return",x );
+						RESULT = l;
+					:}
+					|method_stmt_list:l
+					{:
+						RESULT = l;
+					:}
+					|method_return:x
+					{:
+						RESULT = new Dict(){{
+							set("return",x);
+							set("list",new ArrayList<Dict>());
+						}};
+					:}
+					|
+					{:
+						RESULT = new Dict("list",new ArrayList<Dict>());
+					:}
+					;
+
+method_return 	::=	KW_RETURN expr:e nl_list
+					{:
+						RESULT = new Dict("expr",e);
+					:}
+					;
+
+method_stmt_list 	::=	method_stmt_list:l method_stmt:x
+						{:
+							l.getDictArrayList("list").add(x);
+							RESULT = l;
+						:}
+						|method_stmt:x
+						{:
+							RESULT = new Dict("list",new ArrayList<Dict>(){{
+								add(x);
+							}});
+						:}
+						;
+
+method_stmt 	::=	method_def_var:x nl_list	{:RESULT = x;:}
+					|method_call:x nl_list		{:RESULT = x;:}
+					|set_var:x nl_list 			{:RESULT = x;:}
+					|loops:x nl_list 			{:RESULT = x;:}
+					|conds:x nl_list 			{:RESULT = x;:}
+					|KW_BREAK nl_list			{:RESULT = new Dict("nodo",new Node(TOperation.BREAK,null,null,null,null));:}
+					|KW_CONTINUE nl_list		{:RESULT = new Dict("nodo",new Node(TOperation.BREAK,null,null,null,null));:}
+					|error_sintactico:x nl_list	{:RESULT = x;:}
+					|error_lexico:x nl_list		{:RESULT = x;:}
+					;
+
+loops 			::= loop_while:x 	{:RESULT = x;:}
+					|loop_for:x 	{:RESULT = x;:}
+					;
+
+
+loop_while 		::=	KW_WHILE PL expr:e PR LL nl_list method_stmts:ss LR
+					{:
+						RESULT = new Dict("nodo",new Node(TOperation.STMT_WHILE,null,null,new Dict("stmts",ss,"expr",e),null));
+					:}
+					|KW_DO LL nl_list method_stmts:ss LR KW_WHILE PL expr:e PR
+					{:
+						RESULT = new Dict("nodo",new Node(TOperation.STMT_DO_WHILE,null,null,new Dict("stmts",ss,"expr",e),null));
+					:}
+					;
+
+loop_for 		::= KW_FOR PL for_def:x PR LL nl_list method_stmts:ss LR
+					{:
+						x.set("stmts",ss);
+						RESULT = new Dict("nodo",new Node(TOperation.STMT_FOR,null,null,x,null));
+					:}
+					;
+
+for_def 		::=	id:x EQUAL expr:e COMA expr:e2 COMA id:x2 DPLUS
+					{:
+						RESULT = new Dict("var",x,"init",e,"term",e2,"increment",x2);
+					:}
+					|KW_INT id:x EQUAL expr:e COMA expr:e2 COMA id:x2 DPLUS
+					{:
+						RESULT = new Dict("var",x,"init",e,"term",e2,"increment",x2);
+					:}
+					;
+
+conds 			::=	cond_if:x 		{:RESULT = x;:}
+					|cond_switch:x 	{:RESULT = x;:}
+					;
+
+cond_switch 	::=	KW_SWITCH PL expr:e PR LL nl_list switch_stmts:ss LR
+					{:
+						RESULT = new Dict("nodo",new Node(TOperation.STMT_SWITCH,null,null,new Dict("stmts",ss,"expr",e),null));
+					:}
+					;
+
+cond_if 		::=	cond_if_else_list:x
+					{:
+						RESULT = new Dict("nodo",new Node(TOperation.STMT_IF,null,null,new Dict("if_elseif",x),null));
+					:}
+					|cond_if_else_list:x cond_if_else:x2
+					{:
+						RESULT = new Dict("nodo",new Node(TOperation.STMT_IF,null,null,new Dict("if_elseif",x,"else",x2),null));
+					:}
+					;
+
+switch_stmts 	::=	switch_stmt_list:l switch_default:x
+					{:
+						l.set("default",x);
+						RESULT = l;
+					:}
+					|switch_stmt_list:x {:RESULT = x;:}
+					|switch_default:x 	{:RESULT = new Dict("default",x,"list",new ArrayList<Dict>());:}
+					|					{:RESULT = new Dict("list",new ArrayList<Dict>());:}
+					;
+
+switch_default 	::=	KW_DEFAULT DPUNTOS nl_list method_stmts:ss 	{:RESULT = new Dict("stmts",ss);:}
+					;
+
+switch_stmt_list 	::=	switch_stmt_list:l switch_stmt:x
+						{:
+							l.getDictArrayList("list").add(x);
+							RESULT = l;
+						:}
+						|switch_stmt:x
+						{:
+							RESULT = new Dict("list",new ArrayList<Dict>(){{
+								add(x);
+							}});
+						:}
+						;
+
+switch_stmt ::=	switch_case:x 	{:RESULT = x;:}
+				;
+
+switch_case 	::=	KW_CASE expr:e DPUNTOS nl_list method_stmts:ss //KW_BREAK  // BREAK -> LO MISMO QUE EL DO-WHILE, YA VIENE EN method_stmts
+					{:
+						RESULT = new Dict("expr",e,"stmts",ss);
+					:}
+					;
+
+cond_if_else_list 	::=	cond_if_else_list:l KW_ELSE cond_if_if:x
+						{:
+							l.getDictArrayList("list").add(x);
+							RESULT = l;
+						:}
+						|cond_if_if:x
+						{:
+							RESULT = new Dict("list",new ArrayList<Dict>(){{
+								add(x);
+							}});
+						:}
+						;
+cond_if_if 		::=	KW_IF PL expr:e PR LL nl_list method_stmts:ss LR
+					{:
+						RESULT = new Dict("expr",e,"stmts",ss);
+					:}
+					;
+
+cond_if_else 	::= KW_ELSE LL nl_list method_stmts:ss LR
+					{:
+						RESULT = new Dict("stmts",ss);
+					:}
+					;
+
+set_var 		::= var:x EQUAL expr:e 		{:RESULT = new Dict("nodo",new Node(TOperation.SET_VAR,null,null,new Dict("var",x,"expr",e),null));:}
+					|var:x PEQUAL expr:e 	{:RESULT = new Dict("nodo",new Node(TOperation.SET_VAR,null,null,new Dict("var",x,"expr",e),null));:}
+					|var:x MIEQUAL expr:e 	{:RESULT = new Dict("nodo",new Node(TOperation.SET_VAR,null,null,new Dict("var",x,"expr",e),null));:}
+					|var:x MUEQUAL expr:e 	{:RESULT = new Dict("nodo",new Node(TOperation.SET_VAR,null,null,new Dict("var",x,"expr",e),null));:}
+					|var:x DIEQUAL expr:e 	{:RESULT = new Dict("nodo",new Node(TOperation.SET_VAR,null,null,new Dict("var",x,"expr",e),null));:}
+					;
+
+var 			::=	id:x 			{:RESULT = new Dict("name",x);:}
+					|id:x di_list:l {:RESULT = new Dict("name",x,"dimension",l);:}
+					;
+
+new_obj 		::=	KW_NEW id:x PL method_call_params:l PR
+					{:
+						RESULT = new Dict("nodo",new Node(TOperation.STMT_NEW_OBJECT,null,null,new Dict("type",x,"params",l)));
+					:}
+					;
+
+method_call		::= method_call_obj_list:x 	{:RESULT = x;:}
+					|id:x DPLUS 			{:RESULT = x;:}
+					|id:x DMINUS 			{:RESULT = x;:}
+					;
+
+method_call_obj_list 	::=	method_call_obj_list:l PUNTO method_call_obj:x 		{:RESULT = new Dict();:}
+							|method_call_obj:x 									{:RESULT = new Dict();:}
+							|new_obj:x 											{:RESULT = new Dict();:}
+							|PL expr:e PR Q LL expr:e2 LR DPUNTOS LL expr:e3 LR {:RESULT = new Dict();:}
+							|PL KW_INT PR 										{:RESULT = new Dict();:}
+							;
+
+
+method_call_obj 	::=	id:x 										{:RESULT = x;:}
+						|id:x di_list:l
+						|id:x PL method_call_params:l PR 
+						|id:x PL method_call_params:l PR di_list:l2
+						// -------------
+						// ternario
+						// -------------
+						// existe problemas de reduccion... ya que puede venir algo asi... 
+						// <id> <acepta> <ternario> <acepta>
+						// Ej: i  ( <expr> ) ? .. : ...
+						// El compilador no puede diferenciar entre lo de arriba y esto...
+						// <llamda a metodo> <acepta>
+						// Ej: id (<params>)
+						// Esto debido a que no hay simbolo de finalizacion en las sentencias como el ';'
+						// La forma en que pueda diferencias este caso es tomando el salto de linea
+						// como finalizacion de sentencias...
+						
+						//|PL type PR expr
+						;
+
+method_call_params 	::=	method_call_param_list:x
+						|
+						;
+method_call_param_list 	::=	method_call_param_list:l COMA method_call_param:x
+							|method_call_param:x
+							;
+method_call_param 	::=	expr:x
+						;
+
+method_def_var 	::=	def_var:x 	
+					{:
+						RESULT=new Dict("nodo",new Node(TOperation.DEF_VAR,null,null,x,null));
+					:}
+					;
+
+def_var 		::= type:t id_list:x
+					{:
+						RESULT = new Dict(){{
+							set("type",t);
+							set("name",x);
+						}};
+					:}
+					|type:t id:x EQUAL expr:e
+					{:
+						RESULT = new Dict(){{
+							set("type",t);
+							set("name",new Dict("list",new ArrayList<Dict>(){{add(x);}}));
+							set("val",e);
+						}};
+					:}
+					|id LTHAN type:t BTHAN id_list:x
+					{:
+						RESULT = new Dict(){{
+							set("type",t);
+							set("name",x);
+						}};
+					:}
+					|id LTHAN type:t BTHAN id:x EQUAL expr:e
+					{:
+						RESULT = new Dict(){{
+							set("type",t);
+							set("name",new Dict("list",new ArrayList<Dict>(){{add(x);}}));
+							set("val",e);
+						}};
+					:}
+					
+					// type def_var_array id_list
+					// |type def_var_array id EQUAL expr
+					;
+
+def_var_array 	::=	LTHAN type:t BTHAN
+					|
+					;
+
+modifiers 	::=	modifier_list:x 	{:RESULT = x;:}
+				|					{:RESULT = new Dict("list",new ArrayList<Dict>());:}
+				;
+
+
+modifier_list 	::=	modifier_list:l modifier:x
+					{:
+						l.getDictArrayList("list").add(x);
+						RESULT = l;
+					:}
+					|modifier:x
+					{:
+						RESULT = new Dict(){{
+							put("list",new ArrayList<Dict>(){{add(x);}});
+						}};
+					:}
+					;
+
+modifier	::=	KW_PRIVATE:x	{:RESULT = new Dict("val",TModifier.PRIVATE);:}
+				|KW_PUBLIC:x	{:RESULT = new Dict("val",TModifier.PUBLIC);:}
+				|KW_STATIC:x	{:RESULT = new Dict("val",TModifier.STATIC);:}
+				;
+
+type 		::=	KW_INT:x		{:RESULT = new Dict("val",TType.INT);:}
+				|KW_FLOAT:x		{:RESULT = new Dict("val",TType.FLOAT);:}
+				|KW_CHAR:x		{:RESULT = new Dict("val",TType.CHAR);:}
+				|KW_STRING:x	{:RESULT = new Dict("val",TType.STRING);:}
+				|KW_BOOL:x		{:RESULT = new Dict("val",TType.BOOLEAN);:}
+				|KW_VOID:x		{:RESULT = new Dict("val",TType.VOID);:}
+				|id:x			{:RESULT = new Dict("val",x);:}
+				;
+// Expr
+
+expr 		::=	expr:l OR expr2:x
+				{:
+					Object info = CUP$Parser$stack.elementAt(CUP$Parser$top-1);
+					l.set("nodo",new Node(Sym.OR,l.getNode("nodo"),x.getNode("nodo"),info));
+					RESULT = l;
+				:}
+				|expr2:x	{:RESULT = x;:}
+				;
+
+expr2 		::=	expr2:l AND expr3:x
+				{:
+					Object info = CUP$Parser$stack.elementAt(CUP$Parser$top-1);
+					l.set("nodo",new Node(Sym.AND,l.getNode("nodo"),x.getNode("nodo"),info));
+					RESULT = l;
+				:}
+				|expr3:x	{:RESULT = x;:}
+				;
+expr3 		::=	NOT expr4:x
+				{:
+					Object info = CUP$Parser$stack.elementAt(CUP$Parser$top-1);
+					x.set("nodo",new Node(Sym.NOT,x.getNode("nodo"),null,info));
+					RESULT = x;
+				:}
+				|expr4:x 	{:RESULT = x;:}
+				;
+
+expr4 		::=	expr4:l DEQUAL expr5:x
+				{:
+					Object info = CUP$Parser$stack.elementAt(CUP$Parser$top-1);
+					l.set("nodo",new Node(Sym.DEQUAL,l.getNode("nodo"),x.getNode("nodo"),info));
+					RESULT = l;
+				:}
+				|expr4:l NEQUAL expr5:x
+				{:
+					Object info = CUP$Parser$stack.elementAt(CUP$Parser$top-1);
+					l.set("nodo",new Node(Sym.NEQUAL,l.getNode("nodo"),x.getNode("nodo"),info));
+					RESULT = l;
+				:}
+				|expr4:l BTHAN expr5:x
+				{:
+					Object info = CUP$Parser$stack.elementAt(CUP$Parser$top-1);
+					l.set("nodo",new Node(Sym.BTHAN,l.getNode("nodo"),x.getNode("nodo"),info));
+					RESULT = l;
+				:}
+				|expr4:l BETHAN expr5:x
+				{:
+					Object info = CUP$Parser$stack.elementAt(CUP$Parser$top-1);
+					l.set("nodo",new Node(Sym.BETHAN,l.getNode("nodo"),x.getNode("nodo"),info));
+					RESULT = l;
+				:}
+				|expr4:l LTHAN expr5:x
+				{:
+					Object info = CUP$Parser$stack.elementAt(CUP$Parser$top-1);
+					l.set("nodo",new Node(Sym.LTHAN,l.getNode("nodo"),x.getNode("nodo"),info));
+					RESULT = l;
+				:}
+				|expr4:l LETHAN expr5:x
+				{:
+					Object info = CUP$Parser$stack.elementAt(CUP$Parser$top-1);
+					l.set("nodo",new Node(Sym.LETHAN,l.getNode("nodo"),x.getNode("nodo"),info));
+					RESULT = l;
+				:}
+				|expr5:x	{:RESULT = x;:}
+				;
+
+expr5 		::=	expr5:l PLUS expr6:x
+				{:
+					Object info = CUP$Parser$stack.elementAt(CUP$Parser$top-1);
+					l.set("nodo",new Node(Sym.PLUS,l.getNode("nodo"),x.getNode("nodo"),info));
+					RESULT = l;
+				:}
+				|expr5:l MINUS expr6:x
+				{:
+					Object info = CUP$Parser$stack.elementAt(CUP$Parser$top-1);
+					l.set("nodo",new Node(Sym.MINUS,l.getNode("nodo"),x.getNode("nodo"),info));
+					RESULT = l;
+				:}
+				|expr6:x	{:RESULT = x;:}
+				;
+
+expr6 		::=	expr6:l MULT expr7:x
+				{:
+					Object info = CUP$Parser$stack.elementAt(CUP$Parser$top-1);
+					l.set("nodo",new Node(Sym.MULT,l.getNode("nodo"),x.getNode("nodo"),info));
+					RESULT = l;
+				:}
+				|expr6:l DIV expr7:x
+				{:
+					Object info = CUP$Parser$stack.elementAt(CUP$Parser$top-1);
+					l.set("nodo",new Node(Sym.DIV,l.getNode("nodo"),x.getNode("nodo"),info));
+					RESULT = l;
+				:}
+				|expr7:x	{:RESULT = x;:}
+				;
+
+expr7 		::=	expr7:l EXP expr8:x
+				{:
+					Object info = CUP$Parser$stack.elementAt(CUP$Parser$top-1);
+					l.set("nodo",new Node(Sym.EXP,l.getNode("nodo"),x.getNode("nodo"),info));
+					RESULT = l;
+				:}
+				|expr8:x	{:RESULT = x;:}
+				;
+
+expr8 		::=	MINUS expr9:x
+				{:
+					// new Node(<operacion>,<left>,<right>,<info>)  //nodos no hojas...
+					Object info = CUP$Parser$stack.elementAt(CUP$Parser$top-1);
+					x.set("nodo",new Node(Sym.MINUS,x.getNode("nodo"),null,info));
+					RESULT = x;
+				:}
+				|expr9:x
+				{:RESULT = x;:}
+				;
+
+expr9 		::= int:x			{:RESULT = x;:}
+				|float:x		{:RESULT = x;:}
+				|char:x			{:RESULT = x;:}
+				|string:x		{:RESULT = x;:}
+				|bool:x			{:RESULT = x;:}
+				//aqui puede traer llamadas a objetos, metodos,identificadores, ternarios...
+				|method_call:x	{:RESULT = x;:}
+				|PL expr:x PR	{:RESULT = x;:}
+				;
+//
+id_list 	::= id_list:l COMA id:x
+				{:
+					l.getDictArrayList("list").add(x);
+					RESULT = l;
+				:}
+				|id:x
+				{:
+					RESULT = new Dict(){{
+						put("list",new ArrayList<Dict>(){{add(x);}});
+					}};
+				:}
+				;
+
+di_list 	::=	di_list:l di:x
+				{:
+					l.getDictArrayList("list").add(x);
+					RESULT = l;
+				:}
+				|di:x
+				{:
+					RESULT = new Dict(){{
+						put("list",new ArrayList<Dict>(){{add(x);}});
+					}};
+				:}
+				;
+
+
+nl_list 	::=	nl_list NEWLINE
+				|NEWLINE
+				;
+
+di 			::=	QL expr5:x QR
+				{:
+					RESULT = x;
+				:}
+				;
+
+id 			::= ID:x
+				{:
+					RESULT = new Dict(){{
+						put("nodo",new Node(Sym.ID,null,null,this));
+						put("info",(CUP$Parser$stack.peek()));
+						put("tipo",Sym.ID);
+						put("val",x);
+					}};
+				:}
+				;
+
+int 		::=	INT:x
+				{:
+					RESULT = new Dict(){{
+						put("nodo",new Node(Sym.INT,null,null,this));
+						put("info",(CUP$Parser$stack.peek()));
+						put("tipo",Sym.INT);
+						put("val",x);
+					}};
+				:}
+				;
+
+float 		::=	FLOAT:x
+				{:
+					RESULT = new Dict(){{
+						put("nodo",new Node(Sym.FLOAT,null,null,this));
+						put("info",(CUP$Parser$stack.peek()));
+						put("tipo",Sym.FLOAT);
+						put("val",x);
+					}};
+				:}
+				;
+
+char 		::= CHAR:x
+				{:
+					RESULT = new Dict(){{
+						put("nodo",new Node(Sym.CHAR,null,null,this));
+						put("info",(CUP$Parser$stack.peek()));
+						put("tipo",Sym.CHAR);
+						put("val",x);
+					}};
+				:}
+				;
+
+string 		::=	STRING:x
+				{:
+					RESULT = new Dict(){{
+						put("nodo",new Node(Sym.STRING,null,null,this));
+						put("info",CUP$Parser$stack.peek());
+						put("tipo",Sym.STRING);
+						put("val",x);
+					}};
+				:}
+				;
+
+bool 		::=	BOOL:x
+				{:
+					RESULT = new Dict(){{
+						put("nodo",new Node(Sym.BOOL,null,null,this));
+						put("info",(CUP$Parser$stack.peek()));
+						put("tipo",Sym.BOOL);
+						put("val",x);
+					}};
+				:}
+				;
+
+
+error_lexico	::=	ERROR:x
+					{:
+						RESULT = new Dict(){{
+							put("nodo",new Node(TOperation.ERROR_LEXICO,null,null,this));
+							put("info",(CUP$Parser$stack.peek()));
+							put("tipo",Sym.ERROR);
+							put("val",x);
+						}};
+					:}
+					;
+
+error_sintactico 	::=	error:x
+						{:
+							RESULT = new Dict(
+								"nodo",new Node(TOperation.ERROR_SINTACTICO,null,null,null),
+								"info",parser.info,
+								"type",Sym.error
+								);
+						
+						:}
+						;
