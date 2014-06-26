@@ -32,6 +32,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -618,7 +619,7 @@ public class Win extends javax.swing.JFrame {
         if (info != null) {
             try {
                 Files.write(Paths.get(info.getString("tooltip")), info.getString("text").getBytes("utf8"));
-                System.out.println("File Saved..");
+                notificar("File Saved..");
             } catch (UnsupportedEncodingException ex) {
                 Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IOException ex) {
@@ -651,7 +652,11 @@ public class Win extends javax.swing.JFrame {
         Dict tinfo = getSelectedTabInfo();
 
         if (tinfo != null) {
-            frc_compile(tinfo.getString("text"), compiler_actions, true);
+            final Dict actions = compiler_actions;
+            // compilacion y definicion
+            frc_def(tinfo.getString("text"), actions);
+            // generacion codigo 3dir
+            frc_3dir(actions);
         }
     }//GEN-LAST:event_jmitem_compileActionPerformed
 
@@ -665,11 +670,19 @@ public class Win extends javax.swing.JFrame {
             }
 
             final Symbol sym = p.parse();
-            notify("File compiled...");
+            notificar("File compiled...");
 
             if (sym.value != null) {
-                final Dict app = (Dict) sym.value;
-                frc_compiler_stmts_exec(app, actions);
+//                final Dict app = (Dict) sym.value;
+                //
+                if (!actions.containsKey("app")) {
+                    actions.put("app", new Stack());
+                }
+                Stack app = actions.getStack("app");
+                app.push(sym.value);
+
+                // ejecutar sentencias...
+                frc_compiler_stmts_exec((Dict) app.peek(), actions);
             }
         } catch (Exception ex) {
             error(ex);
@@ -680,11 +693,11 @@ public class Win extends javax.swing.JFrame {
         Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
     }
 
-    private void notify(Object msg) {
-        notify("%s", msg);
+    private void notificar(Object msg) {
+        notificar("%s", msg);
     }
 
-    private void notify(String format, Object... msgs) {
+    private void notificar(String format, Object... msgs) {
         System.err.format(format, msgs);
         System.err.println();
 
@@ -735,7 +748,7 @@ public class Win extends javax.swing.JFrame {
          */
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
+                if ("metal".equals(info.getName())) {
                     javax.swing.UIManager.setLookAndFeel(info.getClassName());
                     break;
                 }
@@ -917,7 +930,7 @@ public class Win extends javax.swing.JFrame {
         editor.setText(file_text);
 
         panel.addTab(fpath.getFileName().toString(), null, scroll, fpath.toString());
-        notify("File opened...");
+        notificar("File opened...");
         if (isFRCFile(fpath)) {
             editor.getDocument().addDocumentListener(new DocumentListener() {
 
@@ -1349,18 +1362,29 @@ public class Win extends javax.swing.JFrame {
                 System.err.println("No Nodo..." + stmt);
                 continue;
             }
+//            System.out.println(nodo.getOperation());
             nodo.exec(cactions);
         }
     }
 
     private void frc_compiler_clear(Dict cactions) {
-        ((CC) cactions.get("cc")).clear();
+        final CC cc = (CC) cactions.get("cc");
+        final Object operations = cactions.get("operations");
+        final Object phase = cactions.get("phase");
+
+        cactions.clear();
+        cc.clear();
+
+        cactions.put("cc", cc);
+        cactions.put("operations", operations);
+        cactions.put("phase", phase);
     }
 
     Dict compiler_actions = new Dict(
             "cc", new com.github.gg.CC(),
             "operations", new HashMap<TOperation, Operation>() {
                 {
+                    //<editor-fold defaultstate="collapsed" desc="IMPORT">
                     put(TOperation.IMPORT, (Operation) (Node node, Object actions) -> {
                         //======================================================
                         // Inicializacion...
@@ -1388,16 +1412,29 @@ public class Win extends javax.swing.JFrame {
                         //======================================================
                         // Compilar archivo import
                         //======================================================
-                        frc_compile(file_text(path_val_path), cactions, false);
+                        Object phase = cactions.get("phase");
+                        phase = (phase == null ? "null" : phase);
+
+                        if (phase.equals("def")) {
+                            frc_compile(file_text(path_val_path), cactions, false);
+                        } else if (phase.equals("3dir")) {
+                        } else {
+                            notificar("No actions for -> " + TOperation.IMPORT);
+                        }
 
                         return null;
                     });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="DEF_CLASS">
                     put(TOperation.DEF_CLASS, (Operation) (Node node, Object actions) -> {
                         //======================================================
                         // Inicializacion...
                         //======================================================
                         Dict cactions = (Dict) actions;
                         CC ccompiler = (CC) cactions.get("cc");
+                        Object phase = cactions.get("phase");
+                        phase = (phase == null ? "null" : phase);
 
                         //======================================================
                         // Recopilando informacion necesaria...
@@ -1416,45 +1453,48 @@ public class Win extends javax.swing.JFrame {
                         //Agregar simbolos
                         //======================================================
                         try {
-                            //agregar clase
-                            ccompiler.getSims().addClass(_name_val, _extends_val, _modifiers_val);
-                            //agregar variable this
-//                            ccompiler.getSims().addField(_name_val, new HashSet<TModifier>() {
-//                                {
-//                                    add(TModifier.PRIVATE);
-//                                }
-//                            }, _name_val, "this");
+                            if (phase.equals("def")) {
+                                //agregar clase
+                                ccompiler.getSims().addClass(_name_val, _extends_val, _modifiers_val);
+                            } else if (phase.equals("3dir")) {
+                            } else {
+                                notificar("No actions for -> " + TOperation.DEF_CLASS);
+                            }
+
+                            //======================================================
+                            //Ejecutar sentencias de clase y manejo de ambito...
+                            //======================================================
+                            /**
+                             * scope: Cuando se esta en def_field y def_method
+                             * es string Cuando se encuentra dentro de un metodo
+                             * es el simbolo del metodo... Mejor que sea solo
+                             * simbolos que se maneje... pero si da tiempo...
+                             */
+                            final Stack scope = new Stack<>();
+                            cactions.set("scope", scope);
+                            scope.push(_name_val);
+                            frc_compiler_stmts_exec(_stmts, cactions);
+                            scope.pop();
                         } catch (UnsupportedOperationException exc) {
                             compiler_error(exc, TErr.SEMANTICO, _name.get("info"), actions);
                         } catch (CloneNotSupportedException ex) {
                             compiler_error(ex, TErr.SEMANTICO, _name.get("info"), actions);
-//                            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
                         }
-
-                        //======================================================
-                        //Ejecutar sentencias de clase y manejo de ambito...
-                        //======================================================
-                        /**
-                         * scope: Cuando se esta en def_field y def_method es
-                         * string Cuando se encuentra dentro de un metodo es el
-                         * simbolo del metodo... Mejor que sea solo simbolos que
-                         * se maneje... pero si da tiempo...
-                         */
-                        final Stack scope = new Stack<>();
-                        cactions.set("scope", scope);
-                        scope.push(_name_val);
-                        frc_compiler_stmts_exec(_stmts, cactions);
-                        scope.pop();
 
                         return null;
                     });
+//</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="DEF_FIELD">
                     put(TOperation.DEF_FIELD, (Operation) (Node node, Object actions) -> {
                         //======================================================
                         // Inicializacion...
                         //======================================================
                         Dict cactions = (Dict) actions;
                         CC ccompiler = (CC) cactions.get("cc");
-                        Stack<String> stack_scope = cactions.getStack("scope");
+                        Stack<String> scope = cactions.getStack("scope");
+                        Object phase = cactions.get("phase");
+                        phase = (phase == null ? "null" : phase);
 
                         //======================================================
                         // Recopilando informacion necesaria...
@@ -1473,7 +1513,12 @@ public class Win extends javax.swing.JFrame {
                         for (Dict n : (ArrayList<Dict>) _name.getDictArrayList("list")) {
                             final String n_val = n.getString("val");
                             try {
-                                ccompiler.getSims().addField(stack_scope.peek(), _modifiers_val, _type_val, n_val, new Dict("array", (_array == null ? false : _array)));
+                                if (phase.equals("def")) {
+                                    ccompiler.getSims().addField(scope.peek(), _modifiers_val, _type_val, n_val, new Dict("array", (_array == null ? false : _array)));
+                                } else if (phase.equals("3dir")) {
+                                } else {
+                                    notificar("No actions for -> " + TOperation.DEF_FIELD);
+                                }
                             } catch (Exception exc) {
                                 compiler_error(exc, TErr.SEMANTICO, n.get("info"), actions);
                             }
@@ -1481,10 +1526,15 @@ public class Win extends javax.swing.JFrame {
 
                         return null;
                     });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="DEF_METHOD">
                     put(TOperation.DEF_METHOD, (Operation) (Node node, Object actions) -> {
                         Dict cactions = (Dict) actions;
                         CC ccompiler = (CC) cactions.get("cc");
                         Stack scope = cactions.getStack("scope");
+                        Object phase = cactions.get("phase");
+                        phase = (phase == null ? "null" : phase);
 
                         Dict _modifiers = node.getDictRef().getDict("modifiers");
                         Dict _type = node.getDictRef().getDict("type");
@@ -1502,31 +1552,52 @@ public class Win extends javax.swing.JFrame {
 //                        System.err.println(_name_val);
 //                        System.err.println(Arrays.toString(_params_type_array));
                         try {
-                            Sim method_sim = ccompiler.getSims().addMethod(scope.peek().toString(), _modifiers_val, _type_val, _name_val, _params_type_array);
-                            ccompiler.getSims().addVariable(method_sim, method_sim.scope, "this");
-                            cactions.put("method_sim", method_sim);
+
+                            Sim method_sim = null;
+                            if (phase.equals("def")) {
+                                method_sim = ccompiler.getSims().addMethod(scope.peek().toString(), _modifiers_val, _type_val, _name_val, _params_type_array);
+                                if (!(_name_val.equals("main") && _type_val.equals(TType.VOID.toString()) && _params_type_array.length == 0)) {
+                                    ccompiler.getSims().addVariable(method_sim, method_sim.scope, "this", new Dict());
+                                }
+                            } else if (phase.equals("3dir")) {
+                                method_sim = ccompiler.getSims().getMethod(scope.peek().toString(), _type_val, _name_val, _params_type_array);
+
+                                String tres = String.format("method %s {", _name_val);
+                                write3dir(tres);
+
+                            } else {
+                                notificar("No actions for -> " + TOperation.DEF_METHOD);
+                                return null;
+                            }
+//                            cactions.put("method_sim", method_sim);
+
+                            //======================================================
+                            //Ejecutar sentencias de metodo y manejo de ambito...
+                            //======================================================
+                            scope.push(method_sim);
+                            // ejecutar parametros
+                            frc_compiler_stmts_exec(_params, cactions);
+                            // ejecutar sentencias
+                            frc_compiler_stmts_exec(_stmts, cactions);
+                            scope.pop();
                         } catch (Exception exc) {
+//                            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, exc);
                             compiler_error(exc, TErr.SEMANTICO, _name.get("info"), actions);
                         }
-
-                        //======================================================
-                        //Ejecutar sentencias de metodo y manejo de ambito...
-                        //======================================================
-                        scope.push(_name_val);
-                        // ejecutar parametros
-                        frc_compiler_stmts_exec(_params, cactions);
-                        // ejecutar sentencias
-                        frc_compiler_stmts_exec(_stmts, cactions);
-                        scope.pop();
 
                         if (!_type_val.equals(TType.VOID.toString())) {
                         }
                         return null;
                     });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="DEF_CONSTRUCTOR">
                     put(TOperation.DEF_CONSTRUCT, (Operation) (Node node, Object actions) -> {
                         Dict cactions = (Dict) actions;
                         CC ccompiler = (CC) cactions.get("cc");
                         Stack scope = cactions.getStack("scope");
+                        Object phase = cactions.get("phase");
+                        phase = (phase == null ? "null" : phase);
 
                         Dict _modifiers = node.getDictRef().getDict("modifiers");
                         Dict _name = node.getDictRef().getDict("name");
@@ -1539,9 +1610,17 @@ public class Win extends javax.swing.JFrame {
 
 //                        System.err.format("Constructor ->[[Modificadores->%1$s][nombre->%2$s][parametros->%3$s]]\n", _modifiers_val, _name_val, Arrays.toString(_params_type_array));
                         try {
-                            Sim method_sim = ccompiler.getSims().addConstruct(scope.peek().toString(), _modifiers_val, _name_val, _params_type_array);
-                            ccompiler.getSims().addVariable(method_sim, method_sim.scope, "this");
-//                            cactions.put("method_sim", method_sim);
+                            Sim method_sim = null;
+
+                            if (phase.equals("def")) {
+                                method_sim = ccompiler.getSims().addConstruct(scope.peek().toString(), _modifiers_val, _name_val, _params_type_array);
+                                ccompiler.getSims().addVariable(method_sim, method_sim.scope, "this", new Dict());
+                            } else if (phase.equals("3dir")) {
+                                return null;
+                            } else {
+                                notificar("No actions for -> " + TOperation.DEF_CONSTRUCT);
+                                return null;
+                            }
 
                             //======================================================
                             //Ejecutar sentencias de metodo y manejo de ambito...
@@ -1559,11 +1638,16 @@ public class Win extends javax.swing.JFrame {
 
                         return null;
                     });
+//</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="DEF_PARAMETER">
                     put(TOperation.DEF_PARAMETER, (Operation) (Node node, Object actions) -> {
                         Dict cactions = (Dict) actions;
                         CC ccompiler = (CC) cactions.get("cc");
                         Stack scope = cactions.getStack("scope");
                         Sim method_sim = (Sim) scope.peek();
+                        Object phase = cactions.get("phase");
+                        phase = (phase == null ? "null" : phase);
 
                         Boolean _array_val = node.getDictRef().containsKey("array") ? node.getDictRef().getBoolean("array") : false;
                         Dict _ref = node.getDictRef().getDict("ref");
@@ -1576,49 +1660,155 @@ public class Win extends javax.swing.JFrame {
 
 //                        System.err.format("Parametro ->[[ref->%1$s][tipo->%2$s][nombre->%3$s]]\n", _ref_val, _type_val, _name_val);
                         try {
-                            ccompiler.getSims().addParameter(method_sim, Boolean.parseBoolean(_ref_val), _type_val, _name_val, new Dict("array", _array_val));
+                            if (phase.equals("def")) {
+                                ccompiler.getSims().addParameter(method_sim, Boolean.parseBoolean(_ref_val), _type_val, _name_val, new Dict("array", _array_val));
+                            } else if (phase.equals("3dir")) {
+                                return null;
+                            } else {
+                                notificar("No actions for -> " + TOperation.DEF_PARAMETER);
+                                return null;
+                            }
                         } catch (Exception exc) {
                             compiler_error(exc, TErr.SEMANTICO, _name.get("info"), actions);
                         }
 
                         return null;
                     });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="DEF_LOCALVAR">
                     put(TOperation.DEF_LOCALVAR, (Operation) (Node node, Object actions) -> {
 
                         Dict cactions = (Dict) actions;
                         CC ccompiler = (CC) cactions.get("cc");
-                        Stack<String> stack_scope = cactions.getStack("scope");
-                        Sim method_sim = cactions.getSim("method_sim");
+                        Stack scope = cactions.getStack("scope");
+                        Sim method_sim = (Sim) scope.peek();
+                        Object phase = cactions.get("phase");
+                        phase = (phase == null ? "null" : phase);
+
+                        Boolean _array_val = node.getDictRef().containsKey("array") ? node.getDictRef().getBoolean("array") : false;
 
                         Dict _type = node.getDictRef().getDict("type");
                         Dict _name = node.getDictRef().getDict("name");
+                        Dict _val = node.getDictRef().getDict("val");
 
                         String _type_val = _type.getString("val");
+                        Node _val_val = _val == null ? null : _val.getNode("nodo");
 
                         //======================================================
                         // Agregando simbolos...
                         //======================================================
                         for (Dict n : (ArrayList<Dict>) _name.getDictArrayList("list")) {
                             final String n_val = n.getString("val");
-                            System.err.format("Variable ->[[tipo->%2$s][nombre->%2$s]]\n", _type_val, n_val);
+//                            System.err.format("Variable ->[[tipo->%2$s][nombre->%2$s]]\n", _type_val, n_val);
 
-//                            try {
-//                                ccompiler.getSims().addVariable(cactions.getSim("method_sim"), _type_val, n_val);
-//                            } catch (Exception exc) {
-//                                compiler_error(exc, TErr.SEMANTICO, n.get("info"), actions);
-//                            }
+                            try {
+                                if (phase.equals("def")) {
+                                    ccompiler.getSims().addVariable(method_sim, _type_val, n_val, new Dict("array", _array_val));
+                                } else if (phase.equals("3dir")) {
+                                    if (_val_val != null) {
+                                        _val_val.exec(actions);
+//                                        System.err.println("3dir aqui...");
+                                    }
+                                    return null;
+                                } else {
+                                    notificar("No actions for -> " + TOperation.DEF_LOCALVAR);
+                                    return null;
+                                }
+                            } catch (Exception exc) {
+                                compiler_error(exc, TErr.SEMANTICO, n.get("info"), actions);
+                            }
                         }
 
                         return null;
                     });
-                    put(TOperation.ERROR_LEXICO, (Operation) (Node node, Object cc) -> {
-                        compiler_error(new UnsupportedOperationException("Caracter no reconocido..."), TErr.LEXICO, node.getDictRef().get("info"), cc);
+                    //</editor-fold>
+
+                    put(TOperation.PLUS, new Operation() {
+                        @Override
+                        public Object exec(Node node, Object actions) {
+                            final Dict ca = (Dict) actions;
+                            String lval = node.getLeft().getDictVal().getString("val");
+                            String rval = node.getRight().getDictVal().getString("val");
+
+                            Object temp = getTemp(ca);
+                            String tres = String.format("%s = %s + %s;", temp, lval, rval);
+                            write3dir(tres);
+
+                            return new Dict("val", temp);
+                        }
+                    });
+
+                    //<editor-fold defaultstate="collapsed" desc="LEAF">
+                    put(TOperation.LEAF, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Dict ref = node.getDictRef();
+                        final Stack scope = ca.getStack("scope");
+                        final Sim method_sim = (Sim) scope.peek();
+
+                        TType ref_type = (TType) ref.get("type");
+                        Object ref_val = ref.get("val");
+                        
+                        if(ref_type == TType.REF){
+//                            cc.getSims().getLocalvar(method_sim.name
+//                                    , ref_val.toString()
+//                                    , ((Dict)method_sim.others));
+//                            System.out.println(method_sim.others);
+                        }
+                        
+                        Object temp = getTemp(ca);
+                        String tres = String.format("%s = %s;", temp, ref_val);
+                        write3dir(tres);
+
+                        return new Dict("val", temp, "type", ref_type);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="ERROR_LEXICO">
+                    put(TOperation.ERROR_LEXICO, (Operation) (Node node, Object actions) -> {
+                        Dict cactions = (Dict) actions;
+                        Object phase = cactions.get("phase");
+                        phase = (phase == null ? "null" : phase);
+
+                        if (phase.equals("def")) {
+                            compiler_error(new UnsupportedOperationException("Caracter no reconocido..."), TErr.LEXICO, node.getDictRef().get("info"), actions);
+                        } else if (phase.equals("3dir")) {
+                            return null;
+                        } else {
+                            notificar("No actions for -> " + TOperation.ERROR_LEXICO);
+                            return null;
+                        }
                         return null;
                     });
-                    put(TOperation.ERROR_SINTACTICO, (Operation) (Node node, Object cc) -> {
-                        compiler_error(new UnsupportedOperationException("Error de sintaxis..."), TErr.SINTACTICO, node.getDictRef().get("info"), cc);
+//</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="ERROR_SINTACTICO">
+                    put(TOperation.ERROR_SINTACTICO, (Operation) (Node node, Object actions) -> {
+                        Dict cactions = (Dict) actions;
+                        Object phase = cactions.get("phase");
+                        phase = (phase == null ? "null" : phase);
+
+                        if (phase.equals("def")) {
+                            compiler_error(new UnsupportedOperationException("Error de sintaxis..."), TErr.SINTACTICO, node.getDictRef().get("info"), actions);
+                        } else if (phase.equals("3dir")) {
+                            return null;
+                        } else {
+                            notificar("No actions for -> " + TOperation.ERROR_SINTACTICO);
+                            return null;
+                        }
                         return null;
                     });
+//</editor-fold>
+                }
+
+                private String getTemp(Dict actions) {
+                    return "t" + actions.put("3dir_t", actions.getInt("3dir_t") + 1);
+                }
+
+                private void write3dir(String temp) {
+                    System.out.println(temp);
+//                                Files.write(cactions.getPath("3dir_path"), $3dir_method.getBytes("utf8"), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
                 }
 
                 private void compiler_error(Exception exc, TErr terr, Object info, Object cc) {
@@ -1688,6 +1878,30 @@ public class Win extends javax.swing.JFrame {
         AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY,
                 StyleConstants.TabSet, tabset);
         pane.setParagraphAttributes(aset, false);
+    }
+
+    private void frc_3dir(Dict actions) {
+        Stack<Dict> apps = actions.getStack("app");
+        actions.put("phase", "3dir");
+        actions.put("3dir_path", Paths.get("gg.3dir"));
+        actions.put("3dir_t", 0);
+        actions.put("3dir_l", 0);
+
+        try {
+            Files.write(actions.getPath("3dir_path"), new byte[]{}, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException ex) {
+//            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+            notificar(ex);
+        }
+
+        for (Dict app : apps) {
+            frc_compiler_stmts_exec(app, actions);
+        }
+    }
+
+    private void frc_def(Object input, Dict actions) {
+        actions.put("phase", "def");
+        frc_compile(input.toString(), actions, true);
     }
 
 }

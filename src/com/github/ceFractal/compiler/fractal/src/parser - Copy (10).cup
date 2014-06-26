@@ -54,7 +54,7 @@ non terminal    Dict        app,stmt,stmt_list,imports,id,stmt_class,class_stmt,
 							expr_add,expr_mul,expr_expnte,expr_eq,expr_rel,expr_unary,expr_unary_pre,expr_unary_post,
 							expr_prim_lit,expr_name,expr_name_simple,expr_name_complex,block,expr_unary_pre1,
 							expr_unary1,expr_call_simple,expr_call_complex,expr_call,expr_nc_complex,expr_nc_simple,
-							expr_nc,method_param_ref,null,this,kw_super
+							expr_nc,method_param_ref
 							;
 
 
@@ -476,24 +476,16 @@ expr_assign_oper	::=	EQUAL
 						|DIEQUAL
 						;
 
-expr_name 			::= expr_name_simple:x 		{:RESULT = new Dict("list",new ArrayList<Dict>(){{add(x);}});:}
-						|expr_name_complex:x 	{:RESULT = x;:}
+expr_name 			::= expr_name_simple
+						|expr_name_complex
 						;	
 
-expr_name_simple 	::=	id:x 					{:RESULT = x;:}
-						|id:x di_list:l 	
-						{:
-							x.put("dims",l);
-							RESULT = x;
-						:}
-						|this:x 				{:RESULT = x;:}
-						|kw_super:x 			{:RESULT = x;:}
+expr_name_simple 	::=	id
+						|id di_list
+						|KW_THIS
+						|KW_SUPER
 						;
-expr_name_complex 	::=	expr_name:l PUNTO expr_name_simple:x
-						{:
-							l.getDictArrayList("list").add(x);
-							RESULT = l;
-						:}
+expr_name_complex 	::=	expr_name PUNTO expr_name_simple
 						;
 
 expr_call 			::=	expr_call_simple
@@ -519,295 +511,87 @@ expr_nc_complex 	::=	expr_nc PUNTO expr_nc_simple
 // Expression
 // ****************************
 expr 		::=	expr_assign
-				|expr_cond:x 	{:RESULT = x;:}
+				|expr_cond
 				;
 
 expr_assign ::=	expr_name expr_assign_oper expr
 				;
 
-expr_cond 	::=	expr_cond_or:x {:RESULT = x;:}
+expr_cond 	::=	expr_cond_or
 				|expr_cond_or Q expr DPUNTOS expr
 				;
 
-expr_cond_or 	::=	expr_cond_or:l OR expr_cond_and:x
-					{:
-					l.put(
-						"nodo",
-						new Node(
-							TOperation.OR,
-							l.getNode("nodo"),
-							x.getNode("nodo"),
-							new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))
-								));
-					RESULT = l;
-				:}
-					|expr_cond_and:x {:RESULT = x;:}
+expr_cond_or 	::=	expr_cond_or OR expr_cond_and
+					|expr_cond_and
 					;
 
-expr_cond_and 	::=	expr_cond_and:l AND expr_eq:x
-					{:
-					l.put(
-						"nodo",
-						new Node(
-							TOperation.AND,
-							l.getNode("nodo"),
-							x.getNode("nodo"),
-							new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))
-								));
-					RESULT = l;
-				:}
-					|expr_eq:x 	{:RESULT = x;:}
+expr_cond_and 	::=	expr_cond_and AND expr_eq
+					|expr_eq
 					;
 
-expr_eq 	::=	expr_eq:l DEQUAL expr_rel:x
-				{:
-					l.put(
-						"nodo",
-						new Node(
-							TOperation.DEQUAL,
-							l.getNode("nodo"),
-							x.getNode("nodo"),
-							new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))
-								));
-					RESULT = l;
-				:}
-				|expr_eq:l NEQUAL expr_rel:x
-				{:
-					l.put(
-						"nodo",
-						new Node(
-							TOperation.NEQUAL,
-							l.getNode("nodo"),
-							x.getNode("nodo"),
-							new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))
-								));
-					RESULT = l;
-				:}
-				|expr_rel:x 	{:RESULT = x;:}
+expr_eq 	::=	expr_eq DEQUAL expr_rel
+				|expr_eq NEQUAL expr_rel
+				|expr_rel
 				;
 
-expr_rel 	::=	expr_rel:l LTHAN expr_add:x
-				{:
-					l.put(
-						"nodo",
-						new Node(
-							TOperation.LTHAN,
-							l.getNode("nodo"),
-							x.getNode("nodo"),
-							new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))
-								));
-					RESULT = l;
-				:}
-				|expr_rel:l LETHAN expr_add:x
-				{:
-					l.put(
-						"nodo",
-						new Node(
-							TOperation.LETHAN,
-							l.getNode("nodo"),
-							x.getNode("nodo"),
-							new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))
-								));
-					RESULT = l;
-				:}
-				|expr_rel:l BTHAN expr_add:x
-				{:
-					l.put(
-						"nodo",
-						new Node(
-							TOperation.BTHAN,
-							l.getNode("nodo"),
-							x.getNode("nodo"),
-							new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))
-								));
-					RESULT = l;
-				:}
-				|expr_rel:l BETHAN expr_add:x
-				{:
-					l.put(
-						"nodo",
-						new Node(
-							TOperation.BETHAN,
-							l.getNode("nodo"),
-							x.getNode("nodo"),
-							new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))
-								));
-					RESULT = l;
-				:}
-				|expr_add:x 	{:RESULT = x;:}
+expr_rel 	::=	expr_rel LTHAN expr_add
+				|expr_rel LETHAN expr_add
+				|expr_rel BTHAN expr_add
+				|expr_rel BETHAN expr_add
+				|expr_add
 				;
 					
-expr_add 	::=	expr_add:l PLUS expr_mul:x
-				{:
-					l.put(
-						"nodo",
-						new Node(
-							TOperation.PLUS,
-							l.getNode("nodo"),
-							x.getNode("nodo"),
-							new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))
-								));
-					RESULT = l;
-				:}
-				|expr_add:l MINUS expr_mul:x
-				{:
-					l.put(
-						"nodo",
-						new Node(
-							TOperation.MINUS,
-							l.getNode("nodo"),
-							x.getNode("nodo"),
-							new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))
-								));
-					RESULT = l;
-				:}
-				|expr_mul:x 	{:RESULT = x;:}
+expr_add 	::=	expr_add PLUS expr_mul
+				|expr_add MINUS expr_mul
+				|expr_mul
 				;
 
-expr_mul 	::=	expr_mul:l MULT expr_expnte:x
-				{:
-					l.put(
-						"nodo",
-						new Node(
-							TOperation.MULT,
-							l.getNode("nodo"),
-							x.getNode("nodo"),
-							new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))
-								));
-					RESULT = l;
-				:}
-				|expr_mul:l DIV expr_expnte:x
-				{:
-					l.put(
-						"nodo",
-						new Node(
-							TOperation.DIV,
-							l.getNode("nodo"),
-							x.getNode("nodo"),
-							new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))
-								));
-					RESULT = l;
-				:}
-				|expr_expnte:x 	{:RESULT = x;:}
+expr_mul 	::=	expr_mul MULT expr_expnte
+				|expr_mul DIV expr_expnte
+				|expr_expnte
 				;
 
-expr_expnte	::=	expr_expnte:l EXP expr_unary:x
-				{:
-					l.put(
-						"nodo",
-						new Node(
-							TOperation.EXP,
-							l.getNode("nodo"),
-							x.getNode("nodo"),
-							new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))
-								));
-					RESULT = l;
-				:}
-				|expr_unary:x 	{:RESULT = x;:}
+expr_expnte	::=	expr_expnte EXP expr_unary
+				|expr_unary
 				;
 
-expr_unary 	::=	DPLUS expr_unary:x 		{:RESULT = new Dict("nodo",new Node(TOperation.LLPLUS,x.getNode("nodo"),null,new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))));:}
-				|DMINUS expr_unary:x 	{:RESULT = new Dict("nodo",new Node(TOperation.LLMINUS,x.getNode("nodo"),null,new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))));:}
-				|PLUS expr_unary:x 		{:RESULT = new Dict("nodo",new Node(TOperation.LPLUS,x.getNode("nodo"),null,new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))));:}
-				|MINUS expr_unary:x 	{:RESULT = new Dict("nodo",new Node(TOperation.LMINUS,x.getNode("nodo"),null,new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))));:}
-				|expr_unary1:x 			{:RESULT = x;:}
- 				;
+expr_unary 	::=	DPLUS expr_unary
+				|DMINUS expr_unary
+				|PLUS expr_unary
+				|MINUS expr_unary
+				|expr_unary1
+				;
 
-expr_unary1		::=	NOT expr_unary:x 						{:RESULT = new Dict("nodo",new Node(TOperation.NOT,x.getNode("nodo"),null,new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))));:}
-					|PL type_primitive:t PR expr_unary:x 	{:RESULT = new Dict("nodo",new Node(TOperation.CAST,x.getNode("nodo"),null,new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1),"type",t)));:}
-					|PL expr:t PR expr_unary1:x  			{:RESULT = new Dict("nodo",new Node(TOperation.CAST,x.getNode("nodo"),null,new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1),"type",t)));:}
-					|expr_unary_post:x 						{:RESULT = x;:}
+expr_unary1		::=	NOT expr_unary
+					|PL type_primitive PR expr_unary
+					|PL expr PR expr_unary1
+					|expr_unary_post
 					;
-expr_unary_post ::=	expr_prim:x 		 		{:RESULT = x;:}
-					|expr_unary_post:x DPLUS 	{:RESULT = new Dict("nodo",new Node(TOperation.RRPLUS,x.getNode("nodo"),null,new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top))));:}
-					|expr_unary_post:x DMINUS 	{:RESULT = new Dict("nodo",new Node(TOperation.RRMINUS,x.getNode("nodo"),null,new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top))));:}
+expr_unary_post ::=	expr_prim
+					// |expr_name
+					|expr_unary_post DPLUS
+					|expr_unary_post DMINUS
 					;
 
 
-expr_prim	::= expr_prim_lit:x 							{:RESULT = x;:}
+expr2 		::=	expr_prim PUNTO expr2
+				|expr_prim
+				;
+expr_prim	::= expr_prim_lit:x 	{RESULT = x;}
 				// par_expr
-  				|PL expr:x PR 								{:RESULT = x;:}
+  				|PL expr PR
   				// new object
-  				|KW_NEW id:x PL method_call_params:l PR 	
-  				{:
-  					RESULT = new Dict(
-  						"nodo",new Node(
-  							TOperation.NEW
-  							,null
-  							,null
-  							,new Dict(
-								"info",CUP$Parser$stack.elementAt(CUP$Parser$top-4),
-  								"type",x,
-  								"params",l
-  								)
-  							)
-  						);
-				:}
-  				|KW_NEW KW_ARRAY PL method_call_params:l PR
-  				{:
-  					RESULT = new Dict(
-  						"nodo",new Node(
-  							TOperation.NEW
-  							,null
-  							,null
-  							,new Dict(
-  								"array",true,
-								"info",CUP$Parser$stack.elementAt(CUP$Parser$top-4),
-  								"params",l
-  								)
-  							)
-  						);
-				:}
+  				|KW_NEW id PL method_call_params PR
+  				|KW_NEW KW_ARRAY PL method_call_params PR
   				//	
   				// |expr_nc
-  				|expr_name:x 			
-  				{:
-  					RESULT = new Dict(
-  						"nodo",new Node(
-  							TOperation.LEAF
-  							,null
-  							,null
-  							,new Dict(
-  								"name",x
-  								)
-  							)
-  						);
-				:}	
+  				|expr_name
   				// array access
   				// |expr_name di_list
   				//method call
   				// |expr_call
-  				|expr_name:x PL method_call_params:l PR 
-  				{:
-  					RESULT = new Dict(
-  						"nodo",new Node(
-  							TOperation.METHOD_CALL
-  							,null
-  							,null
-  							,new Dict(
-								"info",CUP$Parser$stack.elementAt(CUP$Parser$top-3),
-  								"name",x,
-  								"params",l
-  								)
-  							)
-  						);
-				:}	
-  				|expr_name:x PL method_call_params:l PR di_list:d
-  				{:
-  					RESULT = new Dict(
-  						"nodo",new Node(
-  							TOperation.METHOD_CALL
-  							,null
-  							,null
-  							,new Dict(
-								"info",CUP$Parser$stack.elementAt(CUP$Parser$top-4),
-  								"name",x,
-  								"params",l,
-  								"dims",d
-  								)
-  							)
-  						);
-				:}
+  				|expr_name PL method_call_params PR
+  				|expr_name PL method_call_params PR di_list
   				//field access
   				// |expr_prim PUNTO id
   				// |expr_prim PUNTO id
@@ -820,12 +604,12 @@ expr_prim	::= expr_prim_lit:x 							{:RESULT = x;:}
 
 
 
-expr_prim_lit ::=	int:x 		{:RESULT = x;:}
-					|float:x 	{:RESULT = x;:}
-					|char:x 	{:RESULT = x;:}	
-					|string:x 	{:RESULT = x;:}
-					|bool:x 	{:RESULT = x;:}
-					|null:x 	{:RESULT = x;:}
+expr_prim_lit ::=	int:x 		{RESULT = x;}
+					|float:x 	{RESULT = x;}
+					|char:x 	{RESULT = x;} 	
+					|string:x 	{RESULT = x;}
+					|bool:x 	{RESULT = x;}
+					|NULL:x 	{RESULT = x;}
     		// |FloatingPointLiteral
     		// |CharacterLiteral 	
     		// |StringLiteral 	
@@ -941,16 +725,9 @@ id_list 	::= id_list:l COMA id:x
 				;
 
 di_list 	::=	di_list:l di:x
-				{:
-					l.getDictArrayList("list").add(x);
-					RESULT = l;
-				:}
+				
 				|di:x
-				{:
-					RESULT = new Dict("list",new ArrayList(){{
-						add(x);
-					}});
-				:}
+				
 				;
 
 
@@ -958,105 +735,52 @@ nl_list 	::=	nl_list NEWLINE
 				|NEWLINE
 				;
 
-di 			::=	QL expr:x QR 	{:RESULT = x;:}
+di 			::=	QL expr:x QR
+				
 				;
 
 id 			::= ID:x
 				{:
 					RESULT = new Dict(){{
-						put("nodo",new Node(TOperation.LEAF,null,null,this));
+						put("nodo",new Node(Sym.ID,null,null,this));
 						put("info",(CUP$Parser$stack.peek()));
-						put("type",TType.REF);
+						put("tipo",Sym.ID);
 						put("val",x);
 					}};
 				:}
 				;
 
 int 		::=	INT:x
-				{:
 					RESULT = new Dict(){{
 						put("nodo",new Node(TOperation.LEAF,null,null,this));
 						put("info",(CUP$Parser$stack.peek()));
 						put("type",TType.INT);
 						put("val",x);
 					}};
-				:}
 				;
 
 float 		::=	FLOAT:x
-				{:
-					RESULT = new Dict(){{
-						put("nodo",new Node(TOperation.LEAF,null,null,this));
-						put("info",(CUP$Parser$stack.peek()));
-						put("type",TType.FLOAT);
-						put("val",x);
-					}};
-				:}
+				
 				;
 
 char 		::= CHAR:x
-				{:
-					RESULT = new Dict(){{
-						put("nodo",new Node(TOperation.LEAF,null,null,this));
-						put("info",(CUP$Parser$stack.peek()));
-						put("type",TType.CHAR);
-						put("val",x);
-					}};
-				:}
+				
 				;
 
 string 		::=	STRING:x
 				{:
 					RESULT = new Dict(){{
-						put("nodo",new Node(TOperation.LEAF,null,null,this));
-						put("info",(CUP$Parser$stack.peek()));
-						put("type",TType.STRING);
+						put("nodo",new Node(Sym.STRING,null,null,this));
+						put("info",CUP$Parser$stack.peek());
+						put("tipo",Sym.STRING);
 						put("val",x);
 					}};
 				:}
 				;
 
 bool 		::=	BOOL:x
-				{:
-					RESULT = new Dict(){{
-						put("nodo",new Node(TOperation.LEAF,null,null,this));
-						put("info",(CUP$Parser$stack.peek()));
-						put("type",TType.BOOLEAN);
-						put("val",x);
-					}};
-				:}
+				
 				;
-null 		::=	NULL:x
-				{:
-					RESULT = new Dict(){{
-						put("nodo",new Node(TOperation.LEAF,null,null,this));
-						put("info",(CUP$Parser$stack.peek()));
-						put("type",TType.NULL);
-						put("val",x);
-					}};
-				:}
-				;
-this 		::=	KW_THIS:x
-				{:
-					RESULT = new Dict(){{
-						put("nodo",new Node(TOperation.LEAF,null,null,this));
-						put("info",(CUP$Parser$stack.peek()));
-						put("type",TType.REF);
-						put("val",x);
-					}};
-				:}
-				;
-kw_super 	::=	KW_SUPER:x
-				{:
-					RESULT = new Dict(){{
-						put("nodo",new Node(TOperation.LEAF,null,null,this));
-						put("info",(CUP$Parser$stack.peek()));
-						put("type",TType.REF);
-						put("val",x);
-					}};
-				:}
-				;
-
 
 
 error_lexico	::=	ERROR:x

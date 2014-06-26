@@ -61,7 +61,7 @@ INT     = [0-9]+
 FLOAT   = {INT}"."{INT}
 CHAR    = "'"[^\n\r\t\\]"'"
 BOOL    = "true"|"false"
-
+COMMENT = "//" [^\r\n]* {NEWLINE}
 
 %state STRING
 
@@ -70,6 +70,7 @@ BOOL    = "true"|"false"
 <YYINITIAL>
 {
     {SPACE}     {}
+    {COMMENT}   {}
 
     {NEWLINE}   {return symbol(Sym.NEWLINE);}
 

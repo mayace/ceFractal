@@ -762,17 +762,8 @@ expr_prim	::= expr_prim_lit:x 							{:RESULT = x;:}
   				// |expr_nc
   				|expr_name:x 			
   				{:
-  					RESULT = new Dict(
-  						"nodo",new Node(
-  							TOperation.LEAF
-  							,null
-  							,null
-  							,new Dict(
-  								"name",x
-  								)
-  							)
-  						);
-				:}	
+  					RESULT = x;
+  				:}
   				// array access
   				// |expr_name di_list
   				//method call
