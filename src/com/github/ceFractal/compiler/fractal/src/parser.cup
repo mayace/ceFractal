@@ -296,16 +296,24 @@ loops 			::= loop_while:x 	{:RESULT = x;:}
 
 
 loop_while 		::=	KW_WHILE PL expr:e PR LL nl_list method_stmts:ss LR
-					
+					{:
+					:}
 					|KW_DO LL nl_list method_stmts:ss LR KW_WHILE PL expr:e PR
-					
+					{:
+					:}
 					;
 
 loop_for 		::= KW_FOR PL for_def:x PR LL nl_list method_stmts:ss LR
+					{:
+					:}
 					;
 
 for_def 		::=	id:x EQUAL expr:e COMA expr:e2 COMA id:x2 DPLUS
+					{:
+					:}
 					|KW_INT id:x EQUAL expr:e COMA expr:e2 COMA id:x2 DPLUS
+					{:
+					:}
 					;
 
 conds 			::=	cond_if:x 		
@@ -313,6 +321,7 @@ conds 			::=	cond_if:x
 					;
 
 cond_switch 	::=	KW_SWITCH PL expr:e PR LL nl_list switch_stmts:ss LR
+					
 					;
 
 cond_if 		::=	cond_if_else_list:x
@@ -381,13 +390,22 @@ method_call_obj 	::=	id:x
 						|id:x PL method_call_params:l PR di_list:l2
 						;
 
-method_call_params 	::=	method_call_param_list:x
-						|
+method_call_params 	::=	method_call_param_list:x 	{:RESULT = x;:}
+						| 							{:RESULT = new Dict("list",new ArrayList<Dict>());:}
 						;
 method_call_param_list 	::=	method_call_param_list:l COMA method_call_param:x
+							{:
+								l.getDictArrayList("list").add(x);
+								RESULT = l;
+							:}
 							|method_call_param:x
+							{:
+								RESULT = new Dict("list",new ArrayList(){{
+									add(x);
+								}});
+							:}
 							;
-method_call_param 	::=	expr:x
+method_call_param 	::=	expr:x 	{:RESULT = x;:}
 						;
 
 method_def_var 	::=	def_var:x 	
@@ -469,11 +487,11 @@ type_primitive	::=	KW_INT:x		{:RESULT = new Dict("val",TType.INT);:}
 					|KW_VOID:x		{:RESULT = new Dict("val",TType.VOID);:}
 					;
 
-expr_assign_oper	::=	EQUAL
-						|PEQUAL
-						|MIEQUAL
-						|MUEQUAL
-						|DIEQUAL
+expr_assign_oper	::=	EQUAL:x 	{:RESULT = new Dict("val",x,"info",CUP$Parser$stack.peek());:}
+						|PEQUAL:x 	{:RESULT = new Dict("val",x,"info",CUP$Parser$stack.peek());:}
+						|MIEQUAL:x 	{:RESULT = new Dict("val",x,"info",CUP$Parser$stack.peek());:}
+						|MUEQUAL:x 	{:RESULT = new Dict("val",x,"info",CUP$Parser$stack.peek());:}
+						|DIEQUAL:x 	{:RESULT = new Dict("val",x,"info",CUP$Parser$stack.peek());:}
 						;
 
 expr_name 			::= expr_name_simple:x 		{:RESULT = new Dict("list",new ArrayList<Dict>(){{add(x);}});:}
@@ -496,8 +514,8 @@ expr_name_complex 	::=	expr_name:l PUNTO expr_name_simple:x
 						:}
 						;
 
-expr_call 			::=	expr_call_simple
-						|expr_call_complex
+expr_call 			::=	expr_call_simple:x
+						|expr_call_complex:x
 						;
 
 expr_call_simple 	::=	id PL method_call_params PR
@@ -518,15 +536,23 @@ expr_nc_complex 	::=	expr_nc PUNTO expr_nc_simple
 // ****************************
 // Expression
 // ****************************
-expr 		::=	expr_assign
+expr 		::=	expr_assign:x 	{:RESULT = x;:}
 				|expr_cond:x 	{:RESULT = x;:}
 				;
 
-expr_assign ::=	expr_name expr_assign_oper expr
+expr_assign ::=	expr_name:x expr_assign_oper:a expr:v
+				{:
+					Dict ref = new Dict("name",x,"operator",a,"val",v);
+					RESULT = new Dict("nodo",new Node(TOperation.SET_VAR,null,null,ref));
+				:}
 				;
 
-expr_cond 	::=	expr_cond_or:x {:RESULT = x;:}
-				|expr_cond_or Q expr DPUNTOS expr
+expr_cond 	::=	expr_cond_or:x 	{:RESULT = x;:}
+				|expr_cond_or:x Q expr:vt DPUNTOS expr:vf
+				{:
+					Dict ref = new Dict("condition",x,"vtrue",vt,"vfalse",vf);
+					RESULT = new Dict(TOperation.TERNARY,null,null,ref);
+				:}
 				;
 
 expr_cond_or 	::=	expr_cond_or:l OR expr_cond_and:x
@@ -768,7 +794,8 @@ expr_prim	::= expr_prim_lit:x 							{:RESULT = x;:}
   							,null
   							,null
   							,new Dict(
-  								"name",x
+  								"val",x,
+  								"type",TType.REF
   								)
   							)
   						);

@@ -1415,9 +1415,9 @@ public class Win extends javax.swing.JFrame {
                         Object phase = cactions.get("phase");
                         phase = (phase == null ? "null" : phase);
 
-                        if (phase.equals("def")) {
+                        if (isDefPhase(phase)) {
                             frc_compile(file_text(path_val_path), cactions, false);
-                        } else if (phase.equals("3dir")) {
+                        } else if (is3dirPhase(phase)) {
                         } else {
                             notificar("No actions for -> " + TOperation.IMPORT);
                         }
@@ -1453,10 +1453,10 @@ public class Win extends javax.swing.JFrame {
                         //Agregar simbolos
                         //======================================================
                         try {
-                            if (phase.equals("def")) {
+                            if (isDefPhase(phase)) {
                                 //agregar clase
                                 ccompiler.getSims().addClass(_name_val, _extends_val, _modifiers_val);
-                            } else if (phase.equals("3dir")) {
+                            } else if (is3dirPhase(phase)) {
                             } else {
                                 notificar("No actions for -> " + TOperation.DEF_CLASS);
                             }
@@ -1513,9 +1513,9 @@ public class Win extends javax.swing.JFrame {
                         for (Dict n : (ArrayList<Dict>) _name.getDictArrayList("list")) {
                             final String n_val = n.getString("val");
                             try {
-                                if (phase.equals("def")) {
+                                if (isDefPhase(phase)) {
                                     ccompiler.getSims().addField(scope.peek(), _modifiers_val, _type_val, n_val, new Dict("array", (_array == null ? false : _array)));
-                                } else if (phase.equals("3dir")) {
+                                } else if (is3dirPhase(phase)) {
                                 } else {
                                     notificar("No actions for -> " + TOperation.DEF_FIELD);
                                 }
@@ -1551,43 +1551,42 @@ public class Win extends javax.swing.JFrame {
 //                        System.err.println(_type_val);
 //                        System.err.println(_name_val);
 //                        System.err.println(Arrays.toString(_params_type_array));
+                        //<editor-fold defaultstate="collapsed" desc="PROCESAMIENTO...">
                         try {
 
-                            Sim method_sim = null;
-                            if (phase.equals("def")) {
-                                method_sim = ccompiler.getSims().addMethod(scope.peek().toString(), _modifiers_val, _type_val, _name_val, _params_type_array);
+                            if (isDefPhase(phase)) {
+                                // agregar metodo
+                                Sim method_sim = ccompiler.getSims().addMethod(scope.peek().toString(), _modifiers_val, _type_val, _name_val, _params_type_array);
+                                // agregar this, si no es el metodo main
                                 if (!(_name_val.equals("main") && _type_val.equals(TType.VOID.toString()) && _params_type_array.length == 0)) {
                                     ccompiler.getSims().addVariable(method_sim, method_sim.scope, "this", new Dict());
                                 }
-                            } else if (phase.equals("3dir")) {
-                                method_sim = ccompiler.getSims().getMethod(scope.peek().toString(), _type_val, _name_val, _params_type_array);
+                                // agregar paramaetros
+                                scope.push(method_sim);
+                                frc_compiler_stmts_exec(_params, cactions);
+                                scope.pop();
 
-                                String tres = String.format("method %s {", _name_val);
-                                write3dir(tres);
-
-                            } else {
-                                notificar("No actions for -> " + TOperation.DEF_METHOD);
                                 return null;
                             }
-//                            cactions.put("method_sim", method_sim);
+                            if (is3dirPhase(phase)) {
+                                Sim method_sim = ccompiler.getSims().getMethod(scope.peek().toString(), _type_val, _name_val, _params_type_array);
 
-                            //======================================================
-                            //Ejecutar sentencias de metodo y manejo de ambito...
-                            //======================================================
-                            scope.push(method_sim);
-                            // ejecutar parametros
-                            frc_compiler_stmts_exec(_params, cactions);
-                            // ejecutar sentencias
-                            frc_compiler_stmts_exec(_stmts, cactions);
-                            scope.pop();
-                        } catch (Exception exc) {
-//                            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, exc);
+                                write3dir(String.format("method %s {", _name_val));
+                                // ejecutar sentencias
+                                scope.push(method_sim);
+                                frc_compiler_stmts_exec(_stmts, cactions);
+                                scope.pop();
+                                write3dir("}");
+
+                                return null;
+                            }
+
+                        } catch (UnsupportedOperationException exc) {
                             compiler_error(exc, TErr.SEMANTICO, _name.get("info"), actions);
                         }
+                        //</editor-fold>
 
-                        if (!_type_val.equals(TType.VOID.toString())) {
-                        }
-                        return null;
+                        return noActionsProcessed(TOperation.DEF_METHOD);
                     });
                     //</editor-fold>
 
@@ -1612,10 +1611,10 @@ public class Win extends javax.swing.JFrame {
                         try {
                             Sim method_sim = null;
 
-                            if (phase.equals("def")) {
+                            if (isDefPhase(phase)) {
                                 method_sim = ccompiler.getSims().addConstruct(scope.peek().toString(), _modifiers_val, _name_val, _params_type_array);
                                 ccompiler.getSims().addVariable(method_sim, method_sim.scope, "this", new Dict());
-                            } else if (phase.equals("3dir")) {
+                            } else if (is3dirPhase(phase)) {
                                 return null;
                             } else {
                                 notificar("No actions for -> " + TOperation.DEF_CONSTRUCT);
@@ -1660,9 +1659,9 @@ public class Win extends javax.swing.JFrame {
 
 //                        System.err.format("Parametro ->[[ref->%1$s][tipo->%2$s][nombre->%3$s]]\n", _ref_val, _type_val, _name_val);
                         try {
-                            if (phase.equals("def")) {
+                            if (isDefPhase(phase)) {
                                 ccompiler.getSims().addParameter(method_sim, Boolean.parseBoolean(_ref_val), _type_val, _name_val, new Dict("array", _array_val));
-                            } else if (phase.equals("3dir")) {
+                            } else if (is3dirPhase(phase)) {
                                 return null;
                             } else {
                                 notificar("No actions for -> " + TOperation.DEF_PARAMETER);
@@ -1679,51 +1678,87 @@ public class Win extends javax.swing.JFrame {
                     //<editor-fold defaultstate="collapsed" desc="DEF_LOCALVAR">
                     put(TOperation.DEF_LOCALVAR, (Operation) (Node node, Object actions) -> {
 
+                        //<editor-fold defaultstate="collapsed" desc="AMBITO ARBOL SINTACTICO...">
                         Dict cactions = (Dict) actions;
                         CC ccompiler = (CC) cactions.get("cc");
                         Stack scope = cactions.getStack("scope");
                         Sim method_sim = (Sim) scope.peek();
                         Object phase = cactions.get("phase");
                         phase = (phase == null ? "null" : phase);
+                        //</editor-fold>
 
-                        Boolean _array_val = node.getDictRef().containsKey("array") ? node.getDictRef().getBoolean("array") : false;
+                        //<editor-fold defaultstate="collapsed" desc="NODO DE GRAMATICA ...">
+                        final Dict ref = node.getDictRef();
+                        final boolean _array_val = ref.containsKey("array") ? ref.getBoolean("array") : false;
+                        final Dict _type = ref.getDict("type");
+                        final Dict _name = ref.getDict("name");
+                        final Dict _val = ref.getDict("val");
+                        Object _info = ref.get("info");
 
-                        Dict _type = node.getDictRef().getDict("type");
-                        Dict _name = node.getDictRef().getDict("name");
-                        Dict _val = node.getDictRef().getDict("val");
+                        final String _type_val = _type.getString("val");
+                        final Node _val_node = _val == null ? null : _val.getNode("nodo");
+                        //</editor-fold>
 
-                        String _type_val = _type.getString("val");
-                        Node _val_val = _val == null ? null : _val.getNode("nodo");
+                        //<editor-fold defaultstate="collapsed" desc="PROCESAMIENTO...">
+                        try {
+                            if (is3dirPhase(phase)) {
+                                for (Dict id : _name.getDictArrayList("list")) {
+                                    final String n_val = id.getString("val");
+                                    _info = id.get("info");
+//                                    System.err.format("Variable ->[[tipo->%2$s][nombre->%2$s]]\n", _type_val, n_val);
 
-                        //======================================================
-                        // Agregando simbolos...
-                        //======================================================
-                        for (Dict n : (ArrayList<Dict>) _name.getDictArrayList("list")) {
-                            final String n_val = n.getString("val");
-//                            System.err.format("Variable ->[[tipo->%2$s][nombre->%2$s]]\n", _type_val, n_val);
+                                    final Sim var_sim = ccompiler.getSims().addVariable(method_sim, _type_val, n_val, new Dict("array", _array_val));
+                                    final Node name_nodo = id.getNode("nodo");
 
-                            try {
-                                if (phase.equals("def")) {
-                                    ccompiler.getSims().addVariable(method_sim, _type_val, n_val, new Dict("array", _array_val));
-                                } else if (phase.equals("3dir")) {
-                                    if (_val_val != null) {
-                                        _val_val.exec(actions);
-//                                        System.err.println("3dir aqui...");
+                                    // si es una declaracion con asignacion...
+                                    if (_val_node != null) {
+                                        if (_array_val) {
+                                            _val_node.exec(actions);
+                                            final Dict _val_node_val = _val_node.getDictVal();
+                                            final Object _val_node_val_type = _val_node_val.get("type");
+
+                                            if (!_val_node_val_type.equals("array")) {
+                                                throwException("Se esperaba dimensiones de arreglo");
+                                            }
+
+                                            final int size = _val_node_val.getInt("size");
+                                            final int[] dims = _val_node_val.getIntArray("val");
+
+                                            var_sim.size = size;
+                                            var_sim.getDictOthers().put("dims", dims == null ? new int[]{} : dims);
+                                            method_sim.size += size - 1;
+                                        } else {
+                                            write3dir("//*** ASINGACION VARIABLE... ***//");
+                                            // obtener el puntero de la variable
+                                            name_nodo.getDictRef().put("pointer", true);
+                                            write3dir("// Obtener puntero");
+                                            name_nodo.exec(actions);
+                                            // obtenre el valor a asignar a la variable...
+                                            write3dir("// Obtener valor");
+                                            _val_node.exec(actions);
+                                            // asignar el valor a asignar a la variable...
+                                            final String _val_node_val_type = _val_node.getDictVal().getString("type");
+                                            if (!_type_val.equals(_val_node_val_type)) {
+                                                throwException(String.format("Tipos incompatibles -> %s = %s", _type_val, _val_node_val_type));
+                                            }
+                                            write3dir("// asignacion");
+                                            write3dir(String.format("pila[%s] = %s;", name_nodo.getDictVal().get("val"), _val_node.getDictVal().get("val")));
+                                        }
                                     }
-                                    return null;
-                                } else {
-                                    notificar("No actions for -> " + TOperation.DEF_LOCALVAR);
-                                    return null;
+                                    break;
                                 }
-                            } catch (Exception exc) {
-                                compiler_error(exc, TErr.SEMANTICO, n.get("info"), actions);
+                                return null;
                             }
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SEMANTICO, _info, actions);
                         }
+                        //</editor-fold>
 
-                        return null;
+                        return noActionsProcessed(TOperation.DEF_LOCALVAR);
                     });
                     //</editor-fold>
 
+                    //<editor-fold defaultstate="collapsed" desc="PLUS">
                     put(TOperation.PLUS, new Operation() {
                         @Override
                         public Object exec(Node node, Object actions) {
@@ -1738,32 +1773,265 @@ public class Win extends javax.swing.JFrame {
                             return new Dict("val", temp);
                         }
                     });
+                    //</editor-fold>
 
                     //<editor-fold defaultstate="collapsed" desc="LEAF">
                     put(TOperation.LEAF, (Operation) (Node node, Object actions) -> {
+
                         final Dict ca = (Dict) actions;
                         final CC cc = (CC) ca.get("cc");
-                        final Dict ref = node.getDictRef();
                         final Stack scope = ca.getStack("scope");
                         final Sim method_sim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
 
-                        TType ref_type = (TType) ref.get("type");
-                        Object ref_val = ref.get("val");
-                        
-                        if(ref_type == TType.REF){
-//                            cc.getSims().getLocalvar(method_sim.name
-//                                    , ref_val.toString()
-//                                    , ((Dict)method_sim.others));
-//                            System.out.println(method_sim.others);
+                        final Dict ref = node.getDictRef();
+                        final Boolean ref_pointer = ref.getBoolean("pointer");
+                        final Object ref_type = ref.get("type");
+                        final Object ref_val = ref.get("val");
+                        Object ref_info = ref.get("info");
+                        final Dict val = new Dict();
+
+                        //<editor-fold defaultstate="collapsed" desc="PROCESAMIENTO...">
+                        try {
+                            if (is3dirPhase(phase)) {
+                                //<editor-fold defaultstate="collapsed" desc="3dir">
+
+                                Object val_type = ref_type;
+                                Object val_pointer = null;
+                                Object val_val = ref_val;
+                                Object val_rawval = null;
+
+                                if (ref_type == TType.REF) {
+                                    //<editor-fold defaultstate="collapsed" desc="ref">
+                                    ArrayList<Dict> ref_val_list = val_val instanceof Dict ? ((Dict) ref_val).getDictArrayList("list") : new ArrayList<Dict>() {
+                                        {
+                                            add(ref);
+                                        }
+                                    };
+
+                                    Sim temp_sim = null;
+                                    for (int i = 0; i < ref_val_list.size(); i++) {
+                                        final Dict id = ref_val_list.get(i);
+                                        final String id_val = id.getString("val");
+                                        final Dict id_dims = id.getDict("dims");
+                                        ref_info = id.get("info");
+
+                                        // primer nive... en el metodo actual...
+                                        if (i == 0) {
+
+                                            final Sim id_sim = cc.getSims().getLocalvar(method_sim.name, id_val, ((Dict) method_sim.others).getObjArray("overload"));
+                                            final String t1 = getTemp(ca);
+
+                                            write3dir(String.format("%s = p + %d;", t1, id_sim.position));
+                                            val_val = t1;
+                                            val_pointer = t1;
+
+                                            final Dict id_sim_others = id_sim.getDictOthers();
+                                            final boolean id_sim_others_array = id_sim_others.containsKey("array") ? id_sim_others.getBoolean("array") : false;
+
+                                            if (id_sim_others_array) {
+                                                //<editor-fold defaultstate="collapsed" desc="ARREGLO...">
+                                                if (id_dims == null) {
+                                                    throwException("se esperaba posicion en el arreglo");
+                                                }
+
+                                                int[] id_sim_dims = id_sim.getDictOthers().getIntArray("dims");
+                                                ArrayList<Dict> id_dims_list = id_dims.getDictArrayList("list");
+                                                String temp = null;
+
+                                                for (int j = 0; j < id_dims_list.size(); j++) {
+                                                    final Dict dim = id_dims_list.get(j);
+                                                    final Node dim_node = dim.getNode("nodo");
+                                                    dim_node.exec(actions);
+                                                    final Dict dim_node_val = dim_node.getDictVal();
+                                                    final String dim_node_val_val = dim_node_val.getString("val");
+
+                                                    if (j == 0) {
+                                                        final String t2 = getTemp(ca);
+                                                        final String t3 = getTemp(ca);
+                                                        write3dir(String.format("%s = %s + %s;", t2, t1, dim_node_val_val));
+                                                        write3dir(String.format("%s = %s - 0;", t3, t2));
+                                                        temp = t3;
+                                                        continue;
+                                                    }
+
+                                                    final String t2 = getTemp(ca);
+                                                    final String t3 = getTemp(ca);
+                                                    final String t4 = getTemp(ca);
+                                                    try {
+                                                        write3dir(String.format("%s = %s * %d;", t2, temp, id_sim_dims[j]));
+                                                    } catch (ArrayIndexOutOfBoundsException exc) {
+                                                        throwException("Arreglo fuera de rango en posicion [" + j + "]");
+                                                    }
+                                                    write3dir(String.format("%s = %s + %s;", t3, t2, dim_node_val_val));
+                                                    write3dir(String.format("%s = %s - 0;", t4, t3));
+                                                    temp = t4;
+                                                }
+                                                val_val = temp;
+                                                //</editor-fold>
+                                            }
+
+                                            if (ref_pointer == null || !ref_pointer) {
+                                                final String t2 = getTemp(ca);
+                                                write3dir(String.format("%s = pila[%s];", t2, t1));
+                                                val_val = t2;
+                                                val_type = id_sim.type;
+                                            }
+
+                                            temp_sim = id_sim;
+                                            continue;
+                                        }
+
+                                        if (isPrimitiveType(temp_sim.type)) {
+                                            throwException("No se encuentra el simbolo en el tipo -> " + temp_sim.type);
+                                        }
+
+                                        Sim class_sim = cc.getSims().getClass(temp_sim.type);
+                                        Sim field_sim = cc.getSims().getPublicField(temp_sim.type, id_val);
+
+                                        String t1 = getTemp(ca);
+                                        write3dir(String.format("%s = %s + %d", t1, val_val, field_sim.position));
+                                        val_val = t1;
+                                        if (ref_pointer == null || !ref_pointer) {
+                                            String t2 = getTemp(ca);
+                                            write3dir(String.format("%s = heap[%s];", t2, t1));
+                                            val_val = t2;
+                                            val_type = field_sim.type;
+                                        }
+                                    }
+                                    //</editor-fold>
+                                } else {
+
+                                    TType temp_type = (TType) ref_type;
+                                    val_type = ref_type;
+
+                                    if (temp_type == TType.NULL) {
+                                        Object t1 = getTemp(ca);
+                                        write3dir("// null -> " + ref_val);
+                                        write3dir(String.format("%s = %d;", t1, -1));
+                                        val_val = t1;
+                                    } else if (temp_type == TType.BOOLEAN) {
+                                        Object temp = getTemp(ca);
+                                        write3dir("// boolean -> " + ref_val);
+                                        write3dir(String.format("%s = %d;", temp, Boolean.parseBoolean(ref_val.toString()) ? 1 : 0));
+                                        val_val = temp;
+                                    } else if (temp_type == TType.CHAR) {
+                                        Object temp = getTemp(ca);
+                                        write3dir("// char -> " + ref_val);
+                                        write3dir(String.format("%s = %s;", temp, ref_val.toString().codePointAt(1)));
+                                        val_val = temp;
+                                    } else if (temp_type == TType.STRING) {
+                                        final Object t1 = getTemp(ca);
+                                        final char[] ref_val_chars = ref_val.toString().toCharArray();
+
+                                        write3dir("// string -> " + ref_val);
+                                        write3dir(String.format("%s = h;", t1));
+                                        write3dir(String.format("h = h + %d;", ref_val_chars.length + 1));
+
+                                        for (int i = 0; i < ref_val_chars.length + 1; i++) {
+                                            final String t2 = getTemp(ca);
+                                            write3dir(String.format("%s = %s + %d;", t2, t1, i));
+                                            if (i == ref_val_chars.length) {
+                                                write3dir(String.format("heap[%s] = %s;", t2, -1));
+                                                continue;
+                                            }
+                                            char c = ref_val_chars[i];
+                                            write3dir(String.format("heap[%s] = %s;", t2, (int) c));
+                                        }
+
+                                        val_val = t1;
+                                    } else {
+                                        Object temp = getTemp(ca);
+                                        write3dir("int,float -> "+ref_val);
+                                        write3dir(String.format("%s = %s;", temp, ref_val));
+                                        val_val = temp;
+                                    }
+                                }
+
+                                val.put("pointer", val_pointer);
+                                val.put("raw_val", ref_val);
+                                val.put("val", val_val);
+                                val.put("type", val_type);
+
+                                //</editor-fold>
+                                return val;
+                            }
+                        } catch (UnsupportedOperationException ex) {
+                            compiler_error(ex, TErr.SEMANTICO, ref_info, actions);
                         }
-                        
-                        Object temp = getTemp(ca);
-                        String tres = String.format("%s = %s;", temp, ref_val);
-                        write3dir(tres);
+                        //</editor-fold>
 
-                        return new Dict("val", temp, "type", ref_type);
+                        return noActionsProcessed(TOperation.LEAF);
                     });
                     //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="NEW">
+                    put(TOperation.NEW, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim method_sim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+
+                        final Dict ref = node.getDictRef();
+                        final boolean ref_array = ref.containsKey("array") ? ref.getBoolean("array") : false;
+                        final Dict ref_type = ref.getDict("type");
+                        final Dict ref_params = ref.getDict("params");
+                        Object ref_info = ref.get("info");
+                        final Dict val = new Dict();
+
+                        //<editor-fold defaultstate="collapsed" desc="PROCESAMIENTO...">
+                        try {
+                            if (is3dirPhase(phase)) {
+                                if (ref_array) {
+                                    //<editor-fold defaultstate="collapsed" desc="ARRAY...">
+                                    final ArrayList<Dict> list = ref_params.getDictArrayList("list");
+                                    int[] dims = new int[list.size()];
+                                    int size = 1;
+                                    for (int i = 0; i < list.size(); i++) {
+                                        final Dict expr = list.get(i);
+                                        final Node expr_node = expr.getNode("nodo");
+                                        expr_node.exec(actions);
+                                        final Dict expr_node_val = expr_node.getDictVal();
+                                        final Object expr_node_val_type = expr_node_val.get("type");
+                                        final int expr_node_val_val = expr_node_val.getInt("raw_val");
+                                        
+                                        if (!expr_node_val_type.equals(TType.INT)) {
+                                            throwException("Se esperaba un valor entero");
+                                        }
+                                        dims[i] = expr_node_val_val;
+                                        size *= expr_node_val_val;
+                                    }
+                                    //</editor-fold>
+                                    val.put("val", dims);
+                                    val.put("size", size);
+                                    val.put("type", "array");
+                                } else {
+                                    //llamar a constructor
+                                    ref_info = ref_type.get("info");
+                                    Object classname = ref_type.get("val");
+                                    
+                                    Sim classsim = cc.getSims().getPublicClass(classname);
+                                    
+                                    
+                                }
+
+                                return val;
+                            }
+                        } catch (UnsupportedOperationException ex) {
+                            compiler_error(ex, TErr.SEMANTICO, ref_info, actions);
+                        }
+                        //</editor-fold>
+
+                        return noActionsProcessed(TOperation.NEW);
+                    });
+                    //</editor-fold>
+                    
+                    put(TOperation.SET_VAR, (Operation) (Node node, Object actions) -> {
+                    
+                    
+                        return noActionsProcessed(TOperation.SET_VAR);
+                    });
 
                     //<editor-fold defaultstate="collapsed" desc="ERROR_LEXICO">
                     put(TOperation.ERROR_LEXICO, (Operation) (Node node, Object actions) -> {
@@ -1771,9 +2039,9 @@ public class Win extends javax.swing.JFrame {
                         Object phase = cactions.get("phase");
                         phase = (phase == null ? "null" : phase);
 
-                        if (phase.equals("def")) {
+                        if (isDefPhase(phase)) {
                             compiler_error(new UnsupportedOperationException("Caracter no reconocido..."), TErr.LEXICO, node.getDictRef().get("info"), actions);
-                        } else if (phase.equals("3dir")) {
+                        } else if (is3dirPhase(phase)) {
                             return null;
                         } else {
                             notificar("No actions for -> " + TOperation.ERROR_LEXICO);
@@ -1789,9 +2057,9 @@ public class Win extends javax.swing.JFrame {
                         Object phase = cactions.get("phase");
                         phase = (phase == null ? "null" : phase);
 
-                        if (phase.equals("def")) {
+                        if (isDefPhase(phase)) {
                             compiler_error(new UnsupportedOperationException("Error de sintaxis..."), TErr.SINTACTICO, node.getDictRef().get("info"), actions);
-                        } else if (phase.equals("3dir")) {
+                        } else if (is3dirPhase(phase)) {
                             return null;
                         } else {
                             notificar("No actions for -> " + TOperation.ERROR_SINTACTICO);
@@ -1800,6 +2068,42 @@ public class Win extends javax.swing.JFrame {
                         return null;
                     });
 //</editor-fold>
+                }
+
+                private boolean isPrimitiveType(Object type) {
+                    // obtener demas...
+                    try {
+                        TType temp_sim_type = TType.valueOf(type.toString());
+                        if (temp_sim_type == TType.INT
+                        || temp_sim_type == TType.FLOAT
+                        || temp_sim_type == TType.BOOLEAN
+                        || temp_sim_type == TType.CHAR
+                        || temp_sim_type == TType.NULL
+                        || temp_sim_type == TType.REF
+                        || temp_sim_type == TType.STRING
+                        || temp_sim_type == TType.VOID) {
+                            return true;
+                        }
+                    } catch (IllegalArgumentException exc) {
+                    }
+                    return false;
+                }
+
+                private void throwException(String msg) throws UnsupportedOperationException {
+                    throw new UnsupportedOperationException(msg);
+                }
+
+                private Object noActionsProcessed(TOperation oper) {
+                    notificar("No actions for -> " + oper);
+                    return null;
+                }
+
+                private boolean isDefPhase(Object phase) {
+                    return phase.equals("def");
+                }
+
+                private boolean is3dirPhase(final Object phase) {
+                    return phase.equals("3dir");
                 }
 
                 private String getTemp(Dict actions) {
@@ -1811,10 +2115,9 @@ public class Win extends javax.swing.JFrame {
 //                                Files.write(cactions.getPath("3dir_path"), $3dir_method.getBytes("utf8"), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
                 }
 
-                private void compiler_error(Exception exc, TErr terr, Object info, Object cc) {
-                    CC ccompiler = (CC) ((Dict) cc).get("cc");
-                    Symbol sym = (Symbol) info;
-                    final Err err = new Err(terr, exc.getMessage(), info);
+                private void compiler_error(Exception ex, TErr terr, Object info, Object actions) {
+                    final CC ccompiler = (CC) ((Dict) actions).get("cc");
+                    final Err err = new Err(terr, ex.getMessage(), info);
                     ccompiler.getErrs().add(err);
 
                     System.out.println(err);
