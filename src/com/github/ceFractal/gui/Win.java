@@ -1558,10 +1558,13 @@ public class Win extends javax.swing.JFrame {
                                 // agregar metodo
                                 Sim method_sim = ccompiler.getSims().addMethod(scope.peek().toString(), _modifiers_val, _type_val, _name_val, _params_type_array);
                                 // agregar this, si no es el metodo main
-                                if (!(_name_val.equals("main") && _type_val.equals(TType.VOID.toString()) && _params_type_array.length == 0)) {
+                                if ((_name_val.equals("main") && _type_val.equals(TType.VOID.toString()) && _params_type_array.length == 0)) {
+                                    method_sim.getDictOthers().put("main", true);
+                                } else {
                                     ccompiler.getSims().addVariable(method_sim, method_sim.scope, "this", new Dict());
                                 }
-                                // agregar paramaetros
+
+                                // agregar parametros
                                 scope.push(method_sim);
                                 frc_compiler_stmts_exec(_params, cactions);
                                 scope.pop();
@@ -1569,13 +1572,22 @@ public class Win extends javax.swing.JFrame {
                                 return null;
                             }
                             if (is3dirPhase(phase)) {
-                                Sim method_sim = ccompiler.getSims().getMethod(scope.peek().toString(), _type_val, _name_val, _params_type_array);
+                                final Sim method_sim = ccompiler.getSims().getMethod(scope.peek().toString(), _type_val, _name_val, _params_type_array);
+                                final Boolean isMain = method_sim.getDictOthers().getBoolean("main");
+                                String method_type = "void";
+                                String method_return = "";
+                                if (isMain != null && isMain) {
+                                    method_type = "int";
+                                    method_return = "return 0 ;";
+                                }
 
-                                write3dir(String.format("method %s {", _name_val));
+                                write3dir(String.format("%s %s(){", method_type, _name_val));
                                 // ejecutar sentencias
                                 scope.push(method_sim);
                                 frc_compiler_stmts_exec(_stmts, cactions);
                                 scope.pop();
+
+                                write3dir(method_return);
                                 write3dir("}");
 
                                 return null;
@@ -1911,10 +1923,17 @@ public class Win extends javax.swing.JFrame {
                                         write3dir(String.format("%s = %d;", t1, -1));
                                         val_val = t1;
                                     } else if (temp_type == TType.BOOLEAN) {
-                                        Object temp = getTemp(ca);
+                                        Object t1 = getTemp(ca);
+                                        Object l1 = getLabel(ca);
+                                        Object l2 = getLabel(ca);
                                         write3dir("// boolean -> " + ref_val);
-                                        write3dir(String.format("%s = %d;", temp, Boolean.parseBoolean(ref_val.toString()) ? 1 : 0));
-                                        val_val = temp;
+                                        write3dir(String.format("%s = %d;", t1, Boolean.parseBoolean(ref_val.toString()) ? 1 : 0));
+                                        write3dir(String.format("if (%s == 1) goto %s;", t1, l1));
+                                        write3dir(String.format("goto %s;", l2));
+
+                                        val.put("ltrue", l1);
+                                        val.put("lfalse", l2);
+                                        val_val = t1;
                                     } else if (temp_type == TType.CHAR) {
                                         Object temp = getTemp(ca);
                                         write3dir("// char -> " + ref_val);
@@ -1940,9 +1959,10 @@ public class Win extends javax.swing.JFrame {
                                         }
 
                                         val_val = t1;
+                                        val.put("length", ref_val_chars.length);
                                     } else {
                                         Object temp = getTemp(ca);
-                                        write3dir("int,float -> "+ref_val);
+                                        write3dir("int,float -> " + ref_val);
                                         write3dir(String.format("%s = %s;", temp, ref_val));
                                         val_val = temp;
                                     }
@@ -1995,7 +2015,7 @@ public class Win extends javax.swing.JFrame {
                                         final Dict expr_node_val = expr_node.getDictVal();
                                         final Object expr_node_val_type = expr_node_val.get("type");
                                         final int expr_node_val_val = expr_node_val.getInt("raw_val");
-                                        
+
                                         if (!expr_node_val_type.equals(TType.INT)) {
                                             throwException("Se esperaba un valor entero");
                                         }
@@ -2010,10 +2030,9 @@ public class Win extends javax.swing.JFrame {
                                     //llamar a constructor
                                     ref_info = ref_type.get("info");
                                     Object classname = ref_type.get("val");
-                                    
+
                                     Sim classsim = cc.getSims().getPublicClass(classname);
-                                    
-                                    
+
                                 }
 
                                 return val;
@@ -2026,12 +2045,70 @@ public class Win extends javax.swing.JFrame {
                         return noActionsProcessed(TOperation.NEW);
                     });
                     //</editor-fold>
-                    
+
+                    //<editor-fold defaultstate="collapsed" desc="SET_VAR">
                     put(TOperation.SET_VAR, (Operation) (Node node, Object actions) -> {
-                    
-                    
+
                         return noActionsProcessed(TOperation.SET_VAR);
                     });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="FOR">
+                    put(TOperation.OR, (Operation) (Node node, Object actions) -> {
+
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim method_sim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        final Dict val = new Dict();
+
+                        try {
+                            if (is3dirPhase(phase)) {
+                                Node l = node.getLeft();
+                                l.exec(actions);
+                                Dict lval = l.getDictVal();
+                                String lval_type = lval.getString("type");
+                                String lval_ltrue = lval.getString("ltrue");
+                                String lval_lfalse = lval.getString("lfalse");
+                                if (!lval_type.equals(TType.BOOLEAN.toString())) {
+                                    throwException(String.format("Se esperaba tipo -> %s en -> %s || expr", TType.BOOLEAN, lval_type));
+                                }
+
+                                write3dir(lval_lfalse + ":");
+                                write3dir("// label false");
+
+                                Node r = node.getRight();
+                                r.exec(actions);
+                                Dict rval = r.getDictVal();
+                                String rval_type = rval.getString("type");
+                                String rval_ltrue = rval.getString("ltrue");
+                                String rval_lfalse = rval.getString("lfalse");
+
+                                if (!rval_type.equals(TType.BOOLEAN.toString())) {
+                                    throwException(String.format("Se esperaba tipo -> %s en -> %s || %s", TType.BOOLEAN, lval_type, rval_type));
+                                }
+                                write3dir(lval_ltrue + ":");
+                                write3dir("// label true");
+
+//                                write3dir(rval_ltrue + ":");
+//                                System.out.println(rval);
+//                                System.out.println(lval);
+                                val.put("type", TType.BOOLEAN);
+                                val.put("ltrue", rval_ltrue);
+                                val.put("lfalse", rval_lfalse);
+                                return val;
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.OR);
+                    });
+                    //</editor-fold>
 
                     //<editor-fold defaultstate="collapsed" desc="ERROR_LEXICO">
                     put(TOperation.ERROR_LEXICO, (Operation) (Node node, Object actions) -> {
@@ -2106,8 +2183,14 @@ public class Win extends javax.swing.JFrame {
                     return phase.equals("3dir");
                 }
 
-                private String getTemp(Dict actions) {
-                    return "t" + actions.put("3dir_t", actions.getInt("3dir_t") + 1);
+                private String getTemp(Object actions) {
+                    Dict ad = (Dict) actions;
+                    return "t" + ad.put("3dir_t", ad.getInt("3dir_t") + 1);
+                }
+
+                private String getLabel(Object actions) {
+                    Dict ad = (Dict) actions;
+                    return "l" + ad.put("3dir_l", ad.getInt("3dir_l") + 1);
                 }
 
                 private void write3dir(String temp) {

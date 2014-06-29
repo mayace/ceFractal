@@ -321,7 +321,7 @@ conds 			::=	cond_if:x
 					;
 
 cond_switch 	::=	KW_SWITCH PL expr:e PR LL nl_list switch_stmts:ss LR
-
+					
 					;
 
 cond_if 		::=	cond_if_else_list:x
@@ -564,7 +564,7 @@ expr_cond_or 	::=	expr_cond_or:l OR expr_cond_and:x
 							l.getNode("nodo"),
 							x.getNode("nodo"),
 							new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))
-								){{setAutoexec(false);}});
+								));
 					RESULT = l;
 				:}
 					|expr_cond_and:x {:RESULT = x;:}
