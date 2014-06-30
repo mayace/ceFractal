@@ -1790,14 +1790,16 @@ public class Win extends javax.swing.JFrame {
                     });
                     //</editor-fold>
 
-                    //<editor-fold defaultstate="collapsed" desc="PLUS">
+                    //<editor-fold defaultstate="collapsed" desc="LTHAN">
                     put(TOperation.LTHAN, new Operation() {//<
                         @Override
                         public Object exec(Node node, Object actions) {
-                            final Dict ca = (Dict) actions;
+                            //final Dict ca = (Dict) actions;
+                            System.out.println("menor que");
                             String lval = node.getLeft().getDictVal().getString("val");
                             String rval = node.getRight().getDictVal().getString("val");
-
+                            TType tipo = TType.BOOLEAN;
+                            
                             BloqueCondicion etqs = new BloqueCondicion();
                             etqs.etqVerdad = nuevaEtq();
                             etqs.etqFalso = nuevaEtq();
@@ -1806,10 +1808,11 @@ public class Win extends javax.swing.JFrame {
                             String tres = "\tif "+ lval + "<" + rval +" goto "+ etqs.etqVerdad + "\n"+"\tgoto "+ etqs.etqFalso;
                             write3dir(tres);
 
-                            return new Dict("tags",etqs,"3DCode",tres);
+                            return new Dict("tags",etqs,"type",tipo,"3DCode",tres);
                         }
                     });
-                    
+                    //</editor-fold>
+                    //<editor-fold defaultstate="collapsed" desc="LETHAN">
                     put(TOperation.LETHAN, new Operation() {//<=
                         @Override
                         public Object exec(Node node, Object actions) {
@@ -1828,7 +1831,8 @@ public class Win extends javax.swing.JFrame {
                             return new Dict("tags",etqs,"3DCode",tres);
                         }
                     });
-                    
+                    //</editor-fold>
+                    //<editor-fold defaultstate="collapsed" desc="BTHAN">
                     put(TOperation.BTHAN, new Operation() {//>
                         @Override
                         public Object exec(Node node, Object actions) {
@@ -1847,7 +1851,8 @@ public class Win extends javax.swing.JFrame {
                             return new Dict("tags",etqs,"3DCode",tres);
                         }
                     });
-                    
+                    //</editor-fold>
+                    //<editor-fold defaultstate="collapsed" desc="BETHAN">                    
                     put(TOperation.BETHAN, new Operation() {//>=
                         @Override
                         public Object exec(Node node, Object actions) {
@@ -1866,7 +1871,9 @@ public class Win extends javax.swing.JFrame {
                             return new Dict("tags",etqs,"3DCode",tres);
                         }
                     });
-                    put(TOperation.OR, new Operation() {//OR
+                    //</editor-fold>
+                    
+                    /*put(TOperation.OR, new Operation() {//OR
                         @Override
                         public Object exec(Node node, Object actions) {
                             final Dict ca = (Dict) actions;
@@ -1888,7 +1895,9 @@ public class Win extends javax.swing.JFrame {
 
                             return new Dict("val", temp,"tags",rval);
                         }
-                    });
+                    });*/                    
+                    
+                    //<editor-fold defaultstate="collapsed" desc="PLUS">
                     
                     put(TOperation.PLUS, new Operation() {
                         @Override
@@ -1903,9 +1912,9 @@ public class Win extends javax.swing.JFrame {
                             //System.out.println("test3");
                             TType rtype = node.getRight().getDictVal().getType("type");
                             //System.out.println("test4");
-                            
+                            System.out.println(lval + "------" + rval);
                             TType type;
-                            Object temp = getTemp(ca);;
+                            Object temp = getTemp(ca);
                             switch(ltype){
                                 case INT:
                                     switch(rtype){
@@ -2002,6 +2011,7 @@ public class Win extends javax.swing.JFrame {
                                 int llength = node.getLeft().getDictVal().getLenth("length");
                                 //System.out.println("test3");
                                 int rlength = node.getRight().getDictVal().getLenth("length");
+                                System.out.println(llength + "-----" + rlength);
                                 List<String> temporales = new ArrayList<String>();
                                 
                                 //Procesando cadena izquierda
@@ -2049,6 +2059,8 @@ public class Win extends javax.swing.JFrame {
                         }
                     });
                     
+                    //</editor-fold>
+                    //<editor-fold defaultstate="collapsed" desc="MINUS">
                     put(TOperation.MINUS, new Operation() {
                         @Override
                         public Object exec(Node node, Object actions) {
@@ -2128,6 +2140,8 @@ public class Win extends javax.swing.JFrame {
                             return new Dict("val", temp, "type" , type);
                         }
                     });
+                    //</editor-fold>
+                    //<editor-fold defaultstate="collapsed" desc="MUL">
                     
                     put(TOperation.MULT, new Operation() {
                         @Override
@@ -2208,7 +2222,8 @@ public class Win extends javax.swing.JFrame {
                             return new Dict("val", temp, "type" , type);
                         }
                     });
-                    
+                    //</editor-fold>
+                    //<editor-fold defaultstate="collapsed" desc="DIV">
                     put(TOperation.DIV, new Operation() {
                         @Override
                         public Object exec(Node node, Object actions) {
@@ -2288,7 +2303,8 @@ public class Win extends javax.swing.JFrame {
                             return new Dict("val", temp, "type" , type);
                         }
                     });
-                    
+                    //</editor-fold>
+                    //<editor-fold defaultstate="collapsed" desc="EXP">
                     put(TOperation.EXP, new Operation() {
                         @Override
                         public Object exec(Node node, Object actions) {
@@ -2671,31 +2687,34 @@ public class Win extends javax.swing.JFrame {
                     });
                     //</editor-fold>
 
-                    //<editor-fold defaultstate="collapsed" desc="FOR">
+                    //<editor-fold defaultstate="collapsed" desc="OR">
                     put(TOperation.OR, (Operation) (Node node, Object actions) -> {
-
+                        System.out.println("or");
                         final Dict ca = (Dict) actions;
-                        final CC cc = (CC) ca.get("cc");
-                        final Stack scope = ca.getStack("scope");
-                        final Sim method_sim = (Sim) scope.peek();
+                        //final CC cc = (CC) ca.get("cc");
+                        //final Stack scope = ca.getStack("scope");
+                        //final Sim method_sim = (Sim) scope.peek();
                         final Object phase = ca.get("phase");
 
                         final Dict ref = node.getDictRef();
                         final Object ref_info = ref.get("info");
                         final Dict val = new Dict();
 
-                        try {
-                            if (is3dirPhase(phase)) {
+                        //try {
+                            //if (is3dirPhase(phase)) {
                                 Node l = node.getLeft();
                                 l.exec(actions);
                                 Dict lval = l.getDictVal();
+                                
                                 String lval_type = lval.getString("type");
-                                String lval_ltrue = lval.getString("ltrue");
-                                String lval_lfalse = lval.getString("lfalse");
+                                BloqueCondicion ltags = lval.getTags("tags");
+                                String lval_ltrue = ltags.etqVerdad;
+                                String lval_lfalse = ltags.etqFalso;
+                                
                                 if (!lval_type.equals(TType.BOOLEAN.toString())) {
                                     throwException(String.format("Se esperaba tipo -> %s en -> %s || expr", TType.BOOLEAN, lval_type));
                                 }
-
+                                
                                 write3dir(lval_lfalse + ":");
                                 write3dir("// label false");
 
@@ -2703,8 +2722,9 @@ public class Win extends javax.swing.JFrame {
                                 r.exec(actions);
                                 Dict rval = r.getDictVal();
                                 String rval_type = rval.getString("type");
-                                String rval_ltrue = rval.getString("ltrue");
-                                String rval_lfalse = rval.getString("lfalse");
+                                BloqueCondicion rtags = rval.getTags("tags");
+                                String rval_ltrue = rtags.etqVerdad;
+                                String rval_lfalse = rtags.etqFalso;
 
                                 if (!rval_type.equals(TType.BOOLEAN.toString())) {
                                     throwException(String.format("Se esperaba tipo -> %s en -> %s || %s", TType.BOOLEAN, lval_type, rval_type));
@@ -2712,19 +2732,72 @@ public class Win extends javax.swing.JFrame {
                                 write3dir(lval_ltrue + ":");
                                 write3dir("// label true");
 
-//                                write3dir(rval_ltrue + ":");
-//                                System.out.println(rval);
-//                                System.out.println(lval);
+                                write3dir("go to " + rval_ltrue + ":");
+                                write3dir(rval_ltrue + ":");
                                 val.put("type", TType.BOOLEAN);
-                                val.put("ltrue", rval_ltrue);
-                                val.put("lfalse", rval_lfalse);
+                                val.put("tags",rtags);
+                                //val.put("ltrue", rval_ltrue);
+                                //val.put("lfalse", rval_lfalse);
                                 return val;
-                            }
-                        } catch (UnsupportedOperationException exc) {
-                            compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
-                        }
+                            //}
+                        //} catch (UnsupportedOperationException exc) {
+                            //compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
+                        //}
 
-                        return noActionsProcessed(TOperation.OR);
+                        //return noActionsProcessed(TOperation.OR);
+                    });
+                    //</editor-fold>
+                    
+                    //<editor-fold defaultstate="collapsed" desc="WHILE">
+                    put(TOperation.STMT_DOWHILE, new Operation() {//WHILE
+                        @Override
+                        public Object exec(Node node, Object actions) {
+                            System.out.println("while");
+                            final Dict ca = (Dict) actions;
+                            //final CC cc = (CC) ca.get("cc");
+                            //final Stack scope = ca.getStack("scope");
+                            //final Sim method_sim = (Sim) scope.peek();
+                            final Object phase = ca.get("phase");
+                            
+                            final Dict ref = node.getDictRef();
+                            //final Object ref_info = ref.get("info");
+                            final Object conditions = ref.getDict("condition").getNode("nodo");
+                            final Object stmts = ref.getDict("stmts").getNode("nodo");
+                            final Dict val = new Dict();
+                            
+                            //try {
+                                //if (is3dirPhase(phase)) {
+                                    Node l = (Node)conditions;
+                                    Object temp = getLabel(ca);                                    
+                                    //Etiqueta de inicio generar etiqueta inicio
+                                    String tres = temp + "\n" ;
+                                    write3dir(tres);
+                                    //Ejecutar codigo de condicion
+                                    l.exec(actions);
+                                    Dict lval = l.getDictVal();
+                                    BloqueCondicion ltags = lval.getTags("tags");
+                                    //Etiqueta verdadero viene de la condicion
+                                    tres = ltags.etqVerdad + "\n" ;
+                                    write3dir(tres);
+                                    //Ir a ejecutar sentencias
+                                    Node r = (Node)stmts;
+                                    r.exec(actions);
+                                    //Etiqueta salto inicio while, etiqueta generada al inicio
+                                    tres = "goto " + temp;
+                                    write3dir(tres);
+                                    //Etiqueta falso viene de la condicion
+                                    tres = ltags.etqFalso;
+                                    write3dir(tres);
+                                    val.put("tags",ltags);
+                                    return val;
+                                
+                                //}
+                            //} catch (UnsupportedOperationException exc) {
+                                //compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
+                            //}
+
+                            //return noActionsProcessed(TOperation.STMT_WHILE);
+                        }
                     });
                     //</editor-fold>
 
