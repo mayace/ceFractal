@@ -14,6 +14,7 @@ import com.github.gg.TErr;
 import com.github.gg.TModifier;
 import com.github.gg.TOperation;
 import com.github.gg.TType;
+import com.github.gg.BloqueCondicion;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
@@ -90,6 +91,11 @@ import javax.swing.tree.TreePath;
  */
 public class Win extends javax.swing.JFrame {
 
+    private static int actualEtq=0;
+	
+    private static String nuevaEtq() {
+	return "etqY"+(++actualEtq);
+    }
     /**
      * Creates new form Win
      */
@@ -1785,18 +1791,581 @@ public class Win extends javax.swing.JFrame {
                     //</editor-fold>
 
                     //<editor-fold defaultstate="collapsed" desc="PLUS">
-                    put(TOperation.PLUS, new Operation() {
+                    put(TOperation.LTHAN, new Operation() {//<
                         @Override
                         public Object exec(Node node, Object actions) {
                             final Dict ca = (Dict) actions;
                             String lval = node.getLeft().getDictVal().getString("val");
                             String rval = node.getRight().getDictVal().getString("val");
 
-                            Object temp = getTemp(ca);
-                            String tres = String.format("%s = %s + %s;", temp, lval, rval);
+                            BloqueCondicion etqs = new BloqueCondicion();
+                            etqs.etqVerdad = nuevaEtq();
+                            etqs.etqFalso = nuevaEtq();
+                            
+                            //Object temp = getTemp(ca);
+                            String tres = "\tif "+ lval + "<" + rval +" goto "+ etqs.etqVerdad + "\n"+"\tgoto "+ etqs.etqFalso;
                             write3dir(tres);
 
-                            return new Dict("val", temp);
+                            return new Dict("tags",etqs,"3DCode",tres);
+                        }
+                    });
+                    
+                    put(TOperation.LETHAN, new Operation() {//<=
+                        @Override
+                        public Object exec(Node node, Object actions) {
+                            final Dict ca = (Dict) actions;
+                            String lval = node.getLeft().getDictVal().getString("val");
+                            String rval = node.getRight().getDictVal().getString("val");
+
+                            BloqueCondicion etqs = new BloqueCondicion();
+                            etqs.etqVerdad = nuevaEtq();
+                            etqs.etqFalso = nuevaEtq();
+                            
+                            //Object temp = getTemp(ca);
+                            String tres = "\tif "+ lval + "<=" + rval +" goto "+ etqs.etqVerdad + "\n"+"\tgoto "+ etqs.etqFalso;
+                            write3dir(tres);
+
+                            return new Dict("tags",etqs,"3DCode",tres);
+                        }
+                    });
+                    
+                    put(TOperation.BTHAN, new Operation() {//>
+                        @Override
+                        public Object exec(Node node, Object actions) {
+                            final Dict ca = (Dict) actions;
+                            String lval = node.getLeft().getDictVal().getString("val");
+                            String rval = node.getRight().getDictVal().getString("val");
+
+                            BloqueCondicion etqs = new BloqueCondicion();
+                            etqs.etqVerdad = nuevaEtq();
+                            etqs.etqFalso = nuevaEtq();
+                            
+                            //Object temp = getTemp(ca);
+                            String tres = "\tif "+ lval + ">" + rval +" goto "+ etqs.etqVerdad + "\n"+"\tgoto "+ etqs.etqFalso;
+                            write3dir(tres);
+
+                            return new Dict("tags",etqs,"3DCode",tres);
+                        }
+                    });
+                    
+                    put(TOperation.BETHAN, new Operation() {//>=
+                        @Override
+                        public Object exec(Node node, Object actions) {
+                            final Dict ca = (Dict) actions;
+                            String lval = node.getLeft().getDictVal().getString("val");
+                            String rval = node.getRight().getDictVal().getString("val");
+
+                            BloqueCondicion etqs = new BloqueCondicion();
+                            etqs.etqVerdad = nuevaEtq();
+                            etqs.etqFalso = nuevaEtq();
+                            
+                            //Object temp = getTemp(ca);
+                            String tres = "\tif "+ lval + ">=" + rval +" goto "+ etqs.etqVerdad + "\n"+"\tgoto "+ etqs.etqFalso;
+                            write3dir(tres);
+
+                            return new Dict("tags",etqs,"3DCode",tres);
+                        }
+                    });
+                    put(TOperation.OR, new Operation() {//OR
+                        @Override
+                        public Object exec(Node node, Object actions) {
+                            final Dict ca = (Dict) actions;
+                            
+                            BloqueCondicion lval = node.getLeft().getDictVal().getTags("tags");
+                            String tres = "label "+ lval.etqFalso+ "\n" ;
+                            write3dir(tres);
+                            //Ir a traer codigo para condicion falsa de nodo izquierdo
+                            BloqueCondicion rval = node.getRight().getDictVal().getTags("tags");
+                            Object temp = getTemp(ca);
+                            
+                            tres = "label "+ lval.etqVerdad + "\n";
+                            write3dir(tres);
+                            //Ir a traer codigo para condicion verdadera de nodo izquierdo
+                            write3dir(tres);
+                            tres = "\tgoto "+ rval.etqVerdad;
+                            write3dir(tres);
+                            //Ir a traer bloque de codigo condicion verdadera para nodo derecho
+
+                            return new Dict("val", temp,"tags",rval);
+                        }
+                    });
+                    
+                    put(TOperation.PLUS, new Operation() {
+                        @Override
+                        public Object exec(Node node, Object actions) {
+                            final Dict ca = (Dict) actions;
+                            String lval = node.getLeft().getDictVal().getString("val");
+                            //System.out.println("test1");
+                            String rval = node.getRight().getDictVal().getString("val");
+                            //System.out.println("test2");
+                            
+                            TType ltype = node.getLeft().getDictVal().getType("type");
+                            //System.out.println("test3");
+                            TType rtype = node.getRight().getDictVal().getType("type");
+                            //System.out.println("test4");
+                            
+                            TType type;
+                            Object temp = getTemp(ca);;
+                            switch(ltype){
+                                case INT:
+                                    switch(rtype){
+                                        case INT:
+                                            type = TType.INT;
+                                        break;
+                                        case FLOAT:
+                                            type = TType.FLOAT;
+                                        break;
+                                        case BOOLEAN:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede convertir INT a BOOLEAN");
+                                        case STRING:
+                                            type = TType.STRING;
+                                        break;
+                                        case CHAR:
+                                            type = TType.INT;
+                                            break;
+                                        default :
+                                            throw new UnsupportedOperationException("Tipos incorrectos");
+                                    }
+                                    break;
+                                case FLOAT:
+                                    switch(rtype){
+                                        case INT:
+                                            type = TType.FLOAT;
+                                        break;
+                                        case FLOAT:
+                                            type = TType.FLOAT;
+                                        break;
+                                        case BOOLEAN:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede convertir INT a BOOLEAN");
+                                        case STRING:
+                                            type = TType.STRING;
+                                        break;
+                                        case CHAR:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede convertir FLOAT a CHAR");                                            
+                                        default :
+                                            throw new UnsupportedOperationException("Tipos incorrectos");
+                                    }
+                                    break;
+                                case BOOLEAN:
+                                    switch(rtype){
+                                        case INT:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede convertir BOOLEAN a INT");                                        
+                                        case FLOAT:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede convertir BOOLEAN a FLOAT");                                        
+                                        case BOOLEAN:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede sumar BOOLEAN");
+                                        case STRING:
+                                            type = TType.STRING;
+                                        break;
+                                        case CHAR:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede convertir FLOAT a CHAR");                                            
+                                        default :
+                                            throw new UnsupportedOperationException("Tipos incorrectos");
+                                    }
+                                    break;
+                                case STRING:
+                                    switch(rtype){
+                                        case NULL:
+                                            throw new UnsupportedOperationException("Tipos incorrectos");
+                                        case VOID:
+                                            throw new UnsupportedOperationException("Tipos incorrectos");
+                                        case REF:
+                                            throw new UnsupportedOperationException("Tipos incorrectos");
+                                        default :
+                                            type = TType.STRING;
+                                    }
+                                    break;
+                                case CHAR:
+                                    switch(rtype){
+                                        case INT:
+                                            type = TType.INT;
+                                            break;
+                                        case FLOAT:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede convertir BOOLEAN a FLOAT");                                        
+                                        case BOOLEAN:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede sumar BOOLEAN");
+                                        case STRING:
+                                            type = TType.STRING;
+                                        break;
+                                        case CHAR:
+                                            type = TType.CHAR;
+                                        default :
+                                            throw new UnsupportedOperationException("Tipos incorrectos");
+                                    }
+                                    break;
+                                default :                                    
+                                    throw new UnsupportedOperationException("Tipos incorrectos");
+                            }
+                            //Si es concatenacion ejecutar lo siguiente
+                            if (type == TType.STRING){
+                                System.out.println("Concatenacion-->");
+                                int llength = node.getLeft().getDictVal().getLenth("length");
+                                //System.out.println("test3");
+                                int rlength = node.getRight().getDictVal().getLenth("length");
+                                List<String> temporales = new ArrayList<String>();
+                                
+                                //Procesando cadena izquierda
+                                for (int i = 0;i<llength +1;i++){
+                                    if (i==0){
+                                        final String t2 = getTemp(ca);
+                                        write3dir(temp +"="+ lval +"+"+ i);
+                                        write3dir(t2 + "= heap["+temp+"]");
+                                        temporales.add(t2);
+                                    }else{
+                                        temp = getTemp(ca);
+                                        final String t2 = getTemp(ca);
+                                        write3dir(temp +"="+ lval +"+"+ i);
+                                        write3dir(t2 + "= heap["+temp+"]");
+                                        temporales.add(t2);
+                                    }
+                                }
+                                //Procesando cadena derecha
+                                for (int i = 0;i<rlength +1;i++){
+                                    temp = getTemp(ca);
+                                    final String t2 = getTemp(ca);                                    
+                                    write3dir(temp +"="+ rval +"+"+ i);
+                                    write3dir(t2 + "= heap["+temp+"]");
+                                    temporales.add(t2);
+                                }
+                                //Modificando heap
+                                for(int i = 0;i<llength+rlength;i++){
+                                    final String t2 = temporales.get(i);                                    
+                                    final String t3 = getTemp(ca);
+                                    temp = getTemp(ca);
+                                    if(i == 0){
+                                        write3dir(t3 +"=h");
+                                        write3dir("h = h+"+ (int)(llength+rlength+1));
+                                    }
+                                    write3dir(temp+ "="+t3+ "+"+ i);
+                                    write3dir("heap["+temp+"]=" +t2);
+                                }
+
+                            }else{
+                                String tres = String.format("%s = %s + %s;", temp, lval, rval);
+                                write3dir(tres);
+                            }
+
+                            return new Dict("val", temp, "type" , type);
+                        }
+                    });
+                    
+                    put(TOperation.MINUS, new Operation() {
+                        @Override
+                        public Object exec(Node node, Object actions) {
+                            final Dict ca = (Dict) actions;
+                            String lval = node.getLeft().getDictVal().getString("val");
+                            String rval = node.getRight().getDictVal().getString("val");
+                            
+                            TType ltype = node.getLeft().getDictVal().getType("type");
+                            TType rtype = node.getRight().getDictVal().getType("type");
+                            
+                            TType type;
+                            Object temp = getTemp(ca);
+                            switch(ltype){
+                                case INT:
+                                    switch(rtype){
+                                        case INT:
+                                            type = TType.INT;
+                                        break;
+                                        case FLOAT:
+                                            type = TType.FLOAT;
+                                        break;
+                                        case BOOLEAN:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                        case STRING:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");                                        
+                                        case CHAR:
+                                            type = TType.INT;
+                                            break;
+                                        default :
+                                            throw new UnsupportedOperationException("Tipos incorrectos");
+                                    }
+                                    break;
+                                case FLOAT:
+                                    switch(rtype){
+                                        case INT:
+                                            type = TType.FLOAT;
+                                        break;
+                                        case FLOAT:
+                                            type = TType.FLOAT;
+                                        break;
+                                        case BOOLEAN:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                        case STRING:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                        case CHAR:
+                                            type = TType.FLOAT;
+                                        default :
+                                            throw new UnsupportedOperationException("Tipos incorrectos");
+                                    }
+                                    break;
+                                case CHAR:
+                                    switch(rtype){
+                                        case INT:
+                                            type = TType.INT;
+                                            break;
+                                        case FLOAT:
+                                            type = TType.FLOAT;
+                                            break;
+                                        case BOOLEAN:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                        case STRING:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                        case CHAR:
+                                            type = TType.INT;
+                                            break;
+                                        default :
+                                            throw new UnsupportedOperationException("Tipos incorrectos");
+                                    }
+                                break;
+                                default :                                    
+                                    throw new UnsupportedOperationException("Tipos incorrectos");
+                            }
+                            
+                            String tres = String.format("%s = %s - %s;", temp, lval, rval);
+                            write3dir(tres);
+
+                            return new Dict("val", temp, "type" , type);
+                        }
+                    });
+                    
+                    put(TOperation.MULT, new Operation() {
+                        @Override
+                        public Object exec(Node node, Object actions) {
+                            final Dict ca = (Dict) actions;
+                            String lval = node.getLeft().getDictVal().getString("val");
+                            String rval = node.getRight().getDictVal().getString("val");
+                            
+                            TType ltype = node.getLeft().getDictVal().getType("type");
+                            TType rtype = node.getRight().getDictVal().getType("type");
+                            
+                            TType type;
+                            Object temp = getTemp(ca);
+                            switch(ltype){
+                                case INT:
+                                    switch(rtype){
+                                        case INT:
+                                            type = TType.INT;
+                                        break;
+                                        case FLOAT:
+                                            type = TType.FLOAT;
+                                        break;
+                                        case BOOLEAN:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                        case STRING:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");                                        
+                                        case CHAR:
+                                            type = TType.INT;
+                                            break;
+                                        default :
+                                            throw new UnsupportedOperationException("Tipos incorrectos");
+                                    }
+                                    break;
+                                case FLOAT:
+                                    switch(rtype){
+                                        case INT:
+                                            type = TType.FLOAT;
+                                        break;
+                                        case FLOAT:
+                                            type = TType.FLOAT;
+                                        break;
+                                        case BOOLEAN:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                        case STRING:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                        case CHAR:
+                                            type = TType.FLOAT;
+                                        default :
+                                            throw new UnsupportedOperationException("Tipos incorrectos");
+                                    }
+                                    break;
+                                case CHAR:
+                                    switch(rtype){
+                                        case INT:
+                                            type = TType.INT;
+                                            break;
+                                        case FLOAT:
+                                            type = TType.FLOAT;
+                                            break;
+                                        case BOOLEAN:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                        case STRING:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                        case CHAR:
+                                            type = TType.INT;
+                                            break;
+                                        default :
+                                            throw new UnsupportedOperationException("Tipos incorrectos");
+                                    }
+                                break;
+                                default :                                    
+                                    throw new UnsupportedOperationException("Tipos incorrectos");
+                            }
+                            
+                            String tres = String.format("%s = %s * %s;", temp, lval, rval);
+                            write3dir(tres);
+
+                            return new Dict("val", temp, "type" , type);
+                        }
+                    });
+                    
+                    put(TOperation.DIV, new Operation() {
+                        @Override
+                        public Object exec(Node node, Object actions) {
+                            final Dict ca = (Dict) actions;
+                            String lval = node.getLeft().getDictVal().getString("val");
+                            String rval = node.getRight().getDictVal().getString("val");
+                            
+                            TType ltype = node.getLeft().getDictVal().getType("type");
+                            TType rtype = node.getRight().getDictVal().getType("type");
+                            
+                            TType type;
+                            Object temp = getTemp(ca);
+                            switch(ltype){
+                                case INT:
+                                    switch(rtype){
+                                        case INT:
+                                            type = TType.INT;
+                                        break;
+                                        case FLOAT:
+                                            type = TType.FLOAT;
+                                        break;
+                                        case BOOLEAN:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                        case STRING:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");                                        
+                                        case CHAR:
+                                            type = TType.INT;
+                                            break;
+                                        default :
+                                            throw new UnsupportedOperationException("Tipos incorrectos");
+                                    }
+                                    break;
+                                case FLOAT:
+                                    switch(rtype){
+                                        case INT:
+                                            type = TType.FLOAT;
+                                        break;
+                                        case FLOAT:
+                                            type = TType.FLOAT;
+                                        break;
+                                        case BOOLEAN:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                        case STRING:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                        case CHAR:
+                                            type = TType.FLOAT;
+                                        default :
+                                            throw new UnsupportedOperationException("Tipos incorrectos");
+                                    }
+                                    break;
+                                case CHAR:
+                                    switch(rtype){
+                                        case INT:
+                                            type = TType.INT;
+                                            break;
+                                        case FLOAT:
+                                            type = TType.FLOAT;
+                                            break;
+                                        case BOOLEAN:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                        case STRING:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                        case CHAR:
+                                            type = TType.INT;
+                                            break;
+                                        default :
+                                            throw new UnsupportedOperationException("Tipos incorrectos");
+                                    }
+                                break;
+                                default :                                    
+                                    throw new UnsupportedOperationException("Tipos incorrectos");
+                            }
+                            
+                            String tres = String.format("%s = %s / %s;", temp, lval, rval);
+                            write3dir(tres);
+
+                            return new Dict("val", temp, "type" , type);
+                        }
+                    });
+                    
+                    put(TOperation.EXP, new Operation() {
+                        @Override
+                        public Object exec(Node node, Object actions) {
+                            final Dict ca = (Dict) actions;
+                            String lval = node.getLeft().getDictVal().getString("val");
+                            String rval = node.getRight().getDictVal().getString("val");
+                            
+                            TType ltype = node.getLeft().getDictVal().getType("type");
+                            TType rtype = node.getRight().getDictVal().getType("type");
+                            
+                            TType type;
+                            Object temp = getTemp(ca);
+                            switch(ltype){
+                                case INT:
+                                    switch(rtype){
+                                        case INT:
+                                            type = TType.INT;
+                                        break;
+                                        case FLOAT:
+                                            type = TType.FLOAT;
+                                        break;
+                                        case BOOLEAN:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                        case STRING:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");                                        
+                                        case CHAR:
+                                            type = TType.INT;
+                                            break;
+                                        default :
+                                            throw new UnsupportedOperationException("Tipos incorrectos");
+                                    }
+                                    break;
+                                case FLOAT:
+                                    switch(rtype){
+                                        case INT:
+                                            type = TType.FLOAT;
+                                        break;
+                                        case FLOAT:
+                                            type = TType.FLOAT;
+                                        break;
+                                        case BOOLEAN:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                        case STRING:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                        case CHAR:
+                                            type = TType.FLOAT;
+                                        default :
+                                            throw new UnsupportedOperationException("Tipos incorrectos");
+                                    }
+                                    break;
+                                case CHAR:
+                                    switch(rtype){
+                                        case INT:
+                                            type = TType.INT;
+                                            break;
+                                        case FLOAT:
+                                            type = TType.FLOAT;
+                                            break;
+                                        case BOOLEAN:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                        case STRING:
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                        case CHAR:
+                                            type = TType.INT;
+                                            break;
+                                        default :
+                                            throw new UnsupportedOperationException("Tipos incorrectos");
+                                    }
+                                break;
+                                default :                                    
+                                    throw new UnsupportedOperationException("Tipos incorrectos");
+                            }
+                            
+                            String tres = String.format("%s = %s ^ %s;", temp, lval, rval);
+                            write3dir(tres);
+
+                            return new Dict("val", temp, "type" , type);
                         }
                     });
                     //</editor-fold>
