@@ -1453,12 +1453,29 @@ public class Win extends javax.swing.JFrame {
                         //Agregar simbolos
                         //======================================================
                         try {
+                            final Stack scope = new Stack<>();
+                            cactions.set("scope", scope);
+
                             if (isDefPhase(phase)) {
                                 //agregar clase
-                                ccompiler.getSims().addClass(_name_val, _extends_val, _modifiers_val);
-                            } else if (is3dirPhase(phase)) {
-                            } else {
-                                notificar("No actions for -> " + TOperation.DEF_CLASS);
+                                Sim sim = ccompiler.getSims().addClass(_name_val, _extends_val, _modifiers_val);
+
+                                scope.push(_name_val);
+                                frc_compiler_stmts_exec(_stmts, cactions);
+                                scope.pop();
+                                if (sim.getDictOthers().getInt("constructor") == 0) {
+                                    ccompiler.getSims().addConstruct(sim.name, new HashSet<>(), sim.name, new Object[]{});
+                                }
+
+                                return null;
+                            }
+                            if (is3dirPhase(phase)) {
+
+                                scope.push(_name_val);
+                                frc_compiler_stmts_exec(_stmts, cactions);
+                                scope.pop();
+
+                                return null;
                             }
 
                             //======================================================
@@ -1470,20 +1487,15 @@ public class Win extends javax.swing.JFrame {
                              * es el simbolo del metodo... Mejor que sea solo
                              * simbolos que se maneje... pero si da tiempo...
                              */
-                            final Stack scope = new Stack<>();
-                            cactions.set("scope", scope);
-                            scope.push(_name_val);
-                            frc_compiler_stmts_exec(_stmts, cactions);
-                            scope.pop();
                         } catch (UnsupportedOperationException exc) {
                             compiler_error(exc, TErr.SEMANTICO, _name.get("info"), actions);
                         } catch (CloneNotSupportedException ex) {
                             compiler_error(ex, TErr.SEMANTICO, _name.get("info"), actions);
                         }
 
-                        return null;
+                        return noActionsProcessed(TOperation.DEF_CLASS);
                     });
-//</editor-fold>
+                    //</editor-fold>
 
                     //<editor-fold defaultstate="collapsed" desc="DEF_FIELD">
                     put(TOperation.DEF_FIELD, (Operation) (Node node, Object actions) -> {
@@ -1649,7 +1661,7 @@ public class Win extends javax.swing.JFrame {
 
                         return null;
                     });
-//</editor-fold>
+                    //</editor-fold>
 
                     //<editor-fold defaultstate="collapsed" desc="DEF_PARAMETER">
                     put(TOperation.DEF_PARAMETER, (Operation) (Node node, Object actions) -> {
@@ -2033,6 +2045,10 @@ public class Win extends javax.swing.JFrame {
 
                                     Sim classsim = cc.getSims().getPublicClass(classname);
 
+                                    
+                                    
+                                    
+                                    val.put("type",classsim.name);
                                 }
 
                                 return val;
