@@ -1464,7 +1464,7 @@ public class Win extends javax.swing.JFrame {
                                 frc_compiler_stmts_exec(_stmts, cactions);
                                 scope.pop();
                                 if (sim.getDictOthers().getInt("constructor") == 0) {
-                                    ccompiler.getSims().addConstruct(sim.name, new HashSet<>(), sim.name, new Object[]{});
+                                    ccompiler.getSims().addConstructor(sim.name, new HashSet<>(), sim.name, new Object[]{});
                                 }
 
                                 return null;
@@ -1594,11 +1594,13 @@ public class Win extends javax.swing.JFrame {
                                 }
 
                                 write3dir(String.format("%s %s(){", method_type, _name_val));
-                                // ejecutar sentencias
+                                write3dir();
+                                write3dir();
                                 scope.push(method_sim);
                                 frc_compiler_stmts_exec(_stmts, cactions);
                                 scope.pop();
-
+                                write3dir();
+                                write3dir();
                                 write3dir(method_return);
                                 write3dir("}");
 
@@ -1636,7 +1638,7 @@ public class Win extends javax.swing.JFrame {
                             Sim method_sim = null;
 
                             if (isDefPhase(phase)) {
-                                method_sim = ccompiler.getSims().addConstruct(scope.peek().toString(), _modifiers_val, _name_val, _params_type_array);
+                                method_sim = ccompiler.getSims().addConstructor(scope.peek().toString(), _modifiers_val, _name_val, _params_type_array);
                                 ccompiler.getSims().addVariable(method_sim, method_sim.scope, "this", new Dict());
                             } else if (is3dirPhase(phase)) {
                                 return null;
@@ -2002,7 +2004,7 @@ public class Win extends javax.swing.JFrame {
                         final Dict ca = (Dict) actions;
                         final CC cc = (CC) ca.get("cc");
                         final Stack scope = ca.getStack("scope");
-                        final Sim method_sim = (Sim) scope.peek();
+                        final Sim methodsim = (Sim) scope.peek();
                         final Object phase = ca.get("phase");
 
                         final Dict ref = node.getDictRef();
@@ -2045,10 +2047,41 @@ public class Win extends javax.swing.JFrame {
 
                                     Sim classsim = cc.getSims().getPublicClass(classname);
 
-                                    
-                                    
-                                    
-                                    val.put("type",classsim.name);
+                                    String t1 = getTemp(actions);
+                                    String t2 = getTemp(actions);
+                                    String t3 = getTemp(actions);
+
+                                    write3dir("// new object [%s]", classsim.name);
+                                    write3dir("%s = p + %d;", t1, methodsim.size);
+                                    write3dir("%s = h;", t2);
+                                    write3dir("h = h + %d;", classsim.size);
+                                    write3dir("// parametro -> 0 (this)");
+                                    write3dir("%s = %s + 0;", t3, t1);
+                                    write3dir("pila[%s] = %s;", t3, t2);
+
+                                    ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
+                                    Object[] params = new Object[param_list.size()];
+                                    for (int i = 0; i < param_list.size(); i++) {
+                                        final Dict param = param_list.get(i);
+                                        final Node param_nodo = param.getNode("nodo");
+                                        final String t4 = getTemp(actions);
+
+                                        write3dir("// parametro -> %d", i + 1);
+                                        write3dir("%s = %s + %d;", t4, t1, i + 1);
+                                        param_nodo.exec(actions);
+                                        final Dict param_nodo_val = param_nodo.getDictVal();
+                                        final String param_nodo_val_type = param_nodo_val.getString("type");
+                                        final String param_nodo_val_val = param_nodo_val.getString("val");
+                                        params[i] = param_nodo_val_type;
+                                        write3dir("pila[%s] = %s;", t4, param_nodo_val_val);
+                                    }
+
+                                    write3dir("p = p + %d;", methodsim.size);
+                                    write3dir("new_%s();", classsim.name);
+                                    write3dir("p = p - %d;", methodsim.size);
+
+                                    val.put("type", classsim.name);
+                                    val.put("val", t2);
                                 }
 
                                 return val;
@@ -2207,6 +2240,13 @@ public class Win extends javax.swing.JFrame {
                 private String getLabel(Object actions) {
                     Dict ad = (Dict) actions;
                     return "l" + ad.put("3dir_l", ad.getInt("3dir_l") + 1);
+                }
+
+                private void write3dir(){
+                    write3dir("");
+                }
+                private void write3dir(String format, Object... args) {
+                    write3dir(String.format(format, args));
                 }
 
                 private void write3dir(String temp) {
