@@ -2632,6 +2632,10 @@ public class Win extends javax.swing.JFrame {
 
                                     Sim classsim = cc.getSims().getPublicClass(classname);
 
+                                    ca.put("3dir_pool",true);
+                                    ca.put("3dir_pool_t",ca.get("3dir_t"));
+                                    
+                                    
                                     String t1 = getTemp(actions);
                                     String t2 = getTemp(actions);
                                     String t3 = getTemp(actions);
@@ -2660,6 +2664,7 @@ public class Win extends javax.swing.JFrame {
                                         params[i] = param_nodo_val_type;
                                         write3dir("pila[%s] = %s;", t4, param_nodo_val_val);
                                     }
+                                    final Sim constructorsim = cc.getSims().getConstructor(classsim.name, params);
 
                                     write3dir("p = p + %d;", methodsim.size);
                                     write3dir("new_%s();", classsim.name);
@@ -2891,8 +2896,10 @@ public class Win extends javax.swing.JFrame {
                     write3dir(String.format(format, args));
                 }
 
-                private void write3dir(String temp) {
-                    System.out.println(temp);
+                private void write3dir(String text) {
+                    
+                    
+                    System.out.println(text);
 //                                Files.write(cactions.getPath("3dir_path"), $3dir_method.getBytes("utf8"), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
                 }
 
@@ -2970,6 +2977,9 @@ public class Win extends javax.swing.JFrame {
         actions.put("3dir_path", Paths.get("gg.3dir"));
         actions.put("3dir_t", 0);
         actions.put("3dir_l", 0);
+        actions.put("3dir_pool",false);
+        actions.put("3dir_pool_t",0);
+        actions.put("3dir_pool_txt","");
 
         try {
             Files.write(actions.getPath("3dir_path"), new byte[]{}, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
