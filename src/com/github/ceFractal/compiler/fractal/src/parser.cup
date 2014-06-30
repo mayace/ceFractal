@@ -297,31 +297,52 @@ loops 			::= loop_while:x 	{:RESULT = x;:}
 
 loop_while 		::=	KW_WHILE PL expr:e PR LL nl_list method_stmts:ss LR
 					{:
+						Dict ref = new Dict("condition",e,"stmts",ss);
+						RESULT = new Dict("nodo",new Node(TOperation.STMT_WHILE,null,null,ref));
 					:}
 					|KW_DO LL nl_list method_stmts:ss LR KW_WHILE PL expr:e PR
 					{:
+						Dict ref = new Dict("condition",e,"stmts",ss);
+						RESULT = new Dict("nodo",new Node(TOperation.STMT_DOWHILE,null,null,ref));
 					:}
 					;
 
 loop_for 		::= KW_FOR PL for_def:x PR LL nl_list method_stmts:ss LR
 					{:
+						x.put("stmts",ss);
+						RESULT = new Dict("nodo",new Node(TOperation.STMT_FOR,null,null,x));
 					:}
 					;
 
 for_def 		::=	id:x EQUAL expr:e COMA expr:e2 COMA id:x2 DPLUS
 					{:
+						RESULT = new Dict(
+							"def_var",false,
+							"contador",x,
+							"inicio",e,
+							"condition",e2,
+							"++",x2
+							);
 					:}
 					|KW_INT id:x EQUAL expr:e COMA expr:e2 COMA id:x2 DPLUS
 					{:
+						RESULT = new Dict(
+							"def_var",true,
+							"contador",x,
+							"inicio",e,
+							"condition",e2,
+							"++",x2
+							);
 					:}
 					;
 
-conds 			::=	cond_if:x 		
-					|cond_switch:x 	
+conds 			::=	cond_if:x 		{:RESULT = x;:} 		
+					|cond_switch:x 	{:RESULT = x;:}
 					;
 
 cond_switch 	::=	KW_SWITCH PL expr:e PR LL nl_list switch_stmts:ss LR
-
+					{:
+					:}
 					;
 
 cond_if 		::=	cond_if_else_list:x
@@ -579,7 +600,7 @@ expr_cond_and 	::=	expr_cond_and:l AND expr_eq:x
 							l.getNode("nodo"),
 							x.getNode("nodo"),
 							new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))
-								));
+								){{setAutoexec(false);}});
 					RESULT = l;
 				:}
 					|expr_eq:x 	{:RESULT = x;:}
@@ -739,7 +760,7 @@ expr_unary 	::=	DPLUS expr_unary:x 		{:RESULT = new Dict("nodo",new Node(TOperat
 				|expr_unary1:x 			{:RESULT = x;:}
  				;
 
-expr_unary1		::=	NOT expr_unary:x 						{:RESULT = new Dict("nodo",new Node(TOperation.NOT,x.getNode("nodo"),null,new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))));:}
+expr_unary1		::=	NOT expr_unary:x 						{:RESULT = new Dict("nodo",new Node(TOperation.NOT,x.getNode("nodo"),null,new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))){{setAutoexec(false);}});:}
 					|PL type_primitive:t PR expr_unary:x 	{:RESULT = new Dict("nodo",new Node(TOperation.CAST,x.getNode("nodo"),null,new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1),"type",t)));:}
 					|PL expr:t PR expr_unary1:x  			{:RESULT = new Dict("nodo",new Node(TOperation.CAST,x.getNode("nodo"),null,new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1),"type",t)));:}
 					|expr_unary_post:x 						{:RESULT = x;:}
