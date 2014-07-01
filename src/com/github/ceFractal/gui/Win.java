@@ -91,11 +91,12 @@ import javax.swing.tree.TreePath;
  */
 public class Win extends javax.swing.JFrame {
 
-    private static int actualEtq=0;
-	
+    private static int actualEtq = 0;
+
     private static String nuevaEtq() {
-	return "etqY"+(++actualEtq);
+        return "etqY" + (++actualEtq);
     }
+
     /**
      * Creates new form Win
      */
@@ -1590,19 +1591,18 @@ public class Win extends javax.swing.JFrame {
                                 return null;
                             }
                             if (is3dirPhase(phase)) {
-                                final Sim method_sim = ccompiler.getSims().getMethod(scope.peek().toString(), _type_val, _name_val, _params_type_array);
-                                final Boolean isMain = method_sim.getDictOthers().getBoolean("main");
+                                final Sim methodsim = ccompiler.getSims().getMethod(scope.peek().toString(), _name_val, _params_type_array);
+                                final Boolean isMain = methodsim.getDictOthers().getBoolean("main");
                                 String method_type = "void";
                                 String method_return = "";
                                 if (isMain != null && isMain) {
                                     method_type = "int";
-                                    method_return = "return 0 ;";
+                                    method_return = "return 0;";
                                 }
 
                                 write3dir(String.format("%s %s(){", method_type, _name_val));
                                 write3dir();
-                                write3dir();
-                                scope.push(method_sim);
+                                scope.push(methodsim);
                                 frc_compiler_stmts_exec(_stmts, cactions);
                                 scope.pop();
                                 write3dir();
@@ -1799,16 +1799,16 @@ public class Win extends javax.swing.JFrame {
                             String lval = node.getLeft().getDictVal().getString("val");
                             String rval = node.getRight().getDictVal().getString("val");
                             TType tipo = TType.BOOLEAN;
-                            
+
                             BloqueCondicion etqs = new BloqueCondicion();
                             etqs.etqVerdad = nuevaEtq();
                             etqs.etqFalso = nuevaEtq();
-                            
+
                             //Object temp = getTemp(ca);
-                            String tres = "\tif "+ lval + "<" + rval +" goto "+ etqs.etqVerdad + "\n"+"\tgoto "+ etqs.etqFalso;
+                            String tres = "\tif " + lval + "<" + rval + " goto " + etqs.etqVerdad + "\n" + "\tgoto " + etqs.etqFalso;
                             write3dir(tres);
 
-                            return new Dict("tags",etqs,"type",tipo,"3DCode",tres);
+                            return new Dict("tags", etqs, "type", tipo, "3DCode", tres);
                         }
                     });
                     //</editor-fold>
@@ -1823,12 +1823,12 @@ public class Win extends javax.swing.JFrame {
                             BloqueCondicion etqs = new BloqueCondicion();
                             etqs.etqVerdad = nuevaEtq();
                             etqs.etqFalso = nuevaEtq();
-                            
+
                             //Object temp = getTemp(ca);
-                            String tres = "\tif "+ lval + "<=" + rval +" goto "+ etqs.etqVerdad + "\n"+"\tgoto "+ etqs.etqFalso;
+                            String tres = "\tif " + lval + "<=" + rval + " goto " + etqs.etqVerdad + "\n" + "\tgoto " + etqs.etqFalso;
                             write3dir(tres);
 
-                            return new Dict("tags",etqs,"3DCode",tres);
+                            return new Dict("tags", etqs, "3DCode", tres);
                         }
                     });
                     //</editor-fold>
@@ -1843,12 +1843,12 @@ public class Win extends javax.swing.JFrame {
                             BloqueCondicion etqs = new BloqueCondicion();
                             etqs.etqVerdad = nuevaEtq();
                             etqs.etqFalso = nuevaEtq();
-                            
+
                             //Object temp = getTemp(ca);
-                            String tres = "\tif "+ lval + ">" + rval +" goto "+ etqs.etqVerdad + "\n"+"\tgoto "+ etqs.etqFalso;
+                            String tres = "\tif " + lval + ">" + rval + " goto " + etqs.etqVerdad + "\n" + "\tgoto " + etqs.etqFalso;
                             write3dir(tres);
 
-                            return new Dict("tags",etqs,"3DCode",tres);
+                            return new Dict("tags", etqs, "3DCode", tres);
                         }
                     });
                     //</editor-fold>
@@ -1863,42 +1863,40 @@ public class Win extends javax.swing.JFrame {
                             BloqueCondicion etqs = new BloqueCondicion();
                             etqs.etqVerdad = nuevaEtq();
                             etqs.etqFalso = nuevaEtq();
-                            
+
                             //Object temp = getTemp(ca);
-                            String tres = "\tif "+ lval + ">=" + rval +" goto "+ etqs.etqVerdad + "\n"+"\tgoto "+ etqs.etqFalso;
+                            String tres = "\tif " + lval + ">=" + rval + " goto " + etqs.etqVerdad + "\n" + "\tgoto " + etqs.etqFalso;
                             write3dir(tres);
 
-                            return new Dict("tags",etqs,"3DCode",tres);
+                            return new Dict("tags", etqs, "3DCode", tres);
                         }
                     });
                     //</editor-fold>
-                    
-                    /*put(TOperation.OR, new Operation() {//OR
-                        @Override
-                        public Object exec(Node node, Object actions) {
-                            final Dict ca = (Dict) actions;
-                            
-                            BloqueCondicion lval = node.getLeft().getDictVal().getTags("tags");
-                            String tres = "label "+ lval.etqFalso+ "\n" ;
-                            write3dir(tres);
-                            //Ir a traer codigo para condicion falsa de nodo izquierdo
-                            BloqueCondicion rval = node.getRight().getDictVal().getTags("tags");
-                            Object temp = getTemp(ca);
-                            
-                            tres = "label "+ lval.etqVerdad + "\n";
-                            write3dir(tres);
-                            //Ir a traer codigo para condicion verdadera de nodo izquierdo
-                            write3dir(tres);
-                            tres = "\tgoto "+ rval.etqVerdad;
-                            write3dir(tres);
-                            //Ir a traer bloque de codigo condicion verdadera para nodo derecho
 
-                            return new Dict("val", temp,"tags",rval);
-                        }
-                    });*/                    
-                    
+                    /*put(TOperation.OR, new Operation() {//OR
+                     @Override
+                     public Object exec(Node node, Object actions) {
+                     final Dict ca = (Dict) actions;
+                            
+                     BloqueCondicion lval = node.getLeft().getDictVal().getTags("tags");
+                     String tres = "label "+ lval.etqFalso+ "\n" ;
+                     write3dir(tres);
+                     //Ir a traer codigo para condicion falsa de nodo izquierdo
+                     BloqueCondicion rval = node.getRight().getDictVal().getTags("tags");
+                     Object temp = getTemp(ca);
+                            
+                     tres = "label "+ lval.etqVerdad + "\n";
+                     write3dir(tres);
+                     //Ir a traer codigo para condicion verdadera de nodo izquierdo
+                     write3dir(tres);
+                     tres = "\tgoto "+ rval.etqVerdad;
+                     write3dir(tres);
+                     //Ir a traer bloque de codigo condicion verdadera para nodo derecho
+
+                     return new Dict("val", temp,"tags",rval);
+                     }
+                     });*/
                     //<editor-fold defaultstate="collapsed" desc="PLUS">
-                    
                     put(TOperation.PLUS, new Operation() {
                         @Override
                         public Object exec(Node node, Object actions) {
@@ -1907,7 +1905,7 @@ public class Win extends javax.swing.JFrame {
                             //System.out.println("test1");
                             String rval = node.getRight().getDictVal().getString("val");
                             //System.out.println("test2");
-                            
+
                             TType ltype = node.getLeft().getDictVal().getType("type");
                             //System.out.println("test3");
                             TType rtype = node.getRight().getDictVal().getType("type");
@@ -1915,150 +1913,150 @@ public class Win extends javax.swing.JFrame {
                             System.out.println(lval + "------" + rval);
                             TType type;
                             Object temp = getTemp(ca);
-                            switch(ltype){
+                            switch (ltype) {
                                 case INT:
-                                    switch(rtype){
+                                    switch (rtype) {
                                         case INT:
                                             type = TType.INT;
-                                        break;
+                                            break;
                                         case FLOAT:
                                             type = TType.FLOAT;
-                                        break;
+                                            break;
                                         case BOOLEAN:
                                             throw new UnsupportedOperationException("Tipos incorrectos, no se puede convertir INT a BOOLEAN");
                                         case STRING:
                                             type = TType.STRING;
-                                        break;
+                                            break;
                                         case CHAR:
                                             type = TType.INT;
                                             break;
-                                        default :
+                                        default:
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
                                     break;
                                 case FLOAT:
-                                    switch(rtype){
+                                    switch (rtype) {
                                         case INT:
                                             type = TType.FLOAT;
-                                        break;
+                                            break;
                                         case FLOAT:
                                             type = TType.FLOAT;
-                                        break;
+                                            break;
                                         case BOOLEAN:
                                             throw new UnsupportedOperationException("Tipos incorrectos, no se puede convertir INT a BOOLEAN");
                                         case STRING:
                                             type = TType.STRING;
-                                        break;
+                                            break;
                                         case CHAR:
-                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede convertir FLOAT a CHAR");                                            
-                                        default :
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede convertir FLOAT a CHAR");
+                                        default:
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
                                     break;
                                 case BOOLEAN:
-                                    switch(rtype){
+                                    switch (rtype) {
                                         case INT:
-                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede convertir BOOLEAN a INT");                                        
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede convertir BOOLEAN a INT");
                                         case FLOAT:
-                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede convertir BOOLEAN a FLOAT");                                        
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede convertir BOOLEAN a FLOAT");
                                         case BOOLEAN:
                                             throw new UnsupportedOperationException("Tipos incorrectos, no se puede sumar BOOLEAN");
                                         case STRING:
                                             type = TType.STRING;
-                                        break;
+                                            break;
                                         case CHAR:
-                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede convertir FLOAT a CHAR");                                            
-                                        default :
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede convertir FLOAT a CHAR");
+                                        default:
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
                                     break;
                                 case STRING:
-                                    switch(rtype){
+                                    switch (rtype) {
                                         case NULL:
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                         case VOID:
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                         case REF:
                                             throw new UnsupportedOperationException("Tipos incorrectos");
-                                        default :
+                                        default:
                                             type = TType.STRING;
                                     }
                                     break;
                                 case CHAR:
-                                    switch(rtype){
+                                    switch (rtype) {
                                         case INT:
                                             type = TType.INT;
                                             break;
                                         case FLOAT:
-                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede convertir BOOLEAN a FLOAT");                                        
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede convertir BOOLEAN a FLOAT");
                                         case BOOLEAN:
                                             throw new UnsupportedOperationException("Tipos incorrectos, no se puede sumar BOOLEAN");
                                         case STRING:
                                             type = TType.STRING;
-                                        break;
+                                            break;
                                         case CHAR:
                                             type = TType.CHAR;
-                                        default :
+                                        default:
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
                                     break;
-                                default :                                    
+                                default:
                                     throw new UnsupportedOperationException("Tipos incorrectos");
                             }
                             //Si es concatenacion ejecutar lo siguiente
-                            if (type == TType.STRING){
+                            if (type == TType.STRING) {
                                 System.out.println("Concatenacion-->");
                                 int llength = node.getLeft().getDictVal().getLenth("length");
                                 //System.out.println("test3");
                                 int rlength = node.getRight().getDictVal().getLenth("length");
                                 System.out.println(llength + "-----" + rlength);
                                 List<String> temporales = new ArrayList<String>();
-                                
+
                                 //Procesando cadena izquierda
-                                for (int i = 0;i<llength +1;i++){
-                                    if (i==0){
+                                for (int i = 0; i < llength + 1; i++) {
+                                    if (i == 0) {
                                         final String t2 = getTemp(ca);
-                                        write3dir(temp +"="+ lval +"+"+ i);
-                                        write3dir(t2 + "= heap["+temp+"]");
+                                        write3dir(temp + "=" + lval + "+" + i);
+                                        write3dir(t2 + "= heap[" + temp + "]");
                                         temporales.add(t2);
-                                    }else{
+                                    } else {
                                         temp = getTemp(ca);
                                         final String t2 = getTemp(ca);
-                                        write3dir(temp +"="+ lval +"+"+ i);
-                                        write3dir(t2 + "= heap["+temp+"]");
+                                        write3dir(temp + "=" + lval + "+" + i);
+                                        write3dir(t2 + "= heap[" + temp + "]");
                                         temporales.add(t2);
                                     }
                                 }
                                 //Procesando cadena derecha
-                                for (int i = 0;i<rlength +1;i++){
+                                for (int i = 0; i < rlength + 1; i++) {
                                     temp = getTemp(ca);
-                                    final String t2 = getTemp(ca);                                    
-                                    write3dir(temp +"="+ rval +"+"+ i);
-                                    write3dir(t2 + "= heap["+temp+"]");
+                                    final String t2 = getTemp(ca);
+                                    write3dir(temp + "=" + rval + "+" + i);
+                                    write3dir(t2 + "= heap[" + temp + "]");
                                     temporales.add(t2);
                                 }
                                 //Modificando heap
-                                for(int i = 0;i<llength+rlength;i++){
-                                    final String t2 = temporales.get(i);                                    
+                                for (int i = 0; i < llength + rlength; i++) {
+                                    final String t2 = temporales.get(i);
                                     final String t3 = getTemp(ca);
                                     temp = getTemp(ca);
-                                    if(i == 0){
-                                        write3dir(t3 +"=h");
-                                        write3dir("h = h+"+ (int)(llength+rlength+1));
+                                    if (i == 0) {
+                                        write3dir(t3 + "=h");
+                                        write3dir("h = h+" + (int) (llength + rlength + 1));
                                     }
-                                    write3dir(temp+ "="+t3+ "+"+ i);
-                                    write3dir("heap["+temp+"]=" +t2);
+                                    write3dir(temp + "=" + t3 + "+" + i);
+                                    write3dir("heap[" + temp + "]=" + t2);
                                 }
 
-                            }else{
+                            } else {
                                 String tres = String.format("%s = %s + %s;", temp, lval, rval);
                                 write3dir(tres);
                             }
 
-                            return new Dict("val", temp, "type" , type);
+                            return new Dict("val", temp, "type", type);
                         }
                     });
-                    
+
                     //</editor-fold>
                     //<editor-fold defaultstate="collapsed" desc="MINUS">
                     put(TOperation.MINUS, new Operation() {
@@ -2067,52 +2065,52 @@ public class Win extends javax.swing.JFrame {
                             final Dict ca = (Dict) actions;
                             String lval = node.getLeft().getDictVal().getString("val");
                             String rval = node.getRight().getDictVal().getString("val");
-                            
+
                             TType ltype = node.getLeft().getDictVal().getType("type");
                             TType rtype = node.getRight().getDictVal().getType("type");
-                            
+
                             TType type;
                             Object temp = getTemp(ca);
-                            switch(ltype){
+                            switch (ltype) {
                                 case INT:
-                                    switch(rtype){
+                                    switch (rtype) {
                                         case INT:
                                             type = TType.INT;
-                                        break;
+                                            break;
                                         case FLOAT:
                                             type = TType.FLOAT;
-                                        break;
+                                            break;
                                         case BOOLEAN:
                                             throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                         case STRING:
-                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");                                        
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                         case CHAR:
                                             type = TType.INT;
                                             break;
-                                        default :
+                                        default:
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
                                     break;
                                 case FLOAT:
-                                    switch(rtype){
+                                    switch (rtype) {
                                         case INT:
                                             type = TType.FLOAT;
-                                        break;
+                                            break;
                                         case FLOAT:
                                             type = TType.FLOAT;
-                                        break;
+                                            break;
                                         case BOOLEAN:
                                             throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                         case STRING:
                                             throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                         case CHAR:
                                             type = TType.FLOAT;
-                                        default :
+                                        default:
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
                                     break;
                                 case CHAR:
-                                    switch(rtype){
+                                    switch (rtype) {
                                         case INT:
                                             type = TType.INT;
                                             break;
@@ -2126,75 +2124,75 @@ public class Win extends javax.swing.JFrame {
                                         case CHAR:
                                             type = TType.INT;
                                             break;
-                                        default :
+                                        default:
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
-                                break;
-                                default :                                    
+                                    break;
+                                default:
                                     throw new UnsupportedOperationException("Tipos incorrectos");
                             }
-                            
+
                             String tres = String.format("%s = %s - %s;", temp, lval, rval);
                             write3dir(tres);
 
-                            return new Dict("val", temp, "type" , type);
+                            return new Dict("val", temp, "type", type);
                         }
                     });
                     //</editor-fold>
                     //<editor-fold defaultstate="collapsed" desc="MUL">
-                    
+
                     put(TOperation.MULT, new Operation() {
                         @Override
                         public Object exec(Node node, Object actions) {
                             final Dict ca = (Dict) actions;
                             String lval = node.getLeft().getDictVal().getString("val");
                             String rval = node.getRight().getDictVal().getString("val");
-                            
+
                             TType ltype = node.getLeft().getDictVal().getType("type");
                             TType rtype = node.getRight().getDictVal().getType("type");
-                            
+
                             TType type;
                             Object temp = getTemp(ca);
-                            switch(ltype){
+                            switch (ltype) {
                                 case INT:
-                                    switch(rtype){
+                                    switch (rtype) {
                                         case INT:
                                             type = TType.INT;
-                                        break;
+                                            break;
                                         case FLOAT:
                                             type = TType.FLOAT;
-                                        break;
+                                            break;
                                         case BOOLEAN:
                                             throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                         case STRING:
-                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");                                        
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                         case CHAR:
                                             type = TType.INT;
                                             break;
-                                        default :
+                                        default:
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
                                     break;
                                 case FLOAT:
-                                    switch(rtype){
+                                    switch (rtype) {
                                         case INT:
                                             type = TType.FLOAT;
-                                        break;
+                                            break;
                                         case FLOAT:
                                             type = TType.FLOAT;
-                                        break;
+                                            break;
                                         case BOOLEAN:
                                             throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                         case STRING:
                                             throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                         case CHAR:
                                             type = TType.FLOAT;
-                                        default :
+                                        default:
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
                                     break;
                                 case CHAR:
-                                    switch(rtype){
+                                    switch (rtype) {
                                         case INT:
                                             type = TType.INT;
                                             break;
@@ -2208,18 +2206,18 @@ public class Win extends javax.swing.JFrame {
                                         case CHAR:
                                             type = TType.INT;
                                             break;
-                                        default :
+                                        default:
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
-                                break;
-                                default :                                    
+                                    break;
+                                default:
                                     throw new UnsupportedOperationException("Tipos incorrectos");
                             }
-                            
+
                             String tres = String.format("%s = %s * %s;", temp, lval, rval);
                             write3dir(tres);
 
-                            return new Dict("val", temp, "type" , type);
+                            return new Dict("val", temp, "type", type);
                         }
                     });
                     //</editor-fold>
@@ -2230,52 +2228,52 @@ public class Win extends javax.swing.JFrame {
                             final Dict ca = (Dict) actions;
                             String lval = node.getLeft().getDictVal().getString("val");
                             String rval = node.getRight().getDictVal().getString("val");
-                            
+
                             TType ltype = node.getLeft().getDictVal().getType("type");
                             TType rtype = node.getRight().getDictVal().getType("type");
-                            
+
                             TType type;
                             Object temp = getTemp(ca);
-                            switch(ltype){
+                            switch (ltype) {
                                 case INT:
-                                    switch(rtype){
+                                    switch (rtype) {
                                         case INT:
                                             type = TType.INT;
-                                        break;
+                                            break;
                                         case FLOAT:
                                             type = TType.FLOAT;
-                                        break;
+                                            break;
                                         case BOOLEAN:
                                             throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                         case STRING:
-                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");                                        
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                         case CHAR:
                                             type = TType.INT;
                                             break;
-                                        default :
+                                        default:
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
                                     break;
                                 case FLOAT:
-                                    switch(rtype){
+                                    switch (rtype) {
                                         case INT:
                                             type = TType.FLOAT;
-                                        break;
+                                            break;
                                         case FLOAT:
                                             type = TType.FLOAT;
-                                        break;
+                                            break;
                                         case BOOLEAN:
                                             throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                         case STRING:
                                             throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                         case CHAR:
                                             type = TType.FLOAT;
-                                        default :
+                                        default:
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
                                     break;
                                 case CHAR:
-                                    switch(rtype){
+                                    switch (rtype) {
                                         case INT:
                                             type = TType.INT;
                                             break;
@@ -2289,18 +2287,18 @@ public class Win extends javax.swing.JFrame {
                                         case CHAR:
                                             type = TType.INT;
                                             break;
-                                        default :
+                                        default:
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
-                                break;
-                                default :                                    
+                                    break;
+                                default:
                                     throw new UnsupportedOperationException("Tipos incorrectos");
                             }
-                            
+
                             String tres = String.format("%s = %s / %s;", temp, lval, rval);
                             write3dir(tres);
 
-                            return new Dict("val", temp, "type" , type);
+                            return new Dict("val", temp, "type", type);
                         }
                     });
                     //</editor-fold>
@@ -2311,52 +2309,52 @@ public class Win extends javax.swing.JFrame {
                             final Dict ca = (Dict) actions;
                             String lval = node.getLeft().getDictVal().getString("val");
                             String rval = node.getRight().getDictVal().getString("val");
-                            
+
                             TType ltype = node.getLeft().getDictVal().getType("type");
                             TType rtype = node.getRight().getDictVal().getType("type");
-                            
+
                             TType type;
                             Object temp = getTemp(ca);
-                            switch(ltype){
+                            switch (ltype) {
                                 case INT:
-                                    switch(rtype){
+                                    switch (rtype) {
                                         case INT:
                                             type = TType.INT;
-                                        break;
+                                            break;
                                         case FLOAT:
                                             type = TType.FLOAT;
-                                        break;
+                                            break;
                                         case BOOLEAN:
                                             throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                         case STRING:
-                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");                                        
+                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                         case CHAR:
                                             type = TType.INT;
                                             break;
-                                        default :
+                                        default:
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
                                     break;
                                 case FLOAT:
-                                    switch(rtype){
+                                    switch (rtype) {
                                         case INT:
                                             type = TType.FLOAT;
-                                        break;
+                                            break;
                                         case FLOAT:
                                             type = TType.FLOAT;
-                                        break;
+                                            break;
                                         case BOOLEAN:
                                             throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                         case STRING:
                                             throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                         case CHAR:
                                             type = TType.FLOAT;
-                                        default :
+                                        default:
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
                                     break;
                                 case CHAR:
-                                    switch(rtype){
+                                    switch (rtype) {
                                         case INT:
                                             type = TType.INT;
                                             break;
@@ -2370,18 +2368,18 @@ public class Win extends javax.swing.JFrame {
                                         case CHAR:
                                             type = TType.INT;
                                             break;
-                                        default :
+                                        default:
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
-                                break;
-                                default :                                    
+                                    break;
+                                default:
                                     throw new UnsupportedOperationException("Tipos incorrectos");
                             }
-                            
+
                             String tres = String.format("%s = %s ^ %s;", temp, lval, rval);
                             write3dir(tres);
 
-                            return new Dict("val", temp, "type" , type);
+                            return new Dict("val", temp, "type", type);
                         }
                     });
                     //</editor-fold>
@@ -2632,10 +2630,8 @@ public class Win extends javax.swing.JFrame {
 
                                     Sim classsim = cc.getSims().getPublicClass(classname);
 
-                                    ca.put("3dir_pool",true);
-                                    ca.put("3dir_pool_t",ca.get("3dir_t"));
-                                    
-                                    
+                                    poolOn(actions);
+
                                     String t1 = getTemp(actions);
                                     String t2 = getTemp(actions);
                                     String t3 = getTemp(actions);
@@ -2666,6 +2662,7 @@ public class Win extends javax.swing.JFrame {
                                     }
                                     final Sim constructorsim = cc.getSims().getConstructor(classsim.name, params);
 
+                                    write3dir(poolCommit(actions));
                                     write3dir("p = p + %d;", methodsim.size);
                                     write3dir("new_%s();", classsim.name);
                                     write3dir("p = p - %d;", methodsim.size);
@@ -2677,6 +2674,7 @@ public class Win extends javax.swing.JFrame {
                                 return val;
                             }
                         } catch (UnsupportedOperationException ex) {
+                            poolRollback(actions);
                             compiler_error(ex, TErr.SEMANTICO, ref_info, actions);
                         }
                         //</editor-fold>
@@ -2687,6 +2685,55 @@ public class Win extends javax.swing.JFrame {
 
                     //<editor-fold defaultstate="collapsed" desc="SET_VAR">
                     put(TOperation.SET_VAR, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        final Dict ref_name = ref.getDict("name");
+                        final Dict ref_val = ref.getDict("val");
+                        final Dict ref_operator = ref.getDict("operator");
+                        final Dict val = new Dict();
+                        Object info = ref_operator.get("info");
+                        Object val_val = null;
+                        Object val_type = null;
+
+                        try {
+                            if (is3dirPhase(phase)) {
+
+                                final ArrayList<Dict> name_list = ref_name.getDictArrayList("list");
+
+                                for (int i = 0; i < name_list.size(); i++) {
+                                    final Dict name = name_list.get(i);
+                                    final String name_val = name.getString("val");
+                                    final Object name_info = name.get("info");
+                                    info = name_info;
+                                    if (i == 0) {
+                                        final Sim localvarsim = cc.getSims().getLocalvar(methodsim.name, name_val, methodsim.getDictOthers().getObjArray("overload"));
+
+                                        String t1 = getTemp(actions);
+
+                                        write3dir("%s = p + %d;", t1, localvarsim.position);
+                                        val_val = t1;
+                                        
+                                        if(name_list.size()== 1){
+                                            
+                                        }
+
+                                        continue;
+                                    }
+                                }
+
+                                val.put("val", val_val);
+                                val.put("type", val_type);
+                                return val;
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
+                        }
 
                         return noActionsProcessed(TOperation.SET_VAR);
                     });
@@ -2706,53 +2753,262 @@ public class Win extends javax.swing.JFrame {
                         final Dict val = new Dict();
 
                         //try {
-                            //if (is3dirPhase(phase)) {
-                                Node l = node.getLeft();
-                                l.exec(actions);
-                                Dict lval = l.getDictVal();
-                                
-                                String lval_type = lval.getString("type");
-                                BloqueCondicion ltags = lval.getTags("tags");
-                                String lval_ltrue = ltags.etqVerdad;
-                                String lval_lfalse = ltags.etqFalso;
-                                
-                                if (!lval_type.equals(TType.BOOLEAN.toString())) {
-                                    throwException(String.format("Se esperaba tipo -> %s en -> %s || expr", TType.BOOLEAN, lval_type));
-                                }
-                                
-                                write3dir(lval_lfalse + ":");
-                                write3dir("// label false");
+                        //if (is3dirPhase(phase)) {
+                        Node l = node.getLeft();
+                        l.exec(actions);
+                        Dict lval = l.getDictVal();
 
-                                Node r = node.getRight();
-                                r.exec(actions);
-                                Dict rval = r.getDictVal();
-                                String rval_type = rval.getString("type");
-                                BloqueCondicion rtags = rval.getTags("tags");
-                                String rval_ltrue = rtags.etqVerdad;
-                                String rval_lfalse = rtags.etqFalso;
+                        String lval_type = lval.getString("type");
+                        BloqueCondicion ltags = lval.getTags("tags");
+                        String lval_ltrue = ltags.etqVerdad;
+                        String lval_lfalse = ltags.etqFalso;
 
-                                if (!rval_type.equals(TType.BOOLEAN.toString())) {
-                                    throwException(String.format("Se esperaba tipo -> %s en -> %s || %s", TType.BOOLEAN, lval_type, rval_type));
-                                }
-                                write3dir(lval_ltrue + ":");
-                                write3dir("// label true");
+                        if (!lval_type.equals(TType.BOOLEAN.toString())) {
+                            throwException(String.format("Se esperaba tipo -> %s en -> %s || expr", TType.BOOLEAN, lval_type));
+                        }
 
-                                write3dir("go to " + rval_ltrue + ":");
-                                write3dir(rval_ltrue + ":");
-                                val.put("type", TType.BOOLEAN);
-                                val.put("tags",rtags);
-                                //val.put("ltrue", rval_ltrue);
-                                //val.put("lfalse", rval_lfalse);
-                                return val;
+                        write3dir(lval_lfalse + ":");
+                        write3dir("// label false");
+
+                        Node r = node.getRight();
+                        r.exec(actions);
+                        Dict rval = r.getDictVal();
+                        String rval_type = rval.getString("type");
+                        BloqueCondicion rtags = rval.getTags("tags");
+                        String rval_ltrue = rtags.etqVerdad;
+                        String rval_lfalse = rtags.etqFalso;
+
+                        if (!rval_type.equals(TType.BOOLEAN.toString())) {
+                            throwException(String.format("Se esperaba tipo -> %s en -> %s || %s", TType.BOOLEAN, lval_type, rval_type));
+                        }
+                        write3dir(lval_ltrue + ":");
+                        write3dir("// label true");
+
+                        write3dir("go to " + rval_ltrue + ":");
+                        write3dir(rval_ltrue + ":");
+                        val.put("type", TType.BOOLEAN);
+                        val.put("tags", rtags);
+                        //val.put("ltrue", rval_ltrue);
+                        //val.put("lfalse", rval_lfalse);
+                        return val;
                             //}
                         //} catch (UnsupportedOperationException exc) {
-                            //compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
+                        //compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
                         //}
 
                         //return noActionsProcessed(TOperation.OR);
                     });
                     //</editor-fold>
-                    
+
+                    //<editor-fold defaultstate="collapsed" desc="AND">
+                    put(TOperation.AND, (Operation) (Node node, Object actions) -> {
+
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        final Dict ref_params = ref.getDict("params");
+
+                        final Dict val = new Dict();
+                        Object info = ref_info;
+
+                        try {
+                            if (is3dirPhase(phase)) {
+
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.AND);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="NOT">
+                    put(TOperation.NOT, (Operation) (Node node, Object actions) -> {
+
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        final Dict ref_params = ref.getDict("params");
+
+                        final Dict val = new Dict();
+                        Object info = ref_info;
+
+                        try {
+                            if (is3dirPhase(phase)) {
+
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.NOT);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="METHOD_CALL">
+                    put(TOperation.METHOD_CALL, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        final Dict ref_name = ref.getDict("name");
+                        final Dict ref_params = ref.getDict("params");
+
+                        final Dict val = new Dict();
+                        Object info = ref_info;
+                        Object val_val = null;
+                        Object val_type = null;
+
+                        try {
+                            if (is3dirPhase(phase)) {
+
+                                final ArrayList<Dict> name_list = ref_name.getDictArrayList("list");
+
+                                poolOn(actions);
+//                                String t1 = getTemp(actions);
+//                                write3dir("%s = p + %d;", t1, methodsim.size);
+                                write3dir("// LLAMADA A METODO...");
+
+                                for (int i = 0; i < name_list.size(); i++) {
+                                    Dict name = (Dict) name_list.get(i);
+                                    String name_val = name.getString("val");
+                                    Object name_info = name.get("info");
+                                    info = name_info;
+
+                                    if (i == 0) {
+                                        // metodo local
+                                        if (name_list.size() == 1) {
+                                            throwException("No se permiten llamadas a metodos locales...");
+                                        }
+                                        // variable local
+                                        Sim localvarsim = cc.getSims().getLocalvar(methodsim.name, name_val, methodsim.getDictOthers().getObjArray("overload"));
+                                        if (isPrimitiveType(localvarsim.type)) {
+                                            throwException("Variables de tipos primitivos no tienen metodos...");
+                                        }
+
+                                        String t2 = getTemp(actions);
+                                        String t3 = getTemp(actions);
+
+                                        write3dir("%s = p + %d;", t2, localvarsim.position);
+                                        write3dir("%s = pila[%s];", t3, t2);
+                                        val_val = t3;
+                                        val_type = localvarsim.type;
+                                        continue;
+                                    }
+                                    // campos en clase
+                                    if (i < name_list.size() - 1) {
+                                        final Sim fieldsim = cc.getSims().getPublicField(val_type, name_val);
+                                        String t2 = getTemp(actions);
+                                        String t3 = getTemp(actions);
+                                        write3dir("%s = %s + %d;", t2, val_val, fieldsim.position);
+                                        write3dir("%s = heap[%s];", t3, t2);
+                                        val_val = t3;
+                                        val_type = fieldsim.type;
+                                    }
+                                    // metodo objeto
+
+                                    String t2 = getTemp(actions);
+                                    String t3 = getTemp(actions);
+
+                                    write3dir("%s = p + %d;", t2, methodsim.size);
+                                    write3dir("// parametro -> 0 (this)");
+                                    write3dir("%s = %s + 0;", t3, t2);
+                                    write3dir("pila[%s] = %s;", t3, val_val);
+
+                                    ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
+                                    Object[] params = new Object[param_list.size()];
+                                    for (int j = 0; j < param_list.size(); j++) {
+                                        final Dict param = param_list.get(j);
+                                        final Node param_nodo = param.getNode("nodo");
+                                        final String t4 = getTemp(actions);
+
+                                        write3dir("// parametro -> %d", j + 1);
+                                        write3dir("%s = %s + %d;", t4, t2, j + 1);
+                                        param_nodo.exec(actions);
+                                        final Dict param_nodo_val = param_nodo.getDictVal();
+                                        final String param_nodo_val_type = param_nodo_val.getString("type");
+                                        final String param_nodo_val_val = param_nodo_val.getString("val");
+                                        params[j] = param_nodo_val_type;
+                                        write3dir("pila[%s] = %s;", t4, param_nodo_val_val);
+                                    }
+
+                                    Sim callsim = cc.getSims().getPublicMethod(val_type, name_val, params);
+                                    write3dir(poolCommit(actions));
+                                    write3dir("p = p + %d;", methodsim.size);
+                                    write3dir("%s_%s_%s();", callsim.type, callsim.name, Arrays.toString(params));
+                                    write3dir("p = p - %d;", methodsim.size);
+
+                                    val_val = null;
+                                    val_type = callsim.type;
+                                    // return
+                                    if (!callsim.type.toString().equals(TType.VOID.toString())) {
+                                        String t5 = getTemp(actions);
+                                        String t6 = getTemp(actions);
+                                        String t7 = getTemp(actions);
+                                        write3dir("%s = p + %d;", t5, methodsim.size);
+                                        write3dir("%s = %s + 0;", t6, t5);
+                                        write3dir("%s = pila[%s];", t7, t6);
+                                        val_val = t7;
+                                    }
+
+                                }
+
+                                val.put("val", val_val);
+                                val.put("type", val_type);
+                                return val;
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            poolRollback(actions);
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.METHOD_CALL);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="CAST">
+                    put(TOperation.CAST, (Operation) (Node node, Object actions) -> {
+
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        final Dict ref_params = ref.getDict("params");
+
+                        final Dict val = new Dict();
+                        Object info = ref_info;
+
+                        try {
+                            if (is3dirPhase(phase)) {
+
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.CAST);
+                    });
+                    //</editor-fold>
+
                     //<editor-fold defaultstate="collapsed" desc="WHILE">
                     put(TOperation.STMT_DOWHILE, new Operation() {//WHILE
                         @Override
@@ -2763,46 +3019,157 @@ public class Win extends javax.swing.JFrame {
                             //final Stack scope = ca.getStack("scope");
                             //final Sim method_sim = (Sim) scope.peek();
                             final Object phase = ca.get("phase");
-                            
+
                             final Dict ref = node.getDictRef();
                             //final Object ref_info = ref.get("info");
                             final Object conditions = ref.getDict("condition").getNode("nodo");
                             final Object stmts = ref.getDict("stmts").getNode("nodo");
                             final Dict val = new Dict();
-                            
-                            //try {
-                                //if (is3dirPhase(phase)) {
-                                    Node l = (Node)conditions;
-                                    Object temp = getLabel(ca);                                    
-                                    //Etiqueta de inicio generar etiqueta inicio
-                                    String tres = temp + "\n" ;
-                                    write3dir(tres);
-                                    //Ejecutar codigo de condicion
-                                    l.exec(actions);
-                                    Dict lval = l.getDictVal();
-                                    BloqueCondicion ltags = lval.getTags("tags");
-                                    //Etiqueta verdadero viene de la condicion
-                                    tres = ltags.etqVerdad + "\n" ;
-                                    write3dir(tres);
-                                    //Ir a ejecutar sentencias
-                                    Node r = (Node)stmts;
-                                    r.exec(actions);
-                                    //Etiqueta salto inicio while, etiqueta generada al inicio
-                                    tres = "goto " + temp;
-                                    write3dir(tres);
-                                    //Etiqueta falso viene de la condicion
-                                    tres = ltags.etqFalso;
-                                    write3dir(tres);
-                                    val.put("tags",ltags);
-                                    return val;
-                                
-                                //}
-                            //} catch (UnsupportedOperationException exc) {
-                                //compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
-                            //}
 
+                            //try {
+                            //if (is3dirPhase(phase)) {
+                            Node l = (Node) conditions;
+                            Object temp = getLabel(ca);
+                            //Etiqueta de inicio generar etiqueta inicio
+                            String tres = temp + "\n";
+                            write3dir(tres);
+                            //Ejecutar codigo de condicion
+                            l.exec(actions);
+                            Dict lval = l.getDictVal();
+                            BloqueCondicion ltags = lval.getTags("tags");
+                            //Etiqueta verdadero viene de la condicion
+                            tres = ltags.etqVerdad + "\n";
+                            write3dir(tres);
+                            //Ir a ejecutar sentencias
+                            Node r = (Node) stmts;
+                            r.exec(actions);
+                            //Etiqueta salto inicio while, etiqueta generada al inicio
+                            tres = "goto " + temp;
+                            write3dir(tres);
+                            //Etiqueta falso viene de la condicion
+                            tres = ltags.etqFalso;
+                            write3dir(tres);
+                            val.put("tags", ltags);
+                            return val;
+
+                            //}
+                            //} catch (UnsupportedOperationException exc) {
+                            //compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
+                            //}
                             //return noActionsProcessed(TOperation.STMT_WHILE);
                         }
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="DOWHILE">
+                    put(TOperation.STMT_DOWHILE, (Operation) (Node node, Object actions) -> {
+
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        final Dict ref_params = ref.getDict("params");
+
+                        final Dict val = new Dict();
+                        Object info = ref_info;
+
+                        try {
+                            if (is3dirPhase(phase)) {
+
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.STMT_DOWHILE);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="FOR">
+                    put(TOperation.STMT_FOR, (Operation) (Node node, Object actions) -> {
+
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        final Dict ref_params = ref.getDict("params");
+
+                        final Dict val = new Dict();
+                        Object info = ref_info;
+
+                        try {
+                            if (is3dirPhase(phase)) {
+
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.STMT_FOR);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="IF">
+                    put(TOperation.STMT_IF, (Operation) (Node node, Object actions) -> {
+
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        final Dict ref_params = ref.getDict("params");
+
+                        final Dict val = new Dict();
+                        Object info = ref_info;
+
+                        try {
+                            if (is3dirPhase(phase)) {
+
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.STMT_IF);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="SWITCH">
+                    put(TOperation.STMT_SWITCH, (Operation) (Node node, Object actions) -> {
+
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        final Dict ref_params = ref.getDict("params");
+
+                        final Dict val = new Dict();
+                        Object info = ref_info;
+
+                        try {
+                            if (is3dirPhase(phase)) {
+
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.STMT_SWITCH);
                     });
                     //</editor-fold>
 
@@ -2889,16 +3256,56 @@ public class Win extends javax.swing.JFrame {
                     return "l" + ad.put("3dir_l", ad.getInt("3dir_l") + 1);
                 }
 
-                private void write3dir(){
+                boolean pool = false;
+                StringBuilder pool_text = new StringBuilder();
+                int pool_t = 0;
+                int pool_l = 0;
+
+                private void poolOn(Object actions) {
+                    final Dict ca = (Dict) actions;
+                    pool = true;
+                    pool_t = ca.getInt("3dir_t");
+                    pool_l = ca.getInt("3dir_l");
+                    pool_text.setLength(0);
+                }
+
+                private void poolRollback(Object actions) {
+                    final Dict ca = (Dict) actions;
+                    ca.put("3dir_t", pool_t);
+                    ca.put("3dir_l", pool_l);
+                    pool = false;
+                    pool_t = 0;
+                    pool_l = 0;
+                    pool_text.setLength(0);
+                }
+
+                private String poolCommit(Object actions) {
+                    final Dict ca = (Dict) actions;
+                    final String ret = pool_text.toString();
+
+                    pool = false;
+                    pool_t = 0;
+                    pool_l = 0;
+                    pool_text.setLength(0);
+                    return ret;
+                }
+
+                private void write3dir() {
                     write3dir("");
                 }
+
                 private void write3dir(String format, Object... args) {
                     write3dir(String.format(format, args));
                 }
 
                 private void write3dir(String text) {
-                    
-                    
+
+                    if (pool) {
+                        pool_text.append(text);
+                        pool_text.append("\n");
+                        return;
+                    }
+
                     System.out.println(text);
 //                                Files.write(cactions.getPath("3dir_path"), $3dir_method.getBytes("utf8"), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
                 }
@@ -2977,9 +3384,9 @@ public class Win extends javax.swing.JFrame {
         actions.put("3dir_path", Paths.get("gg.3dir"));
         actions.put("3dir_t", 0);
         actions.put("3dir_l", 0);
-        actions.put("3dir_pool",false);
-        actions.put("3dir_pool_t",0);
-        actions.put("3dir_pool_txt","");
+        actions.put("3dir_pool", false);
+        actions.put("3dir_pool_t", 0);
+        actions.put("3dir_pool_txt", "");
 
         try {
             Files.write(actions.getPath("3dir_path"), new byte[]{}, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
