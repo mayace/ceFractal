@@ -1603,7 +1603,9 @@ public class Win extends javax.swing.JFrame {
                                 write3dir(String.format("%s %s(){", method_type, _name_val));
                                 write3dir();
                                 scope.push(methodsim);
+                                blockIn(actions);
                                 frc_compiler_stmts_exec(_stmts, cactions);
+                                blockOut(actions);
                                 scope.pop();
                                 write3dir();
                                 write3dir();
@@ -1711,12 +1713,13 @@ public class Win extends javax.swing.JFrame {
                     put(TOperation.DEF_LOCALVAR, (Operation) (Node node, Object actions) -> {
 
                         //<editor-fold defaultstate="collapsed" desc="AMBITO ARBOL SINTACTICO...">
-                        Dict cactions = (Dict) actions;
-                        CC ccompiler = (CC) cactions.get("cc");
-                        Stack scope = cactions.getStack("scope");
+                        Dict ca = (Dict) actions;
+                        CC ccompiler = (CC) ca.get("cc");
+                        Stack scope = ca.getStack("scope");
                         Sim method_sim = (Sim) scope.peek();
-                        Object phase = cactions.get("phase");
+                        Object phase = ca.get("phase");
                         phase = (phase == null ? "null" : phase);
+                        final ArrayList block_sim_list = (ArrayList) ca.getStack("3dir_block").peek();
                         //</editor-fold>
 
                         //<editor-fold defaultstate="collapsed" desc="NODO DE GRAMATICA ...">
@@ -1740,6 +1743,7 @@ public class Win extends javax.swing.JFrame {
 //                                    System.err.format("Variable ->[[tipo->%2$s][nombre->%2$s]]\n", _type_val, n_val);
 
                                     final Sim var_sim = ccompiler.getSims().addVariable(method_sim, _type_val, n_val, new Dict("array", _array_val));
+                                    block_sim_list.add(var_sim);
                                     final Node name_nodo = id.getNode("nodo");
 
                                     // si es una declaracion con asignacion...
@@ -2706,6 +2710,7 @@ public class Win extends javax.swing.JFrame {
 
                                 final ArrayList<Dict> name_list = ref_name.getDictArrayList("list");
 
+                                write3dir("// >> ASIGANCION A VARIABLE <<");
                                 for (int i = 0; i < name_list.size(); i++) {
                                     final Dict name = name_list.get(i);
                                     final String name_val = name.getString("val");
@@ -2718,14 +2723,46 @@ public class Win extends javax.swing.JFrame {
 
                                         write3dir("%s = p + %d;", t1, localvarsim.position);
                                         val_val = t1;
-                                        
-                                        if(name_list.size()== 1){
-                                            
-                                        }
+                                        val_type = localvarsim.type;
 
+                                        if (name_list.size() > 1) {
+                                            if (isPrimitiveType(localvarsim.type)) {
+                                                throwException("Las variables con tipo primitivos no tienen campos...");
+                                            }
+                                        }
                                         continue;
                                     }
+                                    Sim fieldsim = cc.getSims().getPublicField(val_type, name_val);
+                                    String t1 = getTemp(actions);
+                                    String t2 = getTemp(actions);
+                                    if (i == 1) {
+                                        write3dir("%s = pila[%s];", t1, val_val);
+                                    } else {
+                                        write3dir("%s = heap[%s];", t1, val_val);
+                                    }
+
+                                    write3dir("%s = %s + %d;", t2, t1, fieldsim.position);
+                                    val_val = t2;
+                                    val_type = fieldsim.type;
                                 }
+
+                                String operator_val = ref_operator.getString("val");
+                                Node ref_val_nodo = ref_val.getNode("nodo");
+                                ref_val_nodo.exec(actions);
+                                String ref_val_nodo_val = ref_val_nodo.getDictVal().getString("val");
+                                String ref_val_nodo_type = ref_val_nodo.getDictVal().getString("type");
+
+                                if (!val_type.equals(ref_val_nodo_type)) {
+                                    throwException("Tipos incompatibles -> %s = %s ", val_type, ref_val_nodo_type);
+                                }
+
+                                if (isPrimitiveType(val_type)) {
+                                    write3dir("pila[%s] = %s;", val_val, ref_val_nodo_val);
+                                } else {
+                                    write3dir("heap[%s] = %s;", val_val, ref_val_nodo_val);
+                                }
+
+                                val_val = ref_val_nodo_val;
 
                                 val.put("val", val_val);
                                 val.put("type", val_type);
@@ -3010,54 +3047,109 @@ public class Win extends javax.swing.JFrame {
                     //</editor-fold>
 
                     //<editor-fold defaultstate="collapsed" desc="WHILE">
-                    put(TOperation.STMT_DOWHILE, new Operation() {//WHILE
-                        @Override
-                        public Object exec(Node node, Object actions) {
-                            System.out.println("while");
-                            final Dict ca = (Dict) actions;
-                            //final CC cc = (CC) ca.get("cc");
-                            //final Stack scope = ca.getStack("scope");
-                            //final Sim method_sim = (Sim) scope.peek();
-                            final Object phase = ca.get("phase");
+                    put(TOperation.STMT_WHILE, (Operation) (Node node, Object actions) -> {
+                        //<editor-fold defaultstate="collapsed" desc="old sam">
+//                        System.out.println("while");
+//                        final Dict ca = (Dict) actions;
+//                        //final CC cc = (CC) ca.get("cc");
+//                        //final Stack scope = ca.getStack("scope");
+//                        //final Sim method_sim = (Sim) scope.peek();
+//                        final Object phase = ca.get("phase");
+//                        
+//                        final Dict ref = node.getDictRef();
+//                        //final Object ref_info = ref.get("info");
+//                        final Object conditions = ref.getDict("condition").getNode("nodo");
+//                        final Object stmts = ref.getDict("stmts").getNode("nodo");
+//                        final Dict val = new Dict();
+//                        
+//                        //try {
+//                        //if (is3dirPhase(phase)) {
+//                        Node l = (Node) conditions;
+//                        Object temp = getLabel(ca);
+//                        //Etiqueta de inicio generar etiqueta inicio
+//                        String tres = temp + "\n";
+//                        write3dir(tres);
+//                        //Ejecutar codigo de condicion
+//                        l.exec(actions);
+//                        Dict lval = l.getDictVal();
+//                        BloqueCondicion ltags = lval.getTags("tags");
+//                        //Etiqueta verdadero viene de la condicion
+//                        tres = ltags.etqVerdad + "\n";
+//                        write3dir(tres);
+//                        //Ir a ejecutar sentencias
+//                        Node r = (Node) stmts;
+//                        r.exec(actions);
+//                        //Etiqueta salto inicio while, etiqueta generada al inicio
+//                        tres = "goto " + temp;
+//                        write3dir(tres);
+//                        //Etiqueta falso viene de la condicion
+//                        tres = ltags.etqFalso;
+//                        write3dir(tres);
+//                        val.put("tags", ltags);
+//                        return val;
+                        //</editor-fold>
 
-                            final Dict ref = node.getDictRef();
-                            //final Object ref_info = ref.get("info");
-                            final Object conditions = ref.getDict("condition").getNode("nodo");
-                            final Object stmts = ref.getDict("stmts").getNode("nodo");
-                            final Dict val = new Dict();
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
 
-                            //try {
-                            //if (is3dirPhase(phase)) {
-                            Node l = (Node) conditions;
-                            Object temp = getLabel(ca);
-                            //Etiqueta de inicio generar etiqueta inicio
-                            String tres = temp + "\n";
-                            write3dir(tres);
-                            //Ejecutar codigo de condicion
-                            l.exec(actions);
-                            Dict lval = l.getDictVal();
-                            BloqueCondicion ltags = lval.getTags("tags");
-                            //Etiqueta verdadero viene de la condicion
-                            tres = ltags.etqVerdad + "\n";
-                            write3dir(tres);
-                            //Ir a ejecutar sentencias
-                            Node r = (Node) stmts;
-                            r.exec(actions);
-                            //Etiqueta salto inicio while, etiqueta generada al inicio
-                            tres = "goto " + temp;
-                            write3dir(tres);
-                            //Etiqueta falso viene de la condicion
-                            tres = ltags.etqFalso;
-                            write3dir(tres);
-                            val.put("tags", ltags);
-                            return val;
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        final Dict ref_condition = ref.getDict("condition");
+                        final Dict ref_stmts = ref.getDict("stmts");
 
-                            //}
-                            //} catch (UnsupportedOperationException exc) {
-                            //compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
-                            //}
-                            //return noActionsProcessed(TOperation.STMT_WHILE);
+                        final Dict val = new Dict();
+                        Object info = ref_info;
+
+                        try {
+                            if (is3dirPhase(phase)) {
+                                poolOn(actions);
+                                final Node condition_node = ref_condition.getNode("nodo");
+                                final ArrayList<Dict> stmt_list = ref_stmts.getDictArrayList("list");
+                                final String l1 = getLabel(actions);
+                                write3dir("// >>>>>>>> while <<<<<<<< //");
+                                write3dir("// >>>> while - label");
+                                write3dir("%s:", l1);
+                                write3dir("// >>>> while - condicion");
+                                condition_node.exec(actions);
+                                final Dict condition_node_val = condition_node.getDictVal();
+                                final String condition_node_val_val = condition_node_val.getString("val");
+                                final String condition_node_val_type = condition_node_val.getString("type");
+
+                                if (!condition_node_val_type.equals(TType.BOOLEAN.toString())) {
+                                    throwException("Se esperaba un tipo de dato -> %s en la condicion no un -> %s...", TType.BOOLEAN, condition_node_val_type);
+                                }
+                                final String condition_node_val_ltrue = condition_node_val.getString("ltrue");
+                                final String condition_node_val_lfalse = condition_node_val.getString("lfalse");
+
+                                write3dir("// >>>> while - true");
+                                write3dir("%s:", condition_node_val_ltrue);
+                                write3dir("// >>>> while - sentencias");
+                                // ejecutar aqui el bloque del while
+                                // controlar lo variables locales que se declaran aqui
+                                // cuando termina el bloque sacar todas las variables locales
+                                // declaradas 
+                                // ***** ya esta...
+                                blockIn(actions);
+                                frc_compiler_stmts_exec(ref_stmts, ca);
+                                blockOut(actions);
+                                /////
+                                write3dir("goto %s;", l1);
+                                write3dir("// >>>> while - false");
+                                write3dir("%s:", condition_node_val_lfalse);
+                                write3dir("// >>>>>>>> while <<<<<<<< //");
+
+                                write3dir(poolCommit(actions));
+                                return null;
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            poolRollback(actions);
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
                         }
+
+                        return noActionsProcessed(TOperation.STMT_WHILE);
                     });
                     //</editor-fold>
 
@@ -3072,16 +3164,49 @@ public class Win extends javax.swing.JFrame {
 
                         final Dict ref = node.getDictRef();
                         final Object ref_info = ref.get("info");
-                        final Dict ref_params = ref.getDict("params");
+                        final Dict ref_condition = ref.getDict("condition");
+                        final Dict ref_stmts = ref.getDict("stmts");
 
                         final Dict val = new Dict();
                         Object info = ref_info;
 
                         try {
                             if (is3dirPhase(phase)) {
+                                final Node condition_node = ref_condition.getNode("nodo");
 
+                                poolOn(actions);
+                                final String l1 = getLabel(actions);
+                                write3dir("// >>>>>>>> dowhile <<<<<<<<");
+                                write3dir("// >>>> dowhile - label");
+                                write3dir("%s:", l1);
+                                write3dir("// >>>> dowhile - sentencias");
+                                blockIn(actions);
+                                frc_compiler_stmts_exec(ref_stmts, ca);
+                                blockOut(actions);
+                                write3dir("// >>>> dowhile - condicion");
+                                condition_node.exec(actions);
+                                final Dict condition_node_val = condition_node.getDictVal();
+                                final String condition_node_val_val = condition_node_val.getString("val");
+                                final String condition_node_val_type = condition_node_val.getString("type");
+                                final String condition_node_val_ltrue = condition_node_val.getString("ltrue");
+                                final String condition_node_val_lfalse = condition_node_val.getString("lfalse");
+                                if (!condition_node_val_type.equals(TType.BOOLEAN.toString())) {
+                                    throwException("Se esperaba un tipo de dato -> %s, se obtuvo -> %s", TType.BOOLEAN, condition_node_val_type);
+                                }
+                                
+                                write3dir("// >>>> dowhile - true");
+                                write3dir("%s:",condition_node_val_ltrue);
+                                write3dir("// >>>> dowhile - label return");
+                                write3dir("goto %s;",l1);
+                                write3dir("// >>>> dowhile - false");
+                                write3dir("%s:",condition_node_val_lfalse);
+                                write3dir("// >>>>>>>> dowhile <<<<<<<<");
+
+                                write3dir(poolCommit(actions));
+                                return null;
                             }
                         } catch (UnsupportedOperationException exc) {
+                            poolRollback(actions);
                             compiler_error(exc, TErr.SEMANTICO, info, actions);
                         }
 
@@ -3097,19 +3222,95 @@ public class Win extends javax.swing.JFrame {
                         final Stack scope = ca.getStack("scope");
                         final Sim methodsim = (Sim) scope.peek();
                         final Object phase = ca.get("phase");
+                        final ArrayList block_sim_list = (ArrayList) ca.getStack("3dir_block").peek();
 
                         final Dict ref = node.getDictRef();
                         final Object ref_info = ref.get("info");
-                        final Dict ref_params = ref.getDict("params");
+                        final boolean ref_defvar = ref.getBoolean("def_var");
+                        final Dict ref_contador = ref.getDict("contador");
+                        final Dict ref_inicio = ref.getDict("inicio");
+                        final Dict ref_condition = ref.getDict("condition");
+                        final Dict ref_increment = ref.getDict("++");
+                        final Dict ref_stmts = ref.getDict("stmts");
 
                         final Dict val = new Dict();
                         Object info = ref_info;
 
                         try {
                             if (is3dirPhase(phase)) {
+                                final Object contador_info = ref_contador.get("info");
+                                final String contador_val = ref_contador.getString("val");
+                                final String contador_type = TType.INT.toString();
+                                final Node inicio_node = ref_inicio.getNode("nodo");
+                                final Node condition_node = ref_condition.getNode("nodo");
+                                final String increment_val = ref_increment.getString("val");
+                                final Object increment_info = ref_increment.get("info");
 
+                                poolOn(actions);
+                                write3dir("// >>>>>>>> for <<<<<<<< //");
+                                if (ref_defvar) {
+                                    info = contador_info;
+                                    final Sim localvar = cc.getSims().addVariable(methodsim, contador_type, contador_val, new Dict());
+                                    block_sim_list.add(localvar);
+                                }
+
+                                final Sim localvarsim = cc.getSims().getLocalvar(methodsim.name, contador_val, methodsim.getDictOthers().getObjArray("overload"));
+                                final String t1 = getTemp(actions);
+                                write3dir("// >>>> for - contador");
+                                write3dir("%s = p + %d;", t1, localvarsim.position);
+                                inicio_node.exec(actions);
+                                final Dict inicio_node_val = inicio_node.getDictVal();
+                                final String inicio_node_val_val = inicio_node_val.getString("val");
+                                final String inicio_node_val_type = inicio_node_val.getString("type");
+
+                                if (!inicio_node_val_type.equals(TType.INT.toString())) {
+                                    throwException("Se requiere tipo de dato -> %s, se obtuvo -> %s ", TType.INT, inicio_node_val_type);
+                                }
+                                write3dir("pila[%s] = %s;", t1, inicio_node_val_val);
+                                final String l1 = getLabel(actions);
+                                write3dir("// >>>> for - label");
+                                write3dir("%s:", l1);
+                                write3dir("// >>>> for - condicion");
+                                condition_node.exec(actions);
+                                final Dict condition_node_val = condition_node.getDictVal();
+                                final String condition_node_val_val = condition_node_val.getString("val");
+                                final String condition_node_val_type = condition_node_val.getString("type");
+                                final String condition_node_val_ltrue = condition_node_val.getString("ltrue");
+                                final String condition_node_val_lfalse = condition_node_val.getString("lfalse");
+
+                                if (!condition_node_val_type.equals(TType.BOOLEAN.toString())) {
+                                    throwException("Se esperaba tipo de dato -> %s, se encontro -> %s", TType.BOOLEAN, condition_node_val_type);
+                                }
+                                write3dir("// >>>> for - true");
+                                write3dir("%s:", condition_node_val_ltrue);
+
+                                write3dir("// >>>> for - sentencias");
+                                blockIn(actions);
+                                frc_compiler_stmts_exec(ref_stmts, ca);
+                                blockOut(actions);
+
+                                write3dir("// >>>> for - increment");
+                                info = increment_info;
+                                final Sim increment_sim = cc.getSims().getLocalvar(methodsim.name, increment_val, methodsim.getDictOthers().getObjArray("overload"));
+                                final String t2 = getTemp(actions);
+                                final String t3 = getTemp(actions);
+                                final String t4 = getTemp(actions);
+                                write3dir("%s = p + %d;", t2, increment_sim.position);
+                                write3dir("%s = pila[%s];", t3, t2);
+                                write3dir("%s = %s + 1; //++", t4, t3);
+                                write3dir("pila[%s] = %s;", t2, t4);
+
+                                write3dir("// >>>> for - label return");
+                                write3dir("goto %s;", l1);
+                                write3dir("// >>>> for - false");
+                                write3dir("%s:", condition_node_val_lfalse);
+                                write3dir("// >>>>>>>> for <<<<<<<< //");
+                                write3dir(poolCommit(actions));
+
+                                return null;
                             }
                         } catch (UnsupportedOperationException exc) {
+                            poolRollback(actions);
                             compiler_error(exc, TErr.SEMANTICO, info, actions);
                         }
 
@@ -3128,7 +3329,8 @@ public class Win extends javax.swing.JFrame {
 
                         final Dict ref = node.getDictRef();
                         final Object ref_info = ref.get("info");
-                        final Dict ref_params = ref.getDict("params");
+                        final Dict ref_if = ref.getDict("if");
+                        final Dict ref_else = ref.getDict("else");
 
                         final Dict val = new Dict();
                         Object info = ref_info;
@@ -3136,6 +3338,9 @@ public class Win extends javax.swing.JFrame {
                         try {
                             if (is3dirPhase(phase)) {
 
+                                
+                                
+                                return null;
                             }
                         } catch (UnsupportedOperationException exc) {
                             compiler_error(exc, TErr.SEMANTICO, info, actions);
@@ -3229,6 +3434,10 @@ public class Win extends javax.swing.JFrame {
                     return false;
                 }
 
+                private void throwException(String format, Object... args) throws UnsupportedOperationException {
+                    throwException(String.format(format, args));
+                }
+
                 private void throwException(String msg) throws UnsupportedOperationException {
                     throw new UnsupportedOperationException(msg);
                 }
@@ -3288,6 +3497,27 @@ public class Win extends javax.swing.JFrame {
                     pool_l = 0;
                     pool_text.setLength(0);
                     return ret;
+                }
+
+                private void blockIn(Object actions) {
+                    final Dict ca = (Dict) actions;
+                    final Stack block = ca.getStack("3dir_block");
+                    block.push(new ArrayList<>());
+                }
+
+                private void blockOut(Object actions) {
+                    final Dict ca = (Dict) actions;
+                    final CC cc = (CC) ca.get("cc");
+                    final Sim methodsim = (Sim) ca.getStack("scope").peek();
+                    final Stack<ArrayList<Sim>> block = ca.getStack("3dir_block");
+
+                    ArrayList<Sim> sim_list = block.pop();
+                    for (Sim sim : sim_list) {
+                        final String sim_key = cc.getSims().getKey4parameter(methodsim.name, sim.name, methodsim.getDictOthers().getObjArray("overload"));
+                        cc.getSims().remove(sim_key);
+                    }
+
+//                    cc.getSims().
                 }
 
                 private void write3dir() {
@@ -3384,9 +3614,7 @@ public class Win extends javax.swing.JFrame {
         actions.put("3dir_path", Paths.get("gg.3dir"));
         actions.put("3dir_t", 0);
         actions.put("3dir_l", 0);
-        actions.put("3dir_pool", false);
-        actions.put("3dir_pool_t", 0);
-        actions.put("3dir_pool_txt", "");
+        actions.put("3dir_block", new Stack<>());
 
         try {
             Files.write(actions.getPath("3dir_path"), new byte[]{}, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);

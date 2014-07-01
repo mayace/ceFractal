@@ -279,7 +279,7 @@ method_stmt_list 	::=	method_stmt_list:l method_stmt:x
 						:}
 						;
 
-method_stmt 	::=	expr:x nl_list				{:RESULT = x;:}
+method_stmt 	::=	expr:x nl_list				{:RESULT = x;:} 
 					|method_def_var:x nl_list	{:RESULT = x;:}
 					//|method_call:x nl_list		
 					// |set_var:x nl_list 			
@@ -297,12 +297,12 @@ loops 			::= loop_while:x 	{:RESULT = x;:}
 
 loop_while 		::=	KW_WHILE PL expr:e PR LL nl_list method_stmts:ss LR
 					{:
-						Dict ref = new Dict("condition",e,"stmts",ss);
+						Dict ref = new Dict("condition",e,"stmts",ss,"info",CUP$Parser$stack.elementAt(CUP$Parser$top-7));
 						RESULT = new Dict("nodo",new Node(TOperation.STMT_WHILE,null,null,ref));
 					:}
 					|KW_DO LL nl_list method_stmts:ss LR KW_WHILE PL expr:e PR
 					{:
-						Dict ref = new Dict("condition",e,"stmts",ss);
+						Dict ref = new Dict("condition",e,"stmts",ss,"info",CUP$Parser$stack.elementAt(CUP$Parser$top-8));
 						RESULT = new Dict("nodo",new Node(TOperation.STMT_DOWHILE,null,null,ref));
 					:}
 					;
@@ -310,6 +310,7 @@ loop_while 		::=	KW_WHILE PL expr:e PR LL nl_list method_stmts:ss LR
 loop_for 		::= KW_FOR PL for_def:x PR LL nl_list method_stmts:ss LR
 					{:
 						x.put("stmts",ss);
+						x.put("info",CUP$Parser$stack.elementAt(CUP$Parser$top-7));
 						RESULT = new Dict("nodo",new Node(TOperation.STMT_FOR,null,null,x));
 					:}
 					;
@@ -342,39 +343,83 @@ conds 			::=	cond_if:x 		{:RESULT = x;:}
 
 cond_switch 	::=	KW_SWITCH PL expr:e PR LL nl_list switch_stmts:ss LR
 					{:
+						Dict ref = new Dict("base",e,"stmts",ss,"info",CUP$Parser$stack.elementAt(CUP$Parser$top-7));
+						RESULT = new Dict("nodo",new Node(TOperation.STMT_SWITCH,null,null,ref));
 					:}
 					;
 
 cond_if 		::=	cond_if_else_list:x
+					{:
+						Dict ref = new Dict("if",x);
+						RESULT = new Dict("nodo",new Node(TOperation.STMT_IF,null,null,ref));
+					:}
 					|cond_if_else_list:x cond_if_else:x2
+					{:
+						Dict ref = new Dict("if",x,"else",x2);
+						RESULT = new Dict("nodo",new Node(TOperation.STMT_IF,null,null,ref));
+					:}
 					;
 
-switch_stmts 	::=	switch_stmt_list:l switch_default:x
-					|switch_stmt_list:x 
-					|switch_default:x 	
-					|					
+switch_stmts 	::=	switch_stmt_list:l switch_default:x 
+					{:
+						l.getDictArrayList("list").add(x);
+						RESULT = l;
+					:}
+					|switch_stmt_list:x {:RESULT = x;:}
+					|switch_default:x 	{:RESULT = new Dict("list",new ArrayList<Dict>(){{add(x);}});:}
+					|					{:RESULT = new Dict("list",new ArrayList<>());:}
 					;
 
-switch_default 	::=	KW_DEFAULT DPUNTOS nl_list method_stmts:ss 	
+switch_default 	::=	KW_DEFAULT DPUNTOS nl_list method_stmts:ss
+					{:
+						RESULT = new Dict("stmts",ss,"info",CUP$Parser$stack.elementAt(CUP$Parser$top-3));
+					:} 	
 					;
 
 switch_stmt_list 	::=	switch_stmt_list:l switch_stmt:x
+						{:
+							l.getDictArrayList("list").add(x);
+							RESULT = l;
+						:}
 						|switch_stmt:x
+						{:
+							RESULT = new Dict("list",new ArrayList(){{
+								add(x);
+							}});
+						:}
 						;
 
-switch_stmt ::=	switch_case:x 	
+switch_stmt ::=	switch_case:x {:RESULT = x;:}
 				;
 
 switch_case 	::=	KW_CASE expr:e DPUNTOS nl_list method_stmts:ss //KW_BREAK  // BREAK -> LO MISMO QUE EL DO-WHILE, YA VIENE EN method_stmts
+					{:
+						RESULT = new Dict("condition",e,"stmts",ss,"info",CUP$Parser$stack.elementAt(CUP$Parser$top-4));
+					:}
 					;
 
 cond_if_else_list 	::=	cond_if_else_list:l KW_ELSE cond_if_if:x
+						{:
+							l.getDictArrayList("list").add(x);
+							RESULT = l;
+						:}
 						|cond_if_if:x
+						{:
+							RESULT = new Dict("list",new ArrayList(){{
+								add(x);
+							}});
+						:}
 						;
 cond_if_if 		::=	KW_IF PL expr:e PR LL nl_list method_stmts:ss LR
+					{:
+						RESULT = new Dict("condition",e,"stmts",ss,"info",CUP$Parser$stack.elementAt(CUP$Parser$top-7));
+					:}
 					;
 
 cond_if_else 	::= KW_ELSE LL nl_list method_stmts:ss LR
+					{:
+						RESULT = new Dict("stmts",ss,"info",CUP$Parser$stack.elementAt(CUP$Parser$top-4));
+					:}
 					;
 
 set_var 		::= var:x EQUAL expr:e 		
