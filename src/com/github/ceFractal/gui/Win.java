@@ -2389,6 +2389,31 @@ public class Win extends javax.swing.JFrame {
                         }
                     });
                     //</editor-fold>
+                    //<editor-fold defaultstate="collapsed" desc="CAST">
+                    put(TOperation.CAST, new Operation() {//CAST
+                     @Override
+                     public Object exec(Node node, Object actions) {
+                     final Dict ca = (Dict) actions;
+                            
+                     BloqueCondicion lval = node.getLeft().getDictVal().getTags("tags");
+                     String tres = "label "+ lval.etqFalso+ "\n" ;
+                     write3dir(tres);
+                     //Ir a traer codigo para condicion falsa de nodo izquierdo
+                     BloqueCondicion rval = node.getRight().getDictVal().getTags("tags");
+                     Object temp = getTemp(ca);
+                            
+                     tres = "label "+ lval.etqVerdad + "\n";
+                     write3dir(tres);
+                     //Ir a traer codigo para condicion verdadera de nodo izquierdo
+                     write3dir(tres);
+                     tres = "\tgoto "+ rval.etqVerdad;
+                     write3dir(tres);
+                     //Ir a traer bloque de codigo condicion verdadera para nodo derecho
+
+                     return new Dict("val", temp,"tags",rval);
+                     }
+                     });
+                    //</editor-fold>
 
                     //<editor-fold defaultstate="collapsed" desc="LEAF">
                     put(TOperation.LEAF, (Operation) (Node node, Object actions) -> {
@@ -2792,7 +2817,7 @@ public class Win extends javax.swing.JFrame {
                         final Dict ref = node.getDictRef();
                         final Object ref_info = ref.get("info");
                         final Dict val = new Dict();
-
+                            System.out.println("or---");
                         try {
                             if (is3dirPhase(phase)) {
                                 Node l = node.getLeft();
@@ -2916,13 +2941,26 @@ public class Win extends javax.swing.JFrame {
                         final Dict ref = node.getDictRef();
                         final Object ref_info = ref.get("info");
                         final Dict ref_params = ref.getDict("params");
-
                         final Dict val = new Dict();
                         Object info = ref_info;
-
+                        System.out.println("not");
                         try {
                             if (is3dirPhase(phase)) {
-
+                                Node l = node.getLeft();
+                                l.exec(actions);
+                                Dict lval = l.getDictVal();
+                                String lval_type = lval.getString("type");
+                                BloqueCondicion ltags = lval.getTags("tags");
+                                if (!lval_type.equals(TType.BOOLEAN.toString())) {
+                                    throwException(String.format("Se esperaba tipo -> %s en -> %s || expr", TType.BOOLEAN, lval_type));
+                                }
+                                BloqueCondicion rtags = new BloqueCondicion();
+                                rtags.etqFalso = ltags.etqVerdad;
+                                rtags.etqVerdad = ltags.etqFalso;
+                                System.out.println(rtags.etqFalso + "-"+rtags.etqVerdad + "-"+ltags.etqVerdad+ "-"+ltags.etqFalso);
+                                val.put("type", TType.BOOLEAN);
+                                val.put("tags",rtags);
+                                return val;
                             }
                         } catch (UnsupportedOperationException exc) {
                             compiler_error(exc, TErr.SEMANTICO, info, actions);
@@ -3389,6 +3427,8 @@ public class Win extends javax.swing.JFrame {
                     });
                     //</editor-fold>
 
+                    
+                    
                     //<editor-fold defaultstate="collapsed" desc="SWITCH">
                     put(TOperation.STMT_SWITCH, (Operation) (Node node, Object actions) -> {
 
