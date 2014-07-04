@@ -104,6 +104,17 @@ COMMENT = "//" [^\r\n]* {NEWLINE}
     "static"    {return symbol(Sym.KW_STATIC);}
     "void"      {return symbol(Sym.KW_VOID);}
 
+    "imprimir"    {return symbol(Sym.PRINT);}
+    "imprimirln"  {return symbol(Sym.PRINTLN);}
+    "linea"       {return symbol(Sym.KW_LINEA);}
+    "texto"       {return symbol(Sym.KW_TEXTO);}
+    "arco"        {return symbol(Sym.KW_ARCO);}
+    "rectangulo"  {return symbol(Sym.KW_RECTANGULO);}
+    "ovalo"       {return symbol(Sym.KW_OVALO);}
+    "poligono"    {return symbol(Sym.KW_POLIGONO);}
+    "lienzo"      {return symbol(Sym.KW_LIENZO);}
+    
+
     "="         {return symbol(Sym.EQUAL);}
     "+="        {return symbol(Sym.PEQUAL);}
     "-="        {return symbol(Sym.MIEQUAL);}

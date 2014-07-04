@@ -37,7 +37,8 @@ terminal        String 		KW_INT,KW_FLOAT,KW_CHAR,KW_STRING,KW_BOOL,KW_NEW,KW_WHI
 							DEQUAL,BTHAN,BETHAN,LTHAN,LETHAN,NEQUAL,AND,OR,NOT,DPLUS,PLUS,DMINUS,MINUS,MULT,
 							DIV,EXP,QL,QR,PL,PR,COMA,DPUNTOS,PUNTO,REF,INT,FLOAT,CHAR,BOOL,
 							ID,STRING,LL,LR,KW_VOID,KW_RETURN,Q,KW_STATIC,NEWLINE,ERROR,KW_ARRAY,
-							KW_THIS,KW_SUPER,NULL
+							KW_THIS,KW_SUPER,NULL,PRINT, PRINTLN,KW_LINEA,KW_TEXTO,KW_ARCO,
+							KW_RECTANGULO,KW_OVALO,KW_POLIGONO,KW_LIENZO
 							;
 non terminal    Dict        app,stmt,stmt_list,imports,id,stmt_class,class_stmt,class_stmts,class_stmt_list,
 							method_param,method_stmt,method_params,method_stmts,method_stmt_list,def_var,modifiers,type,
@@ -262,7 +263,7 @@ method_stmts 	::=	method_stmt_list:l method_return:x
 
 method_return 	::=	KW_RETURN expr:e nl_list
 					{:
-						RESULT = new Dict("nodo",new Node(TOperation.RETURN,null,null,new Dict("return",e)));
+						RESULT = new Dict("nodo",new Node(TOperation.RETURN,null,null,new Dict("return",e,"info",CUP$Parser$stack.elementAt(CUP$Parser$top-2))));
 					:}
 					;
 
@@ -285,8 +286,8 @@ method_stmt 	::=	expr:x nl_list				{:RESULT = x;:}
 					// |set_var:x nl_list 			
 					|loops:x nl_list 			{:RESULT = x;:}
 					|conds:x nl_list 			{:RESULT = x;:}
-					|KW_BREAK nl_list			{:RESULT = new Dict("nodo",new Node(TOperation.BREAK,null,null,null));:}
-					|KW_CONTINUE nl_list		{:RESULT = new Dict("nodo",new Node(TOperation.CONTINUE,null,null,null));:}
+					|KW_BREAK nl_list			{:RESULT = new Dict("nodo",new Node(TOperation.BREAK,null,null,new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))));:}
+					|KW_CONTINUE nl_list		{:RESULT = new Dict("nodo",new Node(TOperation.CONTINUE,null,null,new Dict("info",CUP$Parser$stack.elementAt(CUP$Parser$top-1))));:}
 					|err:x nl_list				{:RESULT = x;:}
 					;
 
@@ -901,14 +902,51 @@ expr_prim	::= expr_prim_lit:x 							{:RESULT = x;:}
   							)
   						);
 				:}
-  				//field access
-  				// |expr_prim PUNTO id
-  				// |expr_prim PUNTO id
-  				// |
-    		// |this [Arguments]
-    		// |super SuperSuffix
-    		// |new Creator
-		    // |Identifier { . Identifier } [IdentifierSuffix]
+  				|PRINT:x PL method_call_params:l PR
+  				{:
+  					Dict ref = new Dict("name",x,"params",l,"info",CUP$Parser$stack.elementAt(CUP$Parser$top-3));
+  					RESULT = new Dict("nodo",new Node(TOperation.PRINT,null,null,ref));
+  				:}
+  				|PRINTLN:x PL method_call_params:l PR
+  				{:
+  					Dict ref = new Dict("name",x,"params",l,"info",CUP$Parser$stack.elementAt(CUP$Parser$top-3));
+  					RESULT = new Dict("nodo",new Node(TOperation.PRINTLN,null,null,ref));
+  				:}
+  				|KW_LINEA:x PL method_call_params:l PR
+  				{:
+  					Dict ref = new Dict("name",x,"params",l,"info",CUP$Parser$stack.elementAt(CUP$Parser$top-3));
+  					RESULT = new Dict("nodo",new Node(TOperation.NM_LINEA,null,null,ref));
+  				:}
+  				|KW_TEXTO:x PL method_call_params:l PR
+  				{:
+  					Dict ref = new Dict("name",x,"params",l,"info",CUP$Parser$stack.elementAt(CUP$Parser$top-3));
+  					RESULT = new Dict("nodo",new Node(TOperation.NM_TEXTO,null,null,ref));
+  				:}
+  				|KW_ARCO:x PL method_call_params:l PR
+  				{:
+  					Dict ref = new Dict("name",x,"params",l,"info",CUP$Parser$stack.elementAt(CUP$Parser$top-3));
+  					RESULT = new Dict("nodo",new Node(TOperation.NM_ARCO,null,null,ref));
+  				:}
+  				|KW_RECTANGULO:x PL method_call_params:l PR
+  				{:
+  					Dict ref = new Dict("name",x,"params",l,"info",CUP$Parser$stack.elementAt(CUP$Parser$top-3));
+  					RESULT = new Dict("nodo",new Node(TOperation.NM_RECTANGULO,null,null,ref));
+  				:}
+  				|KW_OVALO:x PL method_call_params:l PR
+  				{:
+  					Dict ref = new Dict("name",x,"params",l,"info",CUP$Parser$stack.elementAt(CUP$Parser$top-3));
+  					RESULT = new Dict("nodo",new Node(TOperation.NM_OVALO,null,null,ref));
+  				:}
+  				|KW_POLIGONO:x PL method_call_params:l PR
+  				{:
+  					Dict ref = new Dict("name",x,"params",l,"info",CUP$Parser$stack.elementAt(CUP$Parser$top-3));
+  					RESULT = new Dict("nodo",new Node(TOperation.NM_POLIGONO,null,null,ref));
+  				:}
+  				|KW_LIENZO:x PL method_call_params:l PR
+  				{:
+  					Dict ref = new Dict("name",x,"params",l,"info",CUP$Parser$stack.elementAt(CUP$Parser$top-3));
+  					RESULT = new Dict("nodo",new Node(TOperation.NM_LIENZO,null,null,ref));
+  				:}
 				;
 
 
