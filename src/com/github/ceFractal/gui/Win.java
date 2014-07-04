@@ -1387,6 +1387,544 @@ public class Win extends javax.swing.JFrame {
         cactions.put("phase", phase);
     }
 
+    final Dict actions_3dir = new Dict(
+            "cc", new com.github.gg.CC(),
+            "operations", new HashMap<TOperation, Operation>() {
+                {
+
+                    //<editor-fold defaultstate="collapsed" desc="LABEL">
+                    put(TOperation.LABEL, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final Object ca_phase = ca.get("phase");
+                        final CC ca_cc = (CC) ca.get("cc");
+
+                        final Dict node_ref = node.getDictRef();
+                        final Object node_ref_info = node_ref.get("info");
+
+                        try {
+
+                            final Node node_l = node.getLeft();
+                            final Node node_r = node.getRight();
+                            final Dict node_l_val = node_l.getDictVal();
+                            final Dict node_r_val = node_r.getDictVal();
+                            final float node_l_val_val = node_l_val.getFloat("val");
+                            final float node_r_val_val = node_r_val.getFloat("val");
+
+                            final Dict node_val = new Dict();
+                            float node_val_val = -1;
+
+                            if (isDefPhase(ca_phase)) {
+                                return null;
+                            }
+
+                            if (isExecPhase(ca_phase)) {
+
+                                node_val_val = node_l_val_val + node_r_val_val;
+
+                                node_val.put("val", node_val_val);
+
+                                return node_val;
+                            }
+
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SEMANTICO, node_ref_info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.LABEL);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="DEF_METHOD">
+                    put(TOperation.DEF_METHOD, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final Object ca_phase = ca.get("phase");
+                        final CC ca_cc = (CC) ca.get("cc");
+
+                        final Dict node_ref = node.getDictRef();
+                        final Object node_ref_info = node_ref.get("info");
+
+                        try {
+
+                            final Dict node_ref_name = node_ref.getDict("name");
+                            final Node node_ref_name_node = node_ref_name.getNode("nodo");
+                            final Dict node_ref_name_node_ref = node_ref_name_node.getDictRef();
+                            final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
+                            final Dict node_ref_stmts = node_ref.getDict("stmts");
+
+                            if (isDefPhase(ca_phase)) {
+                                ca_cc.getMethods().put(node_ref_name_node_ref_val, node);
+                                return null;
+                            }
+
+                            if (isExecPhase(ca_phase)) {
+                                if (node_ref_name_node_ref_val.equals("void_main_1__1")) {
+                                    frc_compiler_stmts_exec(node_ref_stmts, ca);
+                                }
+                                return null;
+                            }
+
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SEMANTICO, node_ref_info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.DEF_METHOD);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="SET_VAR">
+                    put(TOperation.SET_VAR, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final Object ca_phase = ca.get("phase");
+                        final CC ca_cc = (CC) ca.get("cc");
+
+                        final Dict node_ref = node.getDictRef();
+                        final Dict node_ref_name = node_ref.getDict("name");
+                        final Object node_ref_info = node_ref.get("info");
+
+                        try {
+
+                            final Node node_l = node.getLeft();
+                            final Dict node_l_val = node_l.getDictVal();
+                            final int node_l_val_valp = node_l_val.getInt("valp");
+                            final Dict node_l_ref = node_l.getDictRef();
+                            final String node_l_ref_val = node_l_ref.getString("val");
+                            final Node node_r = node.getRight();
+                            final Dict node_r_val = node_r.getDictVal();
+                            final float node_r_val_val = node_r_val.getFloat("val");
+
+                            if (isDefPhase(ca_phase)) {
+                                return null;
+                            }
+
+                            if (isExecPhase(ca_phase)) {
+
+                                final String node_ref_name_type = node_ref_name.getString("type");
+
+                                if (node_ref_name_type.equals(TType.REF.toString())) {
+
+                                } else if (node_ref_name_type.equals("memory")) {
+                                    final int node_ref_name_memory = node_ref_name.getInt("memory");
+                                    switch (node_ref_name_memory) {
+                                        case com.github.gg.compiler.tres.Sym.STACK:
+                                            ca_cc.getStack()[node_l_val_valp] = node_r_val_val;
+                                            break;
+                                        case com.github.gg.compiler.tres.Sym.HEAP:
+                                            ca_cc.getHeap()[node_l_val_valp] = node_r_val_val;
+                                            break;
+                                        default:
+                                            throwException("wtf %s", TOperation.SET_VAR);
+                                    }
+
+                                } else {
+                                    throwException("wtf %s");
+                                }
+
+                                return null;
+                            }
+
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SEMANTICO, node_ref_info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.SET_VAR);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="PLUS">
+                    put(TOperation.PLUS, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final Object ca_phase = ca.get("phase");
+                        final CC ca_cc = (CC) ca.get("cc");
+
+                        final Dict node_ref = node.getDictRef();
+                        final Object node_ref_info = node_ref.get("info");
+
+                        try {
+
+                            final Node node_l = node.getLeft();
+                            final Node node_r = node.getRight();
+                            final Dict node_l_val = node_l.getDictVal();
+                            final Dict node_r_val = node_r.getDictVal();
+                            final float node_l_val_val = node_l_val.getFloat("val");
+                            final float node_r_val_val = node_r_val.getFloat("val");
+
+                            final Dict node_val = new Dict();
+                            float node_val_val = -1;
+
+                            if (isDefPhase(ca_phase)) {
+                                return null;
+                            }
+
+                            if (isExecPhase(ca_phase)) {
+
+                                node_val_val = node_l_val_val + node_r_val_val;
+
+                                node_val.put("val", node_val_val);
+
+                                return node_val;
+                            }
+
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SEMANTICO, node_ref_info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.PLUS);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="MINUS">
+                    put(TOperation.MINUS, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final Object ca_phase = ca.get("phase");
+                        final CC ca_cc = (CC) ca.get("cc");
+
+                        final Dict node_ref = node.getDictRef();
+                        final Object node_ref_info = node_ref.get("info");
+
+                        try {
+
+                            final Node node_l = node.getLeft();
+                            final Node node_r = node.getRight();
+                            final Dict node_l_val = node_l.getDictVal();
+                            final Dict node_r_val = node_r.getDictVal();
+                            final float node_l_val_val = node_l_val.getFloat("val");
+                            final float node_r_val_val = node_r_val.getFloat("val");
+
+                            final Dict node_val = new Dict();
+                            float node_val_val = -1;
+
+                            if (isDefPhase(ca_phase)) {
+                                return null;
+                            }
+
+                            if (isExecPhase(ca_phase)) {
+
+                                node_val_val = node_l_val_val - node_r_val_val;
+
+                                node_val.put("val", node_val_val);
+
+                                return node_val;
+                            }
+
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SEMANTICO, node_ref_info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.MINUS);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="MULT">
+                    put(TOperation.MULT, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final Object ca_phase = ca.get("phase");
+                        final CC ca_cc = (CC) ca.get("cc");
+
+                        final Dict node_ref = node.getDictRef();
+                        final Object node_ref_info = node_ref.get("info");
+
+                        try {
+
+                            final Node node_l = node.getLeft();
+                            final Node node_r = node.getRight();
+                            final Dict node_l_val = node_l.getDictVal();
+                            final Dict node_r_val = node_r.getDictVal();
+                            final float node_l_val_val = node_l_val.getFloat("val");
+                            final float node_r_val_val = node_r_val.getFloat("val");
+
+                            final Dict node_val = new Dict();
+                            float node_val_val = -1;
+
+                            if (isDefPhase(ca_phase)) {
+                                return null;
+                            }
+
+                            if (isExecPhase(ca_phase)) {
+
+                                node_val_val = node_l_val_val * node_r_val_val;
+
+                                node_val.put("val", node_val_val);
+
+                                return node_val;
+                            }
+
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SEMANTICO, node_ref_info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.MULT);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="DIV">
+                    put(TOperation.DIV, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final Object ca_phase = ca.get("phase");
+                        final CC ca_cc = (CC) ca.get("cc");
+
+                        final Dict node_ref = node.getDictRef();
+                        final Object node_ref_info = node_ref.get("info");
+                        try {
+
+                            final Node node_l = node.getLeft();
+                            final Node node_r = node.getRight();
+                            final Dict node_l_val = node_l.getDictVal();
+                            final Dict node_r_val = node_r.getDictVal();
+                            final float node_l_val_val = node_l_val.getFloat("val");
+                            final float node_r_val_val = node_r_val.getFloat("val");
+
+                            final Dict node_val = new Dict();
+                            float node_val_val = -1;
+
+                            if (isDefPhase(ca_phase)) {
+                                return null;
+                            }
+
+                            if (isExecPhase(ca_phase)) {
+
+                                node_val_val = node_l_val_val / node_r_val_val;
+
+                                node_val.put("val", node_val_val);
+
+                                return node_val;
+                            }
+
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SEMANTICO, node_ref_info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.DIV);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="MOD">
+                    put(TOperation.MOD, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final Object ca_phase = ca.get("phase");
+                        final CC ca_cc = (CC) ca.get("cc");
+
+                        final Dict node_ref = node.getDictRef();
+                        final Object node_ref_info = node_ref.get("info");
+
+                        try {
+
+                            final Node node_l = node.getLeft();
+                            final Node node_r = node.getRight();
+                            final Dict node_l_val = node_l.getDictVal();
+                            final Dict node_r_val = node_r.getDictVal();
+                            final float node_l_val_val = node_l_val.getFloat("val");
+                            final float node_r_val_val = node_r_val.getFloat("val");
+
+                            final Dict node_val = new Dict();
+                            float node_val_val = -1;
+
+                            if (isDefPhase(ca_phase)) {
+                                return null;
+                            }
+
+                            if (isExecPhase(ca_phase)) {
+
+                                node_val_val = node_l_val_val % node_r_val_val;
+
+                                node_val.put("val", node_val_val);
+
+                                return node_val;
+                            }
+
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SEMANTICO, node_ref_info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.MOD);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="EXPONENTE">
+                    put(TOperation.EXP, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final Object ca_phase = ca.get("phase");
+                        final CC ca_cc = (CC) ca.get("cc");
+
+                        final Dict node_ref = node.getDictRef();
+                        final Object node_ref_info = node_ref.get("info");
+
+                        try {
+                            final Node node_l = node.getLeft();
+                            final Node node_r = node.getRight();
+                            final Dict node_l_val = node_l.getDictVal();
+                            final Dict node_r_val = node_r.getDictVal();
+                            final float node_l_val_val = node_l_val.getFloat("val");
+                            final float node_r_val_val = node_r_val.getFloat("val");
+
+                            final Dict node_val = new Dict();
+                            float node_val_val = -1;
+
+                            if (isDefPhase(ca_phase)) {
+                                return null;
+                            }
+
+                            if (isExecPhase(ca_phase)) {
+
+                                node_val_val = node_l_val_val * node_r_val_val;
+
+                                node_val.put("val", node_val_val);
+
+                                return node_val;
+                            }
+
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SEMANTICO, node_ref_info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.EXP);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="LEAF">
+                    put(TOperation.LEAF, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final Object ca_phase = ca.get("phase");
+                        final CC ca_cc = (CC) ca.get("cc");
+
+                        final Dict node_ref = node.getDictRef();
+                        final Object node_ref_info = node_ref.get("info");
+
+                        try {
+
+                            final String node_ref_val = node_ref.getString("val");
+                            final String node_ref_type = node_ref.getString("type");
+
+                            final Dict node_val = new Dict();
+                            float node_val_val = -1;
+                            final String node_val_valp = node_ref_val;
+                            final String node_val_valt = node_ref_type;
+
+                            if (isDefPhase(ca_phase)) {
+                                return null;
+                            }
+
+                            if (isExecPhase(ca_phase)) {
+
+                                if (node_ref_type.equals(TType.INT.toString())) {
+                                    node_val_val = Float.parseFloat(node_ref_val);
+                                } else if (node_ref_type.equals(TType.FLOAT.toString())) {
+                                    node_val_val = Float.parseFloat(node_ref_val);
+
+                                } else if (node_ref_type.equals(TType.REF.toString())) {
+                                    node_val_val = ca_cc.getTemps().get(node_ref_val);
+                                } else if (node_ref_type.equals("memory")) {
+                                    final int node_ref_memory = node_ref.getInt("memory");
+                                    final Dict node_ref_position = node_ref.getDict("position");
+                                    final Node node_ref_position_node = node_ref_position.getNode("nodo");
+                                    node_ref_position_node.exec(actions);
+                                    final Dict node_ref_position_node_val = node_ref_position_node.getDictVal();
+                                    final int node_ref_position_node_val_val = node_ref_position_node_val.getInt("val");
+
+                                    switch (node_ref_memory) {
+                                        case com.github.gg.compiler.tres.Sym.STACK:
+                                            node_val_val = ca_cc.getStack()[node_ref_position_node_val_val];
+                                            break;
+                                        case com.github.gg.compiler.tres.Sym.HEAP:
+                                            node_val_val = ca_cc.getHeap()[node_ref_position_node_val_val];
+                                            break;
+                                        default:
+                                            throwException("wtf %s", TOperation.LEAF);
+                                    }
+                                } else {
+                                }
+
+                                node_val.put("val", node_val_val);
+                                node_val.put("valp", node_val_valp);
+                                node_val.put("valt", node_val_valt);
+
+                                return node_val;
+                            }
+
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SEMANTICO, node_ref_info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.LEAF);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="ERROR_LEXICO">
+                    put(TOperation.ERROR_LEXICO, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final Object ca_phase = ca.get("phase");
+
+                        final Dict node_ref = node.getDictRef();
+                        final Object node_ref_info = node_ref.get("info");
+
+                        try {
+
+                            if (isDefPhase(ca_phase)) {
+                                throwException("Caracter no reconocido...");
+                                return null;
+                            }
+
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.LEXICO, node_ref_info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.ERROR_LEXICO);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="ERROR_SINTACTICO">
+                    put(TOperation.ERROR_SINTACTICO, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final Object ca_phase = ca.get("phase");
+
+                        final Dict node_ref = node.getDictRef();
+                        final Object node_ref_info = node_ref.get("info");
+                        try {
+
+                            if (isDefPhase(ca_phase)) {
+                                throwException("Error de sintaxis...");
+                                return null;
+                            }
+
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SINTACTICO, node_ref_info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.ERROR_SINTACTICO);
+                    });
+                    //</editor-fold>
+                }
+
+                private void throwException(String format, Object... args) throws UnsupportedOperationException {
+                    throwException(String.format(format, args));
+                }
+
+                private void throwException(String msg) throws UnsupportedOperationException {
+                    throw new UnsupportedOperationException(msg);
+                }
+
+                private Object noActionsProcessed(TOperation operation) {
+                    notificar("No actions for -> " + operation);
+                    return null;
+                }
+
+                private boolean isDefPhase(Object phase) {
+                    return phase.equals("def");
+                }
+
+                private boolean isExecPhase(final Object phase) {
+                    return phase.equals("exec");
+                }
+
+                private void compiler_error(Exception exc, TErr terr, Object info, Object actions) {
+                    final CC cc = (CC) ((Dict) actions).get("cc");
+                    final Err err = new Err(terr, exc.getMessage(), info);
+
+                    cc.getErrs().add(err);
+                    System.out.println(err);
+                }
+            }
+    );
+
     Dict compiler_actions = new Dict(
             "cc", new com.github.gg.CC(),
             "operations", new HashMap<TOperation, Operation>() {
@@ -1549,10 +2087,10 @@ public class Win extends javax.swing.JFrame {
 
                     //<editor-fold defaultstate="collapsed" desc="DEF_METHOD">
                     put(TOperation.DEF_METHOD, (Operation) (Node node, Object actions) -> {
-                        Dict cactions = (Dict) actions;
-                        CC ccompiler = (CC) cactions.get("cc");
-                        Stack scope = cactions.getStack("scope");
-                        Object phase = cactions.get("phase");
+                        Dict ca = (Dict) actions;
+                        CC ccompiler = (CC) ca.get("cc");
+                        Stack scope = ca.getStack("scope");
+                        Object phase = ca.get("phase");
                         phase = (phase == null ? "null" : phase);
 
                         Dict _modifiers = node.getDictRef().getDict("modifiers");
@@ -1585,12 +2123,13 @@ public class Win extends javax.swing.JFrame {
 
                                 // agregar parametros
                                 scope.push(method_sim);
-                                frc_compiler_stmts_exec(_params, cactions);
+                                frc_compiler_stmts_exec(_params, ca);
                                 scope.pop();
 
                                 return null;
                             }
                             if (is3dirPhase(phase)) {
+
                                 final Sim methodsim = ccompiler.getSims().getMethod(scope.peek().toString(), _name_val, _params_type_array);
                                 final Boolean isMain = methodsim.getDictOthers().getBoolean("main");
                                 String method_type = "void";
@@ -1600,14 +2139,22 @@ public class Win extends javax.swing.JFrame {
                                     method_return = "return 0;";
                                 }
 
-                                write3dir(String.format("%s %s(){", method_type, _name_val));
+                                final String l1 = getLabel(actions);
+                                final Stack flow_control = new Stack();
+                                ca.put("flow_control", flow_control);
+                                write3dir(String.format("%s %s(){", method_type, getMethodName(methodsim)));
                                 write3dir();
+
+                                flow_control.push(l1);
                                 scope.push(methodsim);
                                 blockIn(actions);
-                                frc_compiler_stmts_exec(_stmts, cactions);
+                                frc_compiler_stmts_exec(_stmts, ca);
                                 blockOut(actions);
                                 scope.pop();
-                                write3dir();
+                                flow_control.pop();
+
+                                write3dir("// ==== method - salida");
+                                write3dir("%s:", l1);
                                 write3dir();
                                 write3dir(method_return);
                                 write3dir("}");
@@ -1626,10 +2173,10 @@ public class Win extends javax.swing.JFrame {
 
                     //<editor-fold defaultstate="collapsed" desc="DEF_CONSTRUCTOR">
                     put(TOperation.DEF_CONSTRUCT, (Operation) (Node node, Object actions) -> {
-                        Dict cactions = (Dict) actions;
-                        CC ccompiler = (CC) cactions.get("cc");
-                        Stack scope = cactions.getStack("scope");
-                        Object phase = cactions.get("phase");
+                        Dict ca = (Dict) actions;
+                        CC ccompiler = (CC) ca.get("cc");
+                        Stack scope = ca.getStack("scope");
+                        Object phase = ca.get("phase");
                         phase = (phase == null ? "null" : phase);
 
                         Dict _modifiers = node.getDictRef().getDict("modifiers");
@@ -1643,12 +2190,31 @@ public class Win extends javax.swing.JFrame {
 
 //                        System.err.format("Constructor ->[[Modificadores->%1$s][nombre->%2$s][parametros->%3$s]]\n", _modifiers_val, _name_val, Arrays.toString(_params_type_array));
                         try {
-                            Sim method_sim = null;
+                            Sim methodsim = null;
 
                             if (isDefPhase(phase)) {
-                                method_sim = ccompiler.getSims().addConstructor(scope.peek().toString(), _modifiers_val, _name_val, _params_type_array);
-                                ccompiler.getSims().addVariable(method_sim, method_sim.scope, "this", new Dict());
+                                methodsim = ccompiler.getSims().addConstructor(scope.peek().toString(), _modifiers_val, _name_val, _params_type_array);
+                                ccompiler.getSims().addVariable(methodsim, methodsim.scope, "this", new Dict());
                             } else if (is3dirPhase(phase)) {
+                                methodsim = ccompiler.getSims().getConstructor(scope.peek().toString(), _params_type_array);
+                                final String l1 = getLabel(actions);
+                                final Stack flow_control = new Stack();
+                                ca.put("flow_control", flow_control);
+                                write3dir(String.format("void %s(){", getMethodName(methodsim)));
+                                write3dir();
+
+                                flow_control.push(l1);
+                                scope.push(methodsim);
+                                blockIn(actions);
+                                frc_compiler_stmts_exec(_stmts, ca);
+                                blockOut(actions);
+                                scope.pop();
+                                flow_control.pop();
+
+                                write3dir("// ==== method - salida");
+                                write3dir("%s:", l1);
+                                write3dir();
+                                write3dir("}");
                                 return null;
                             } else {
                                 notificar("No actions for -> " + TOperation.DEF_CONSTRUCT);
@@ -1658,11 +2224,11 @@ public class Win extends javax.swing.JFrame {
                             //======================================================
                             //Ejecutar sentencias de metodo y manejo de ambito...
                             //======================================================
-                            scope.push(method_sim);
+                            scope.push(methodsim);
                             // ejecutar parametros
-                            frc_compiler_stmts_exec(_params, cactions);
+                            frc_compiler_stmts_exec(_params, ca);
                             // ejecutar sentencias
-                            frc_compiler_stmts_exec(_stmts, cactions);
+                            frc_compiler_stmts_exec(_stmts, ca);
                             scope.pop();
 
                         } catch (Exception exc) {
@@ -3094,6 +3660,7 @@ public class Win extends javax.swing.JFrame {
                         final Stack scope = ca.getStack("scope");
                         final Sim methodsim = (Sim) scope.peek();
                         final Object phase = ca.get("phase");
+                        final Stack flow_control = ca.getStack("flow_control");
 
                         final Dict ref = node.getDictRef();
                         final Object ref_info = ref.get("info");
@@ -3109,6 +3676,7 @@ public class Win extends javax.swing.JFrame {
                                 final Node condition_node = ref_condition.getNode("nodo");
                                 final ArrayList<Dict> stmt_list = ref_stmts.getDictArrayList("list");
                                 final String l1 = getLabel(actions);
+                                final String l2 = getLabel(actions);
                                 write3dir("// >>>>>>>> while <<<<<<<< //");
                                 write3dir("// >>>> while - label");
                                 write3dir("%s:", l1);
@@ -3132,13 +3700,17 @@ public class Win extends javax.swing.JFrame {
                                 // cuando termina el bloque sacar todas las variables locales
                                 // declaradas 
                                 // ***** ya esta...
+                                flow_control.push(l2);
                                 blockIn(actions);
                                 frc_compiler_stmts_exec(ref_stmts, ca);
                                 blockOut(actions);
+                                flow_control.pop();
                                 /////
                                 write3dir("goto %s;", l1);
                                 write3dir("// >>>> while - false");
                                 write3dir("%s:", condition_node_val_lfalse);
+                                write3dir("// >>>> while - label salida");
+                                write3dir("%s:", l2);
                                 write3dir("// >>>>>>>> while <<<<<<<< //");
 
                                 write3dir(poolCommit(actions));
@@ -3161,6 +3733,7 @@ public class Win extends javax.swing.JFrame {
                         final Stack scope = ca.getStack("scope");
                         final Sim methodsim = (Sim) scope.peek();
                         final Object phase = ca.get("phase");
+                        final Stack flow_control = ca.getStack("flow_control");
 
                         final Dict ref = node.getDictRef();
                         final Object ref_info = ref.get("info");
@@ -3176,13 +3749,16 @@ public class Win extends javax.swing.JFrame {
 
                                 poolOn(actions);
                                 final String l1 = getLabel(actions);
+                                final String l2 = getLabel(actions);
                                 write3dir("// >>>>>>>> dowhile <<<<<<<<");
                                 write3dir("// >>>> dowhile - label");
                                 write3dir("%s:", l1);
                                 write3dir("// >>>> dowhile - sentencias");
+                                flow_control.push(l2);
                                 blockIn(actions);
                                 frc_compiler_stmts_exec(ref_stmts, ca);
                                 blockOut(actions);
+                                flow_control.pop();
                                 write3dir("// >>>> dowhile - condicion");
                                 condition_node.exec(actions);
                                 final Dict condition_node_val = condition_node.getDictVal();
@@ -3193,13 +3769,15 @@ public class Win extends javax.swing.JFrame {
                                 if (!condition_node_val_type.equals(TType.BOOLEAN.toString())) {
                                     throwException("Se esperaba un tipo de dato -> %s, se obtuvo -> %s", TType.BOOLEAN, condition_node_val_type);
                                 }
-                                
+
                                 write3dir("// >>>> dowhile - true");
-                                write3dir("%s:",condition_node_val_ltrue);
+                                write3dir("%s:", condition_node_val_ltrue);
                                 write3dir("// >>>> dowhile - label return");
-                                write3dir("goto %s;",l1);
+                                write3dir("goto %s;", l1);
                                 write3dir("// >>>> dowhile - false");
-                                write3dir("%s:",condition_node_val_lfalse);
+                                write3dir("%s:", condition_node_val_lfalse);
+                                write3dir("// >>>> dowhile - label salida");
+                                write3dir("%s:", l2);
                                 write3dir("// >>>>>>>> dowhile <<<<<<<<");
 
                                 write3dir(poolCommit(actions));
@@ -3223,6 +3801,7 @@ public class Win extends javax.swing.JFrame {
                         final Sim methodsim = (Sim) scope.peek();
                         final Object phase = ca.get("phase");
                         final ArrayList block_sim_list = (ArrayList) ca.getStack("3dir_block").peek();
+                        final Stack flow_control = ca.getStack("flow_control");
 
                         final Dict ref = node.getDictRef();
                         final Object ref_info = ref.get("info");
@@ -3268,6 +3847,7 @@ public class Win extends javax.swing.JFrame {
                                 }
                                 write3dir("pila[%s] = %s;", t1, inicio_node_val_val);
                                 final String l1 = getLabel(actions);
+                                final String l2 = getLabel(actions);
                                 write3dir("// >>>> for - label");
                                 write3dir("%s:", l1);
                                 write3dir("// >>>> for - condicion");
@@ -3285,9 +3865,11 @@ public class Win extends javax.swing.JFrame {
                                 write3dir("%s:", condition_node_val_ltrue);
 
                                 write3dir("// >>>> for - sentencias");
+                                flow_control.push(l2);
                                 blockIn(actions);
                                 frc_compiler_stmts_exec(ref_stmts, ca);
                                 blockOut(actions);
+                                flow_control.pop();
 
                                 write3dir("// >>>> for - increment");
                                 info = increment_info;
@@ -3304,6 +3886,8 @@ public class Win extends javax.swing.JFrame {
                                 write3dir("goto %s;", l1);
                                 write3dir("// >>>> for - false");
                                 write3dir("%s:", condition_node_val_lfalse);
+                                write3dir("// >>>> for - label salida");
+                                write3dir("%s:", l2);
                                 write3dir("// >>>>>>>> for <<<<<<<< //");
                                 write3dir(poolCommit(actions));
 
@@ -3337,12 +3921,58 @@ public class Win extends javax.swing.JFrame {
 
                         try {
                             if (is3dirPhase(phase)) {
+                                final ArrayList<Dict> if_list = ref_if.getDictArrayList("list");
 
-                                
-                                
+                                poolOn(actions);
+                                write3dir("// >>>>>>>> if <<<<<<<< //");
+                                final String l1 = getLabel(actions);
+                                for (int i = 0; i < if_list.size(); i++) {
+                                    final Dict _if = if_list.get(i);
+                                    final Object _if_info = _if.get("info");
+                                    final Dict _if_condition = _if.getDict("condition");
+                                    final Dict _if_stmts = _if.getDict("stmts");
+                                    info = _if_info;
+
+                                    write3dir("// >>>> if - condicion (%d)", i);
+                                    final Node _if_condition_node = _if_condition.getNode("nodo");
+                                    _if_condition_node.exec(actions);
+                                    final Dict _if_condition_node_val = _if_condition_node.getDictVal();
+                                    final String _if_condition_node_val_type = _if_condition_node_val.getString("type");
+                                    final String _if_condition_node_val_ltrue = _if_condition_node_val.getString("ltrue");
+                                    final String _if_condition_node_val_lfalse = _if_condition_node_val.getString("lfalse");
+
+                                    if (!_if_condition_node_val_type.equals(TType.BOOLEAN.toString())) {
+                                        throwException("Se esperaba un tipo de dato -> %s, se encontro -> %s", TType.BOOLEAN, _if_condition_node_val_type);
+                                    }
+                                    write3dir("// >>>> if - true (%d)", i);
+                                    write3dir("%s:", _if_condition_node_val_ltrue);
+                                    write3dir("// >>>> if - sentencias (%d)", i);
+                                    blockIn(actions);
+                                    frc_compiler_stmts_exec(_if_stmts, ca);
+                                    blockOut(actions);
+                                    write3dir("// >>>> if - salida (%d)", i);
+                                    write3dir("goto %s;", l1);
+                                    write3dir("// >>>> if - false (%d)", i);
+                                    write3dir("%s:", _if_condition_node_val_lfalse);
+
+                                }
+                                if (ref_else != null) {
+                                    final Object _else_info = ref_else.get("info");
+                                    final Dict _else_stmts = ref_else.getDict("stmts");
+                                    info = _else_info;
+                                    write3dir("// >>> if - sentencias else");
+                                    blockIn(actions);
+                                    frc_compiler_stmts_exec(_else_stmts, ca);
+                                    blockOut(actions);
+                                }
+
+                                write3dir("%s:", l1);
+                                write3dir("// >>>>>>>> if <<<<<<<< //");
+                                write3dir(poolCommit(actions));
                                 return null;
                             }
                         } catch (UnsupportedOperationException exc) {
+                            poolRollback(actions);
                             compiler_error(exc, TErr.SEMANTICO, info, actions);
                         }
 
@@ -3358,9 +3988,202 @@ public class Win extends javax.swing.JFrame {
                         final Stack scope = ca.getStack("scope");
                         final Sim methodsim = (Sim) scope.peek();
                         final Object phase = ca.get("phase");
+                        final Stack flow_control = ca.getStack("flow_control");
 
                         final Dict ref = node.getDictRef();
                         final Object ref_info = ref.get("info");
+                        final Dict ref_base = ref.getDict("base");
+                        final Dict ref_stmts = ref.getDict("stmts");
+
+                        final Dict val = new Dict();
+                        Object info = ref_info;
+
+                        try {
+                            if (is3dirPhase(phase)) {
+
+                                poolOn(actions);
+                                write3dir("// >>>>>>>> switch <<<<<<<< //");
+                                write3dir("// >>>> switch - base");
+                                final String l1 = getLabel(actions);
+                                final Node base_node = ref_base.getNode("nodo");
+                                base_node.exec(actions);
+                                final Dict base_node_val = base_node.getDictVal();
+                                final String base_node_val_val = base_node_val.getString("val");
+                                final String base_node_val_type = base_node_val.getString("type");
+                                write3dir("// >>>> switch - sentencias case");
+                                final ArrayList<Dict> case_list = ref_stmts.getDictArrayList("list");
+                                for (int i = 0; i < case_list.size(); i++) {
+                                    final Dict _case = case_list.get(i);
+                                    final Object _case_info = _case.get("info");
+                                    final Dict _case_condition = _case.getDict("condition");
+                                    final boolean _case_default = _case_condition == null;
+                                    final Dict _case_stmts = _case.getDict("stmts");
+                                    info = _case_info;
+
+                                    if (_case_default) {
+                                        write3dir("// >>>> if - sentencias default", i);
+                                        blockIn(actions);
+                                        frc_compiler_stmts_exec(_case_stmts, ca);
+                                        blockOut(actions);
+                                        break;
+                                    }
+
+                                    final Node _case_condition_node = _case_condition.getNode("nodo");
+
+                                    write3dir("// >>>> switch  -  case (%d)", i);
+                                    write3dir("// >>>> switch  -  condicion (%d)", i);
+                                    _case_condition_node.exec(actions);
+                                    final Dict _case_condition_node_val = _case_condition_node.getDictVal();
+                                    final String _case_condition_node_val_type = _case_condition_node_val.getString("type");
+                                    final String _case_condition_node_val_val = _case_condition_node_val.getString("val");
+
+                                    if (!_case_condition_node_val_type.equals(base_node_val_type)) {
+                                        throwException("Se esperaba un tipo de dato -> %s, se encontro -> %s", base_node_val_type, _case_condition_node_val_type);
+                                    }
+
+                                    final String l2 = getLabel(actions);
+                                    final String l3 = getLabel(actions);
+                                    write3dir("// >>>> switch - comparacion (%d)", i);
+                                    write3dir("if ( %s == %s) goto %s;", base_node_val_val, _case_condition_node_val_val, l2);
+                                    write3dir("goto %s;", l3);
+
+                                    write3dir("// >>>> switch - true (%d)", i);
+                                    write3dir("%s:", l2);
+                                    write3dir("// >>>> switch - sentencias (%d)", i);
+                                    write3dir("// >>>> if - sentencias (%d)", i);
+                                    flow_control.push(l1);
+                                    blockIn(actions);
+                                    frc_compiler_stmts_exec(_case_stmts, ca);
+                                    blockOut(actions);
+                                    flow_control.pop();
+                                    write3dir("// >>>> switch - false (%d)", i);
+                                    write3dir("%s:", l3);
+
+                                }
+
+                                write3dir("// >>>> switch - label salida");
+                                write3dir("%s:", l1);
+                                write3dir("// >>>>>>>> switch <<<<<<<< //");
+                                write3dir(poolCommit(actions));
+
+                                return null;
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            poolRollback(actions);
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.STMT_SWITCH);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="BREAK">
+                    put(TOperation.BREAK, (Operation) (Node node, Object actions) -> {
+
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+                        final Stack flow_control = ca.getStack("flow_control");
+                        final String flow_control_peek = (String) flow_control.peek();
+
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        final Dict _return = ref.getDict("return");
+
+                        Object info = ref_info;
+                        try {
+                            if (is3dirPhase(phase)) {
+
+                                poolOn(actions);
+                                write3dir("// //////// break //////// //");
+
+                                if (flow_control.size() == 1) {
+                                    throwException("No se encontro sentencia for, dowhile, while o switch...");
+                                }
+
+                                write3dir("goto %s;", flow_control_peek);
+
+                                write3dir("// //////// break //////// //");
+
+                                write3dir(poolCommit(actions));
+                                return null;
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            poolRollback(actions);
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.BREAK);
+                    });
+                    //</editor-fold>
+                    //<editor-fold defaultstate="collapsed" desc="CONTINUE">
+                    put(TOperation.CONTINUE, (Operation) (Node node, Object actions) -> {
+                        return noActionsProcessed(TOperation.CONTINUE);
+                    });
+                    //</editor-fold>
+                    //<editor-fold defaultstate="collapsed" desc="RETURN">
+                    put(TOperation.RETURN, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+                        final Stack flow_control = ca.getStack("flow_control");
+                        final String flow_control_peek = (String) flow_control.peek();
+
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        final Dict _return = ref.getDict("return");
+
+                        final Dict val = new Dict();
+                        Object info = ref_info;
+                        try {
+                            if (is3dirPhase(phase)) {
+
+                                poolOn(actions);
+                                write3dir("// //////// return //////// //");
+                                if (!methodsim.type.equals(TType.VOID)) {
+                                    final Node _return_node = _return.getNode("nodo");
+                                    _return_node.exec(actions);
+                                    final Dict _return_node_val = _return_node.getDictVal();
+                                    final String _return_node_val_val = _return_node_val.getString("val");
+                                    final String _return_node_val_type = _return_node_val.getString("type");
+
+                                    if (!_return_node_val_type.equals(methodsim.type.toString())) {
+                                        throwException("Se esperaba un tipo de dato -> %s, se obtuvo -> %s", methodsim.type, _return_node_val_type);
+                                    }
+                                    final String t1 = getTemp(actions);
+                                    write3dir("%s = p + 0;", t1);
+                                    write3dir("pila[%s] = %s;", t1, _return_node_val_val);
+                                }
+
+                                write3dir("goto %s;", flow_control_peek);
+                                write3dir("// //////// return //////// //");
+                                write3dir(poolCommit(actions));
+                                return null;
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            poolRollback(actions);
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.RETURN);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="PRINT">
+                    put(TOperation.PRINT, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        final String ref_name = ref.getString("name");
                         final Dict ref_params = ref.getDict("params");
 
                         final Dict val = new Dict();
@@ -3369,12 +4192,32 @@ public class Win extends javax.swing.JFrame {
                         try {
                             if (is3dirPhase(phase)) {
 
+                                poolOn(actions);
+                                write3dir("//........ llamada %s ........ //", ref_name);
+
+                                ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
+                                Object[] params = new Object[param_list.size()];
+                                for (int j = 0; j < param_list.size(); j++) {
+                                    final Dict param = param_list.get(j);
+                                    final Node param_nodo = param.getNode("nodo");
+                                    param_nodo.exec(actions);
+                                    final Dict param_nodo_val = param_nodo.getDictVal();
+                                    final String param_nodo_val_type = param_nodo_val.getString("type");
+                                    final String param_nodo_val_val = param_nodo_val.getString("val");
+
+                                    params[j] = param_nodo_val_type;
+                                }
+
+                                write3dir("//........ llamada %s ........ //", ref_name);
+                                write3dir(poolCommit(actions));
+                                return null;
                             }
                         } catch (UnsupportedOperationException exc) {
+                            poolRollback(actions);
                             compiler_error(exc, TErr.SEMANTICO, info, actions);
                         }
 
-                        return noActionsProcessed(TOperation.STMT_SWITCH);
+                        return noActionsProcessed(TOperation.PRINT);
                     });
                     //</editor-fold>
 
@@ -3413,6 +4256,14 @@ public class Win extends javax.swing.JFrame {
                         return null;
                     });
 //</editor-fold>
+                }
+
+                private String getMethodName(Sim methodsim) {
+                    final String type = methodsim.type.toString();
+                    final String name = methodsim.name;
+                    final String overload = Arrays.toString(methodsim.getDictOthers().getObjArray("overload")).replaceAll(", ", "_").replace("[", "1_").replace("]", "_1");
+
+                    return String.format("%s_%s_%s", type, name, overload);
                 }
 
                 private boolean isPrimitiveType(Object type) {
@@ -3466,36 +4317,39 @@ public class Win extends javax.swing.JFrame {
                 }
 
                 boolean pool = false;
-                StringBuilder pool_text = new StringBuilder();
-                int pool_t = 0;
-                int pool_l = 0;
+                final Stack<StringBuilder> pool_text = new Stack<>();
+                final Stack<Integer> pool_t = new Stack<>();
+                final Stack<Integer> pool_l = new Stack<>();
 
                 private void poolOn(Object actions) {
                     final Dict ca = (Dict) actions;
                     pool = true;
-                    pool_t = ca.getInt("3dir_t");
-                    pool_l = ca.getInt("3dir_l");
-                    pool_text.setLength(0);
+                    pool_t.push(ca.getInt("3dir_t"));
+                    pool_l.push(ca.getInt("3dir_l"));
+                    pool_text.push(new StringBuilder());
                 }
 
                 private void poolRollback(Object actions) {
                     final Dict ca = (Dict) actions;
-                    ca.put("3dir_t", pool_t);
-                    ca.put("3dir_l", pool_l);
-                    pool = false;
-                    pool_t = 0;
-                    pool_l = 0;
-                    pool_text.setLength(0);
+
+                    ca.put("3dir_t", pool_t.pop());
+                    ca.put("3dir_l", pool_l.pop());
+                    pool_text.pop();
+                    if (pool_text.size() == 0) {
+                        pool = false;
+                    }
                 }
 
                 private String poolCommit(Object actions) {
                     final Dict ca = (Dict) actions;
-                    final String ret = pool_text.toString();
 
-                    pool = false;
-                    pool_t = 0;
-                    pool_l = 0;
-                    pool_text.setLength(0);
+                    pool_t.pop();
+                    pool_l.pop();
+                    String ret = pool_text.pop().toString();
+                    if (pool_text.size() == 0) {
+                        pool = false;
+                    }
+
                     return ret;
                 }
 
@@ -3531,8 +4385,8 @@ public class Win extends javax.swing.JFrame {
                 private void write3dir(String text) {
 
                     if (pool) {
-                        pool_text.append(text);
-                        pool_text.append("\n");
+                        pool_text.peek().append(text);
+                        pool_text.peek().append("\n");
                         return;
                     }
 
