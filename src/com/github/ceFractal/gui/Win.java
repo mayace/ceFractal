@@ -2746,12 +2746,382 @@ public class Win extends javax.swing.JFrame {
             "operations", new HashMap<TOperation, Operation>() {
                 {
 
-                    //<editor-fold defaultstate="collapsed" desc="LINEA">
+                    //<editor-fold defaultstate="collapsed" desc="METHOD_FRectangulo">
+                    put(TOperation.NM_RECTANGULO , (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        final String ref_name = ref.getString("name");
+                        final Dict ref_params = ref.getDict("params");
+
+                        final Dict val = new Dict();
+                        Object info = ref_info;
+                        Object val_val = null;
+                        Object val_type = null;
+
+                        try {
+                            if (is3dirPhase(phase)) {
+
+                                ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
+                                Object[] params = new Object[param_list.size()];
+                                if (param_list.size() != 8) {
+                                    throwException("Numero de parametros no validos");
+                                }
+                                poolOn(actions);
+                                final String t1 = getTemp(actions);
+                                write3dir("// ************ llamada Rectangulo********* //");
+                                write3dir("%s = p + %d;", t1, methodsim.size);
+
+
+                                for (int i = 0; i < param_list.size(); i++) {
+                                    
+                                    final Dict param = param_list.get(i);
+                                    final Node param_node = param.getNode("nodo");
+                                    param_node.exec(actions);
+                                    String parama_valor = param_node.getDictVal().getString("val");
+                                    String tipo = param_node.getDictVal().getString("type");
+                                    System.out.println(tipo);
+                                    //valido que el ultimo parametro se de tipo Booleano
+                                    /*if (!tipo.equals(TType.BOOLEAN.toString()) && i==param_list.size()-1) {
+                                        throwException("Se esperaba un tipo de dato Booleano");
+                                    }*/
+                                    //valido q el resto de parametros sea de tipo int
+                                    if (!tipo.equals(TType.INT.toString()) && i<param_list.size()-2) {
+                                        throwException("Se esperaba un tipo de dato Int");
+                                    }
+                                    
+                                    
+                                    final String t2 = getTemp(actions);
+                                    //String t1 = t+"="+t3+j;
+                                    write3dir("%s = %s + %d;", t2, t1, i);
+                                    write3dir("pila[%s]= %s;", t2, parama_valor);
+
+                                }
+                                
+                                
+
+                                write3dir("p = p + %d;",methodsim.size);
+                                write3dir("call Rectangulo();");
+                                write3dir("p = p - %d;",methodsim.size);
+                                write3dir("// ************ fin llamada a Rectangulo********* //");
+                                write3dir(poolCommit(actions));
+                                val.put("val", val_val);
+                                val.put("type", val_type);
+                                return val;
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            poolRollback(actions);
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.NM_RECTANGULO);
+                    });
+                    //</editor-fold>
+                    
+                    //<editor-fold defaultstate="collapsed" desc="METHOD_FArco">
+                    put(TOperation.NM_ARCO, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        final String ref_name = ref.getString("name");
+                        final Dict ref_params = ref.getDict("params");
+
+                        final Dict val = new Dict();
+                        Object info = ref_info;
+                        Object val_val = null;
+                        Object val_type = null;
+
+                        try {
+                            if (is3dirPhase(phase)) {
+                                
+                                ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
+                                Object[] params = new Object[param_list.size()];
+                                System.out.println(param_list.size());
+                                if (param_list.size() != 10) {
+                                    throwException("Numero de parametros no validos");
+                                }
+                                poolOn(actions);
+                                final String t1 = getTemp(actions);
+                                write3dir("// ************ llamada Arco********* //");
+                                write3dir("%s = p + %d;", t1, methodsim.size);
+
+
+                                for (int i = 0; i < param_list.size(); i++) {
+                                    
+                                    final Dict param = param_list.get(i);
+                                    final Node param_node = param.getNode("nodo");
+                                    param_node.exec(actions);
+                                    String parama_valor = param_node.getDictVal().getString("val");
+                                    String tipo = param_node.getDictVal().getString("type");
+                                    
+                                    //valido que el ultimo parametro sea de tipo Booleano
+                                    /*if (tipo != TType.BOOLEAN && i==param_list.size()-1) {
+                                        throwException("Se esperaba un tipo de dato Booleano");
+                                    }*/
+                                    //valido q los parametros sea de tipo int
+                                    if (!tipo.equals(TType.INT.toString()) && i<param_list.size()-2) {
+                                        throwException("Se esperaba un tipo de dato Int");
+                                    }
+                                    final String t2 = getTemp(actions);
+                                    //String t1 = t+"="+t3+j;
+                                    write3dir("%s = %s + %d;", t2, t1, i);
+                                    write3dir("pila[%s]= %s;", t2, parama_valor);
+
+                                }
+                                
+                                
+
+                                write3dir("p = p + %d;",methodsim.size);
+                                write3dir("call Arco();");
+                                write3dir("p = p - %d;",methodsim.size);
+                                write3dir("// ************ fin llamada a Arco********* //");
+                                write3dir(poolCommit(actions));
+                                val.put("val", val_val);
+                                val.put("type", val_type);
+                                return val;
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            //poolRollback(actions);
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.NM_ARCO);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="METHOD_FOvalo">
+                    put(TOperation.NM_OVALO, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+                        
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        
+                        final String ref_name = ref.getString("name");
+                        final Dict ref_params = ref.getDict("params");
+                        
+                        final Dict val = new Dict();
+                        Object info = ref_info;
+                        Object val_val = null;
+                        Object val_type = null;
+
+                        try {
+                            if (is3dirPhase(phase)) {
+                                
+                                ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
+                                
+                                Object[] params = new Object[param_list.size()];
+                                if (param_list.size() != 8) {
+                                    throwException("Numero de parametros no validos");
+                                }
+                                poolOn(actions);
+                                final String t1 = getTemp(actions);
+                                write3dir("// ************ llamada Ovalo ********* //");
+                                write3dir("%s = p + %d;", t1, methodsim.size);
+
+                               
+                                for (int i = 0; i < param_list.size(); i++) {
+                                    final Dict param = param_list.get(i);
+                                    final Node param_node = param.getNode("nodo");
+                                    param_node.exec(actions);
+                                    String parama_valor = param_node.getDictVal().getString("val");
+                                    //revisar validacion de tipos
+                                    String tipo = param_node.getDictVal().getString("type");
+                                    
+                                    //valido q el ultimo parametro sea de tipo Booleano
+                                    /*if(tipo !=TType.BOOLEAN && i == param_list.size()-1){
+                                        throwException("Se esperaba un tipo de dato Booleano como ultimo parametro");
+                                    }*/
+                                    //valido q los parametros sean de tipo int
+                                    if (!tipo.equals(TType.INT.toString()) && i < param_list.size()-2) {
+                                        throwException("Se esperaba un tipo de dato int");
+                                    }
+                                    final String t2 = getTemp(actions);
+                                    //String t1 = t+"="+t3+j;
+                                    write3dir("%s = %s + %d;", t2, t1, i);
+                                    write3dir("pila[%s]= %s;", t2, parama_valor);
+                                    
+                                }
+                                
+                                
+                               //  write3dir(poolCommit(actions));
+                                write3dir("p = p + %d;",methodsim.size);
+                                write3dir("call Ovalo();");
+                                write3dir("p = p - %d;",methodsim.size);
+                                write3dir("// ************ fin llamada a ovalo********* //");
+                                write3dir(poolCommit(actions));
+                                val.put("val", val_val);
+                                val.put("type", val_type);
+                                return val;
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            poolRollback(actions);
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.NM_OVALO);
+                    });
+                    //</editor-fold>
+                    
+                    //<editor-fold defaultstate="collapsed" desc="METHOD_LINEA">
                     put(TOperation.NM_LINEA, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+                        
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        
+                        final String ref_name = ref.getString("name");
+                        final Dict ref_params = ref.getDict("params");
+                        
+                        final Dict val = new Dict();
+                        Object info = ref_info;
+                        Object val_val = null;
+                        Object val_type = null;
+
+                        try {
+                            if (is3dirPhase(phase)) {
+                                
+                                ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
+                               
+                                Object[] params = new Object[param_list.size()];
+                                if (param_list.size() != 7) {
+                                    throwException("Numero de parametros no validos");
+                                }
+                                poolOn(actions);
+                                final String t1 = getTemp(actions);
+                                write3dir("// ************ llamada LINEA ********* //");
+                                write3dir("%s = p + %d;", t1, methodsim.size);
+
+                               
+                                for (int i = 0; i < param_list.size(); i++) {
+                                    final Dict param = param_list.get(i);
+                                    final Node param_node = param.getNode("nodo");
+                                    param_node.exec(actions);
+                                    String parama_valor = param_node.getDictVal().getString("val");
+                                    //revisar validacion de tipos 
+                                    String tipo = param_node.getDictVal().getString("type");
+                                    
+                                    //valido q los parametros sean de tipo int
+                                    if (!tipo.equals(TType.INT.toString()) && i < param_list.size()) {
+                                        throwException("Se esperaba un tipo de dato int");
+                                    }
+                                    final String t2 = getTemp(actions);
+                                    //String t1 = t+"="+t3+j;
+                                    write3dir("%s = %s + %d;", t2, t1, i);
+                                    write3dir("pila[%s]= %s;", t2, parama_valor);
+                                    
+                                }
+                                System.err.println("Pasando por aqui");
+                                
+                               //  write3dir(poolCommit(actions));
+                                write3dir("p = p + %d;",methodsim.size);
+                                write3dir("call Ovalo();");
+                                write3dir("p = p - %d;",methodsim.size);
+                                write3dir("// ************ fin llamada a LINEA********* //");
+                                write3dir(poolCommit(actions));
+                                val.put("val", val_val);
+                                val.put("type", val_type);
+                                return val;
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            poolRollback(actions);
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
+                        }
 
                         return noActionsProcessed(TOperation.NM_LINEA);
                     });
                     //</editor-fold>
+                    
+                    //<editor-fold defaultstate="collapsed" desc="METHOD_FPoligono">
+                    put(TOperation.NM_POLIGONO, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+                        
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        
+                        final String ref_name = ref.getString("name");
+                        final Dict ref_params = ref.getDict("params");
+                        
+                        final Dict val = new Dict();
+                        Object info = ref_info;
+                        Object val_val = null;
+                        Object val_type = null;
+
+                        try {
+                            if (is3dirPhase(phase)) {
+                                
+                                ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
+                               
+                                Object[] params = new Object[param_list.size()];
+                                if (param_list.size() != 6) {
+                                    throwException("Numero de parametros no validos");
+                                }
+                                poolOn(actions);
+                                final String t1 = getTemp(actions);
+                                write3dir("// ************ llamada LINEA ********* //");
+                                write3dir("%s = p + %d;", t1, methodsim.size);
+
+                               
+                                for (int i = 0; i < param_list.size(); i++) {
+                                    final Dict param = param_list.get(i);
+                                    final Node param_node = param.getNode("nodo");
+                                    param_node.exec(actions);
+                                    String parama_valor = param_node.getDictVal().getString("val");
+                                    //revisar validacion de tipos 
+                                    String tipo = param_node.getDictVal().getString("type");
+                                    System.out.println(tipo);
+                                    //valido q los parametros sean de tipo int
+                                    /*if (!tipo.equals(TType.INT.toString()) && i < param_list.size()) {
+                                        throwException("Se esperaba un tipo de dato int");
+                                    }*/
+                                    final String t2 = getTemp(actions);
+                                    //String t1 = t+"="+t3+j;
+                                    write3dir("%s = %s + %d;", t2, t1, i);
+                                    write3dir("pila[%s]= %s;", t2, parama_valor);
+                                    
+                                }
+                                
+                                
+                               //  write3dir(poolCommit(actions));
+                                write3dir("p = p + %d;",methodsim.size);
+                                write3dir("call Ovalo();");
+                                write3dir("p = p - %d;",methodsim.size);
+                                write3dir("// ************ fin llamada a LINEA********* //");
+                                write3dir(poolCommit(actions));
+                                val.put("val", val_val);
+                                val.put("type", val_type);
+                                return val;
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            poolRollback(actions);
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.NM_LINEA);
+                    });
+                    //</editor-fold>
+
 
                     //<editor-fold defaultstate="collapsed" desc="IMPORT">
                     put(TOperation.IMPORT, (Operation) (Node node, Object actions) -> {
