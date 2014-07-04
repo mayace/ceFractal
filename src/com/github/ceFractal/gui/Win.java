@@ -2364,21 +2364,23 @@ public class Win extends javax.swing.JFrame {
                     put(TOperation.LTHAN, new Operation() {//<
                         @Override
                         public Object exec(Node node, Object actions) {
-                            //final Dict ca = (Dict) actions;
-                            System.out.println("menor que");
+                            final Dict ca = (Dict) actions;
+                            //System.out.println("menor que");
                             String lval = node.getLeft().getDictVal().getString("val");
                             String rval = node.getRight().getDictVal().getString("val");
                             TType tipo = TType.BOOLEAN;
-
+                            
                             BloqueCondicion etqs = new BloqueCondicion();
-                            etqs.etqVerdad = nuevaEtq();
-                            etqs.etqFalso = nuevaEtq();
-
+                            //etqs.etqVerdad = nuevaEtq();
+                            //etqs.etqFalso = nuevaEtq();
+                            etqs.etqVerdad = getLabel(ca);
+                            etqs.etqFalso = getLabel(ca);
+                            
                             //Object temp = getTemp(ca);
-                            String tres = "\tif " + lval + "<" + rval + " goto " + etqs.etqVerdad + "\n" + "\tgoto " + etqs.etqFalso;
+                            String tres = "\tif "+ lval + "<" + rval +" goto "+ etqs.etqVerdad + "\n"+"\tgoto "+ etqs.etqFalso;
                             write3dir(tres);
 
-                            return new Dict("tags", etqs, "type", tipo, "3DCode", tres);
+                            return new Dict("tags",etqs,"type",tipo,"3DCode",tres);
                         }
                     });
                     //</editor-fold>
@@ -2953,6 +2955,31 @@ public class Win extends javax.swing.JFrame {
                         }
                     });
                     //</editor-fold>
+                    //<editor-fold defaultstate="collapsed" desc="CAST">
+                    put(TOperation.CAST, new Operation() {//CAST
+                     @Override
+                     public Object exec(Node node, Object actions) {
+                     final Dict ca = (Dict) actions;
+                            
+                     BloqueCondicion lval = node.getLeft().getDictVal().getTags("tags");
+                     String tres = "label "+ lval.etqFalso+ "\n" ;
+                     write3dir(tres);
+                     //Ir a traer codigo para condicion falsa de nodo izquierdo
+                     BloqueCondicion rval = node.getRight().getDictVal().getTags("tags");
+                     Object temp = getTemp(ca);
+                            
+                     tres = "label "+ lval.etqVerdad + "\n";
+                     write3dir(tres);
+                     //Ir a traer codigo para condicion verdadera de nodo izquierdo
+                     write3dir(tres);
+                     tres = "\tgoto "+ rval.etqVerdad;
+                     write3dir(tres);
+                     //Ir a traer bloque de codigo condicion verdadera para nodo derecho
+
+                     return new Dict("val", temp,"tags",rval);
+                     }
+                     });
+                    //</editor-fold>
 
                     //<editor-fold defaultstate="collapsed" desc="LEAF">
                     put(TOperation.LEAF, (Operation) (Node node, Object actions) -> {
@@ -3343,8 +3370,73 @@ public class Win extends javax.swing.JFrame {
                     //</editor-fold>
 
                     //<editor-fold defaultstate="collapsed" desc="OR">
-                    put(TOperation.OR, (Operation) (Node node, Object actions) -> {
-                        System.out.println("or");
+                    put(TOperation.OR, new Operation() {//OR
+                        @Override
+                        public Object exec(Node node, Object actions) {
+                        //System.out.println("or");
+                        final Dict ca = (Dict) actions;
+                        //final CC cc = (CC) ca.get("cc");
+                        //final Stack scope = ca.getStack("scope");
+                        //final Sim method_sim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        final Dict val = new Dict();
+                            System.out.println("or---");
+                        try {
+                            if (is3dirPhase(phase)) {
+                                Node l = node.getLeft();
+                                l.exec(actions);
+                                Dict lval = l.getDictVal();
+                                
+                                String lval_type = lval.getString("type");
+                                BloqueCondicion ltags = lval.getTags("tags");
+                                String lval_ltrue = ltags.etqVerdad;
+                                String lval_lfalse = ltags.etqFalso;
+                                
+                                if (!lval_type.equals(TType.BOOLEAN.toString())) {
+                                    throwException(String.format("Se esperaba tipo -> %s en -> %s || expr", TType.BOOLEAN, lval_type));
+                                }
+                                
+                                write3dir(lval_lfalse + ":");
+                                //write3dir("// label false");
+
+                                Node r = node.getRight();
+                                r.exec(actions);
+                                Dict rval = r.getDictVal();
+                                String rval_type = rval.getString("type");
+                                BloqueCondicion rtags = rval.getTags("tags");
+                                String rval_ltrue = rtags.etqVerdad;
+                                String rval_lfalse = rtags.etqFalso;
+
+                                if (!rval_type.equals(TType.BOOLEAN.toString())) {
+                                    throwException(String.format("Se esperaba tipo -> %s en -> %s || %s", TType.BOOLEAN, lval_type, rval_type));
+                                }
+                                write3dir(lval_ltrue + ":");
+                                //write3dir("// label true");
+
+                                write3dir("go to " + rval_ltrue);
+                                //write3dir(rval_ltrue + ":");
+                                val.put("type", TType.BOOLEAN);
+                                val.put("tags",rtags);
+                                //val.put("ltrue", rval_ltrue);
+                                //val.put("lfalse", rval_lfalse);
+                                return val;
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.OR);
+                    }});
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="AND">
+                    put(TOperation.AND, new Operation() {
+                        @Override
+                        public Object exec(Node node, Object actions) {
+                        //System.out.println("or");
                         final Dict ca = (Dict) actions;
                         //final CC cc = (CC) ca.get("cc");
                         //final Stack scope = ca.getStack("scope");
@@ -3355,80 +3447,52 @@ public class Win extends javax.swing.JFrame {
                         final Object ref_info = ref.get("info");
                         final Dict val = new Dict();
 
-                        //try {
-                        //if (is3dirPhase(phase)) {
-                        Node l = node.getLeft();
-                        l.exec(actions);
-                        Dict lval = l.getDictVal();
-
-                        String lval_type = lval.getString("type");
-                        BloqueCondicion ltags = lval.getTags("tags");
-                        String lval_ltrue = ltags.etqVerdad;
-                        String lval_lfalse = ltags.etqFalso;
-
-                        if (!lval_type.equals(TType.BOOLEAN.toString())) {
-                            throwException(String.format("Se esperaba tipo -> %s en -> %s || expr", TType.BOOLEAN, lval_type));
-                        }
-
-                        write3dir(lval_lfalse + ":");
-                        write3dir("// label false");
-
-                        Node r = node.getRight();
-                        r.exec(actions);
-                        Dict rval = r.getDictVal();
-                        String rval_type = rval.getString("type");
-                        BloqueCondicion rtags = rval.getTags("tags");
-                        String rval_ltrue = rtags.etqVerdad;
-                        String rval_lfalse = rtags.etqFalso;
-
-                        if (!rval_type.equals(TType.BOOLEAN.toString())) {
-                            throwException(String.format("Se esperaba tipo -> %s en -> %s || %s", TType.BOOLEAN, lval_type, rval_type));
-                        }
-                        write3dir(lval_ltrue + ":");
-                        write3dir("// label true");
-
-                        write3dir("go to " + rval_ltrue + ":");
-                        write3dir(rval_ltrue + ":");
-                        val.put("type", TType.BOOLEAN);
-                        val.put("tags", rtags);
-                        //val.put("ltrue", rval_ltrue);
-                        //val.put("lfalse", rval_lfalse);
-                        return val;
-                            //}
-                        //} catch (UnsupportedOperationException exc) {
-                        //compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
-                        //}
-
-                        //return noActionsProcessed(TOperation.OR);
-                    });
-                    //</editor-fold>
-
-                    //<editor-fold defaultstate="collapsed" desc="AND">
-                    put(TOperation.AND, (Operation) (Node node, Object actions) -> {
-
-                        final Dict ca = (Dict) actions;
-                        final CC cc = (CC) ca.get("cc");
-                        final Stack scope = ca.getStack("scope");
-                        final Sim methodsim = (Sim) scope.peek();
-                        final Object phase = ca.get("phase");
-
-                        final Dict ref = node.getDictRef();
-                        final Object ref_info = ref.get("info");
-                        final Dict ref_params = ref.getDict("params");
-
-                        final Dict val = new Dict();
-                        Object info = ref_info;
-
                         try {
                             if (is3dirPhase(phase)) {
+                                Node l = node.getLeft();
+                                l.exec(actions);
+                                Dict lval = l.getDictVal();
+                                
+                                String lval_type = lval.getString("type");
+                                BloqueCondicion ltags = lval.getTags("tags");
+                                String lval_ltrue = ltags.etqVerdad;
+                                String lval_lfalse = ltags.etqFalso;
+                                
+                                if (!lval_type.equals(TType.BOOLEAN.toString())) {
+                                    throwException(String.format("Se esperaba tipo -> %s en -> %s || expr", TType.BOOLEAN, lval_type));
+                                }
+                                
+                                write3dir(lval_ltrue + ":");
+                                //write3dir("// label true");
 
+                                Node r = node.getRight();
+                                r.exec(actions);
+                                Dict rval = r.getDictVal();
+                                String rval_type = rval.getString("type");
+                                BloqueCondicion rtags = rval.getTags("tags");
+                                String rval_ltrue = rtags.etqVerdad;
+                                String rval_lfalse = rtags.etqFalso;
+
+                                if (!rval_type.equals(TType.BOOLEAN.toString())) {
+                                    throwException(String.format("Se esperaba tipo -> %s en -> %s || %s", TType.BOOLEAN, lval_type, rval_type));
+                                }
+                                write3dir(lval_lfalse + ":");
+                                //write3dir("// label false");
+
+                                write3dir("go to " + rval_lfalse);
+                                //write3dir(rval_ltrue + ":");
+                                val.put("type", TType.BOOLEAN);
+                                val.put("tags",rtags);
+                                //val.put("ltrue", rval_ltrue);
+                                //val.put("lfalse", rval_lfalse);
+                                return val;
                             }
                         } catch (UnsupportedOperationException exc) {
-                            compiler_error(exc, TErr.SEMANTICO, info, actions);
+                            compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
                         }
 
                         return noActionsProcessed(TOperation.AND);
-                    });
+                    }});
                     //</editor-fold>
 
                     //<editor-fold defaultstate="collapsed" desc="NOT">
@@ -3443,13 +3507,26 @@ public class Win extends javax.swing.JFrame {
                         final Dict ref = node.getDictRef();
                         final Object ref_info = ref.get("info");
                         final Dict ref_params = ref.getDict("params");
-
                         final Dict val = new Dict();
                         Object info = ref_info;
-
+                        System.out.println("not");
                         try {
                             if (is3dirPhase(phase)) {
-
+                                Node l = node.getLeft();
+                                l.exec(actions);
+                                Dict lval = l.getDictVal();
+                                String lval_type = lval.getString("type");
+                                BloqueCondicion ltags = lval.getTags("tags");
+                                if (!lval_type.equals(TType.BOOLEAN.toString())) {
+                                    throwException(String.format("Se esperaba tipo -> %s en -> %s || expr", TType.BOOLEAN, lval_type));
+                                }
+                                BloqueCondicion rtags = new BloqueCondicion();
+                                rtags.etqFalso = ltags.etqVerdad;
+                                rtags.etqVerdad = ltags.etqFalso;
+                                System.out.println(rtags.etqFalso + "-"+rtags.etqVerdad + "-"+ltags.etqVerdad+ "-"+ltags.etqFalso);
+                                val.put("type", TType.BOOLEAN);
+                                val.put("tags",rtags);
+                                return val;
                             }
                         } catch (UnsupportedOperationException exc) {
                             compiler_error(exc, TErr.SEMANTICO, info, actions);
@@ -3980,6 +4057,8 @@ public class Win extends javax.swing.JFrame {
                     });
                     //</editor-fold>
 
+                    
+                    
                     //<editor-fold defaultstate="collapsed" desc="SWITCH">
                     put(TOperation.STMT_SWITCH, (Operation) (Node node, Object actions) -> {
 
