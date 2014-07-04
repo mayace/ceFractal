@@ -1461,8 +1461,7 @@ public class Win extends javax.swing.JFrame {
             "cc", new com.github.gg.CC(),
             "operations", new HashMap<TOperation, Operation>() {
                 {
-                    
-                    
+
                     //<editor-fold defaultstate="collapsed" desc="int to float">
                     put(TOperation.CAST_INT2FLOAT, (Operation) (Node node, Object actions) -> {
                         final Dict ca = (Dict) actions;
@@ -1770,7 +1769,7 @@ public class Win extends javax.swing.JFrame {
                         return noActionsProcessed(TOperation.CAST_STRING2CHAR);
                     });
                     //</editor-fold>
-                    
+
                     //<editor-fold defaultstate="collapsed" desc="string to boolean">
                     put(TOperation.CAST_STRING2BOOLEAN, (Operation) (Node node, Object actions) -> {
                         final Dict ca = (Dict) actions;
@@ -1798,7 +1797,7 @@ public class Win extends javax.swing.JFrame {
                         return noActionsProcessed(TOperation.CAST_STRING2BOOLEAN);
                     });
                     //</editor-fold>
-                    
+
                     //<editor-fold defaultstate="collapsed" desc="boolean to int">
                     put(TOperation.CAST_BOOLEAN2INT, (Operation) (Node node, Object actions) -> {
                         final Dict ca = (Dict) actions;
@@ -1826,7 +1825,7 @@ public class Win extends javax.swing.JFrame {
                         return noActionsProcessed(TOperation.CAST_BOOLEAN2INT);
                     });
                     //</editor-fold>
-                    
+
                     //<editor-fold defaultstate="collapsed" desc="boolean to string">
                     put(TOperation.CAST_BOOLEAN2STRING, (Operation) (Node node, Object actions) -> {
                         final Dict ca = (Dict) actions;
@@ -1854,8 +1853,7 @@ public class Win extends javax.swing.JFrame {
                         return noActionsProcessed(TOperation.CAST_BOOLEAN2STRING);
                     });
                     //</editor-fold>
-                    
-                    
+
                     //<editor-fold defaultstate="collapsed" desc="NM_LINEA">
                     put(TOperation.NM_LINEA, (Operation) (Node node, Object actions) -> {
                         final Dict ca = (Dict) actions;
@@ -3141,7 +3139,7 @@ public class Win extends javax.swing.JFrame {
                 {
 
                     //<editor-fold defaultstate="collapsed" desc="METHOD_FRectangulo">
-                    put(TOperation.NM_RECTANGULO , (Operation) (Node node, Object actions) -> {
+                    put(TOperation.NM_RECTANGULO, (Operation) (Node node, Object actions) -> {
                         final Dict ca = (Dict) actions;
                         final CC cc = (CC) ca.get("cc");
                         final Stack scope = ca.getStack("scope");
@@ -3153,60 +3151,77 @@ public class Win extends javax.swing.JFrame {
                         final String ref_name = ref.getString("name");
                         final Dict ref_params = ref.getDict("params");
 
-                        final Dict val = new Dict();
-                        Object info = ref_info;
-                        Object val_val = null;
-                        Object val_type = null;
 
+                        Object info = ref_info;
                         try {
+                            
+                            if(isDefPhase(phase)){
+                                return null;
+                            }
+                            
                             if (is3dirPhase(phase)) {
 
-                                ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
-                                Object[] params = new Object[param_list.size()];
-                                if (param_list.size() != 8) {
-                                    throwException("Numero de parametros no validos");
-                                }
+//                                ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
+//                                Object[] params = new Object[param_list.size()];
+//                                if (param_list.size() != 8) {
+//                                    throwException("Numero de parametros no validos");
+//                                }
+                                final ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
+                                final Object[] params = new Object[param_list.size()];
+
                                 poolOn(actions);
                                 final String t1 = getTemp(actions);
-                                write3dir("// ************ llamada Rectangulo********* //");
+                                write3dir("// ******** llamada %s ******** //", ref_name);
                                 write3dir("%s = p + %d;", t1, methodsim.size);
 
-
                                 for (int i = 0; i < param_list.size(); i++) {
-                                    
                                     final Dict param = param_list.get(i);
                                     final Node param_node = param.getNode("nodo");
-                                    param_node.exec(actions);
-                                    String parama_valor = param_node.getDictVal().getString("val");
-                                    String tipo = param_node.getDictVal().getString("type");
-                                    System.out.println(tipo);
-                                    //valido que el ultimo parametro se de tipo Booleano
-                                    /*if (!tipo.equals(TType.BOOLEAN.toString()) && i==param_list.size()-1) {
-                                        throwException("Se esperaba un tipo de dato Booleano");
-                                    }*/
-                                    //valido q el resto de parametros sea de tipo int
-                                    if (!tipo.equals(TType.INT.toString()) && i<param_list.size()-2) {
-                                        throwException("Se esperaba un tipo de dato Int");
-                                    }
-                                    
-                                    
                                     final String t2 = getTemp(actions);
-                                    //String t1 = t+"="+t3+j;
+
+                                    write3dir("// **** parametro %d", i);
                                     write3dir("%s = %s + %d;", t2, t1, i);
-                                    write3dir("pila[%s]= %s;", t2, parama_valor);
+                                    param_node.exec(actions);
+                                    final Dict param_node_val = param_node.getDictVal();
+                                    final String param_node_val_val = param_node_val.getString("val");
+                                    final String param_node_val_type = param_node_val.getString("type");
+
+                                    write3dir("stack[%s] = %s;", t2, param_node_val_val);
+                                    params[i] = param_node_val_type;
 
                                 }
-                                
-                                
 
-                                write3dir("p = p + %d;",methodsim.size);
-                                write3dir("call Rectangulo();");
-                                write3dir("p = p - %d;",methodsim.size);
-                                write3dir("// ************ fin llamada a Rectangulo********* //");
+//                                for (int i = 0; i < param_list.size(); i++) {
+//                                    
+//                                    final Dict param = param_list.get(i);
+//                                    final Node param_node = param.getNode("nodo");
+//                                    param_node.exec(actions);
+//                                    String parama_valor = param_node.getDictVal().getString("val");
+//                                    String tipo = param_node.getDictVal().getString("type");
+//                                    System.out.println(tipo);
+//                                    //valido que el ultimo parametro se de tipo Booleano
+//                                    /*if (!tipo.equals(TType.BOOLEAN.toString()) && i==param_list.size()-1) {
+//                                        throwException("Se esperaba un tipo de dato Booleano");
+//                                    }*/
+//                                    //valido q el resto de parametros sea de tipo int
+//                                    if (!tipo.equals(TType.INT.toString()) && i<param_list.size()-2) {
+//                                        throwException("Se esperaba un tipo de dato Int");
+//                                    }
+//                                    
+//                                    
+//                                    final String t2 = getTemp(actions);
+//                                    //String t1 = t+"="+t3+j;
+//                                    write3dir("%s = %s + %d;", t2, t1, i);
+//                                    write3dir("pila[%s]= %s;", t2, parama_valor);
+//
+//                                }
+                                write3dir("p = p + %d;", methodsim.size);
+                                write3dir("call %s();", ref_name);
+                                write3dir("p = p - %d;", methodsim.size);
+                                write3dir("// ******** llamada %s ******** //", ref_name);
                                 write3dir(poolCommit(actions));
-                                val.put("val", val_val);
-                                val.put("type", val_type);
-                                return val;
+
+                                return null;
                             }
                         } catch (UnsupportedOperationException exc) {
                             poolRollback(actions);
@@ -3216,7 +3231,7 @@ public class Win extends javax.swing.JFrame {
                         return noActionsProcessed(TOperation.NM_RECTANGULO);
                     });
                     //</editor-fold>
-                    
+
                     //<editor-fold defaultstate="collapsed" desc="METHOD_FArco">
                     put(TOperation.NM_ARCO, (Operation) (Node node, Object actions) -> {
                         final Dict ca = (Dict) actions;
@@ -3237,7 +3252,7 @@ public class Win extends javax.swing.JFrame {
 
                         try {
                             if (is3dirPhase(phase)) {
-                                
+
                                 ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
                                 Object[] params = new Object[param_list.size()];
                                 System.out.println(param_list.size());
@@ -3249,21 +3264,20 @@ public class Win extends javax.swing.JFrame {
                                 write3dir("// ************ llamada Arco********* //");
                                 write3dir("%s = p + %d;", t1, methodsim.size);
 
-
                                 for (int i = 0; i < param_list.size(); i++) {
-                                    
+
                                     final Dict param = param_list.get(i);
                                     final Node param_node = param.getNode("nodo");
                                     param_node.exec(actions);
                                     String parama_valor = param_node.getDictVal().getString("val");
                                     String tipo = param_node.getDictVal().getString("type");
-                                    
+
                                     //valido que el ultimo parametro sea de tipo Booleano
                                     /*if (tipo != TType.BOOLEAN && i==param_list.size()-1) {
-                                        throwException("Se esperaba un tipo de dato Booleano");
-                                    }*/
+                                     throwException("Se esperaba un tipo de dato Booleano");
+                                     }*/
                                     //valido q los parametros sea de tipo int
-                                    if (!tipo.equals(TType.INT.toString()) && i<param_list.size()-2) {
+                                    if (!tipo.equals(TType.INT.toString()) && i < param_list.size() - 2) {
                                         throwException("Se esperaba un tipo de dato Int");
                                     }
                                     final String t2 = getTemp(actions);
@@ -3272,12 +3286,10 @@ public class Win extends javax.swing.JFrame {
                                     write3dir("pila[%s]= %s;", t2, parama_valor);
 
                                 }
-                                
-                                
 
-                                write3dir("p = p + %d;",methodsim.size);
+                                write3dir("p = p + %d;", methodsim.size);
                                 write3dir("call Arco();");
-                                write3dir("p = p - %d;",methodsim.size);
+                                write3dir("p = p - %d;", methodsim.size);
                                 write3dir("// ************ fin llamada a Arco********* //");
                                 write3dir(poolCommit(actions));
                                 val.put("val", val_val);
@@ -3300,13 +3312,13 @@ public class Win extends javax.swing.JFrame {
                         final Stack scope = ca.getStack("scope");
                         final Sim methodsim = (Sim) scope.peek();
                         final Object phase = ca.get("phase");
-                        
+
                         final Dict ref = node.getDictRef();
                         final Object ref_info = ref.get("info");
-                        
+
                         final String ref_name = ref.getString("name");
                         final Dict ref_params = ref.getDict("params");
-                        
+
                         final Dict val = new Dict();
                         Object info = ref_info;
                         Object val_val = null;
@@ -3314,9 +3326,9 @@ public class Win extends javax.swing.JFrame {
 
                         try {
                             if (is3dirPhase(phase)) {
-                                
+
                                 ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
-                                
+
                                 Object[] params = new Object[param_list.size()];
                                 if (param_list.size() != 8) {
                                     throwException("Numero de parametros no validos");
@@ -3326,7 +3338,6 @@ public class Win extends javax.swing.JFrame {
                                 write3dir("// ************ llamada Ovalo ********* //");
                                 write3dir("%s = p + %d;", t1, methodsim.size);
 
-                               
                                 for (int i = 0; i < param_list.size(); i++) {
                                     final Dict param = param_list.get(i);
                                     final Node param_node = param.getNode("nodo");
@@ -3334,27 +3345,26 @@ public class Win extends javax.swing.JFrame {
                                     String parama_valor = param_node.getDictVal().getString("val");
                                     //revisar validacion de tipos
                                     String tipo = param_node.getDictVal().getString("type");
-                                    
+
                                     //valido q el ultimo parametro sea de tipo Booleano
                                     /*if(tipo !=TType.BOOLEAN && i == param_list.size()-1){
-                                        throwException("Se esperaba un tipo de dato Booleano como ultimo parametro");
-                                    }*/
+                                     throwException("Se esperaba un tipo de dato Booleano como ultimo parametro");
+                                     }*/
                                     //valido q los parametros sean de tipo int
-                                    if (!tipo.equals(TType.INT.toString()) && i < param_list.size()-2) {
+                                    if (!tipo.equals(TType.INT.toString()) && i < param_list.size() - 2) {
                                         throwException("Se esperaba un tipo de dato int");
                                     }
                                     final String t2 = getTemp(actions);
                                     //String t1 = t+"="+t3+j;
                                     write3dir("%s = %s + %d;", t2, t1, i);
                                     write3dir("pila[%s]= %s;", t2, parama_valor);
-                                    
+
                                 }
-                                
-                                
-                               //  write3dir(poolCommit(actions));
-                                write3dir("p = p + %d;",methodsim.size);
+
+                                //  write3dir(poolCommit(actions));
+                                write3dir("p = p + %d;", methodsim.size);
                                 write3dir("call Ovalo();");
-                                write3dir("p = p - %d;",methodsim.size);
+                                write3dir("p = p - %d;", methodsim.size);
                                 write3dir("// ************ fin llamada a ovalo********* //");
                                 write3dir(poolCommit(actions));
                                 val.put("val", val_val);
@@ -3369,7 +3379,7 @@ public class Win extends javax.swing.JFrame {
                         return noActionsProcessed(TOperation.NM_OVALO);
                     });
                     //</editor-fold>
-                    
+
                     //<editor-fold defaultstate="collapsed" desc="METHOD_LINEA">
                     put(TOperation.NM_LINEA, (Operation) (Node node, Object actions) -> {
                         final Dict ca = (Dict) actions;
@@ -3377,13 +3387,13 @@ public class Win extends javax.swing.JFrame {
                         final Stack scope = ca.getStack("scope");
                         final Sim methodsim = (Sim) scope.peek();
                         final Object phase = ca.get("phase");
-                        
+
                         final Dict ref = node.getDictRef();
                         final Object ref_info = ref.get("info");
-                        
+
                         final String ref_name = ref.getString("name");
                         final Dict ref_params = ref.getDict("params");
-                        
+
                         final Dict val = new Dict();
                         Object info = ref_info;
                         Object val_val = null;
@@ -3391,9 +3401,9 @@ public class Win extends javax.swing.JFrame {
 
                         try {
                             if (is3dirPhase(phase)) {
-                                
+
                                 ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
-                               
+
                                 Object[] params = new Object[param_list.size()];
                                 if (param_list.size() != 7) {
                                     throwException("Numero de parametros no validos");
@@ -3403,7 +3413,6 @@ public class Win extends javax.swing.JFrame {
                                 write3dir("// ************ llamada LINEA ********* //");
                                 write3dir("%s = p + %d;", t1, methodsim.size);
 
-                               
                                 for (int i = 0; i < param_list.size(); i++) {
                                     final Dict param = param_list.get(i);
                                     final Node param_node = param.getNode("nodo");
@@ -3411,7 +3420,7 @@ public class Win extends javax.swing.JFrame {
                                     String parama_valor = param_node.getDictVal().getString("val");
                                     //revisar validacion de tipos 
                                     String tipo = param_node.getDictVal().getString("type");
-                                    
+
                                     //valido q los parametros sean de tipo int
                                     if (!tipo.equals(TType.INT.toString()) && i < param_list.size()) {
                                         throwException("Se esperaba un tipo de dato int");
@@ -3420,14 +3429,14 @@ public class Win extends javax.swing.JFrame {
                                     //String t1 = t+"="+t3+j;
                                     write3dir("%s = %s + %d;", t2, t1, i);
                                     write3dir("pila[%s]= %s;", t2, parama_valor);
-                                    
+
                                 }
                                 System.err.println("Pasando por aqui");
-                                
-                               //  write3dir(poolCommit(actions));
-                                write3dir("p = p + %d;",methodsim.size);
+
+                                //  write3dir(poolCommit(actions));
+                                write3dir("p = p + %d;", methodsim.size);
                                 write3dir("call Ovalo();");
-                                write3dir("p = p - %d;",methodsim.size);
+                                write3dir("p = p - %d;", methodsim.size);
                                 write3dir("// ************ fin llamada a LINEA********* //");
                                 write3dir(poolCommit(actions));
                                 val.put("val", val_val);
@@ -3442,7 +3451,7 @@ public class Win extends javax.swing.JFrame {
                         return noActionsProcessed(TOperation.NM_LINEA);
                     });
                     //</editor-fold>
-                    
+
                     //<editor-fold defaultstate="collapsed" desc="METHOD_FPoligono">
                     put(TOperation.NM_POLIGONO, (Operation) (Node node, Object actions) -> {
                         final Dict ca = (Dict) actions;
@@ -3450,13 +3459,13 @@ public class Win extends javax.swing.JFrame {
                         final Stack scope = ca.getStack("scope");
                         final Sim methodsim = (Sim) scope.peek();
                         final Object phase = ca.get("phase");
-                        
+
                         final Dict ref = node.getDictRef();
                         final Object ref_info = ref.get("info");
-                        
+
                         final String ref_name = ref.getString("name");
                         final Dict ref_params = ref.getDict("params");
-                        
+
                         final Dict val = new Dict();
                         Object info = ref_info;
                         Object val_val = null;
@@ -3464,9 +3473,9 @@ public class Win extends javax.swing.JFrame {
 
                         try {
                             if (is3dirPhase(phase)) {
-                                
+
                                 ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
-                               
+
                                 Object[] params = new Object[param_list.size()];
                                 if (param_list.size() != 6) {
                                     throwException("Numero de parametros no validos");
@@ -3476,7 +3485,6 @@ public class Win extends javax.swing.JFrame {
                                 write3dir("// ************ llamada LINEA ********* //");
                                 write3dir("%s = p + %d;", t1, methodsim.size);
 
-                               
                                 for (int i = 0; i < param_list.size(); i++) {
                                     final Dict param = param_list.get(i);
                                     final Node param_node = param.getNode("nodo");
@@ -3487,20 +3495,19 @@ public class Win extends javax.swing.JFrame {
                                     System.out.println(tipo);
                                     //valido q los parametros sean de tipo int
                                     /*if (!tipo.equals(TType.INT.toString()) && i < param_list.size()) {
-                                        throwException("Se esperaba un tipo de dato int");
-                                    }*/
+                                     throwException("Se esperaba un tipo de dato int");
+                                     }*/
                                     final String t2 = getTemp(actions);
                                     //String t1 = t+"="+t3+j;
                                     write3dir("%s = %s + %d;", t2, t1, i);
                                     write3dir("pila[%s]= %s;", t2, parama_valor);
-                                    
+
                                 }
-                                
-                                
-                               //  write3dir(poolCommit(actions));
-                                write3dir("p = p + %d;",methodsim.size);
+
+                                //  write3dir(poolCommit(actions));
+                                write3dir("p = p + %d;", methodsim.size);
                                 write3dir("call Ovalo();");
-                                write3dir("p = p - %d;",methodsim.size);
+                                write3dir("p = p - %d;", methodsim.size);
                                 write3dir("// ************ fin llamada a LINEA********* //");
                                 write3dir(poolCommit(actions));
                                 val.put("val", val_val);
@@ -3515,7 +3522,6 @@ public class Win extends javax.swing.JFrame {
                         return noActionsProcessed(TOperation.NM_LINEA);
                     });
                     //</editor-fold>
-
 
                     //<editor-fold defaultstate="collapsed" desc="IMPORT">
                     put(TOperation.IMPORT, (Operation) (Node node, Object actions) -> {
@@ -3948,234 +3954,397 @@ public class Win extends javax.swing.JFrame {
                     });
                     //</editor-fold>
 
-                  
+                    //<editor-fold defaultstate="collapsed" desc="OR">
+                    put(TOperation.OR, new Operation() {//OR
+                        @Override
+                        public Object exec(Node node, Object actions) {
+                            final Dict ca = (Dict) actions;
+                            final CC cc = (CC) ca.get("cc");
+                            final Stack scope = ca.getStack("scope");
+                            final Sim method_sim = (Sim) scope.peek();
+                            final Object phase = ca.get("phase");
+
+                            final Dict ref = node.getDictRef();
+                            final Object ref_info = ref.get("info");
+                            final Dict val = new Dict();
+                            try {
+                                if (is3dirPhase(phase)) {
+                                    Node l = node.getLeft();
+                                    l.exec(actions);
+                                    Dict lval = l.getDictVal();
+
+                                    String lval_type = lval.getString("type");
+                                    BloqueCondicion ltags = lval.getTags("tags");
+                                    String lval_ltrue = ltags.etqVerdad;
+                                    String lval_lfalse = ltags.etqFalso;
+
+                                    if (!lval_type.equals(TType.BOOLEAN.toString())) {
+                                        throwException(String.format("Se esperaba tipo -> %s en -> %s || expr", TType.BOOLEAN, lval_type));
+                                    }
+
+                                    write3dir(lval_lfalse + ":");
+                                    //write3dir("// label false");
+
+                                    Node r = node.getRight();
+                                    r.exec(actions);
+                                    Dict rval = r.getDictVal();
+                                    String rval_type = rval.getString("type");
+                                    BloqueCondicion rtags = rval.getTags("tags");
+                                    String rval_ltrue = rtags.etqVerdad;
+                                    String rval_lfalse = rtags.etqFalso;
+
+                                    if (!rval_type.equals(TType.BOOLEAN.toString())) {
+                                        throwException(String.format("Se esperaba tipo -> %s en -> %s || %s", TType.BOOLEAN, lval_type, rval_type));
+                                    }
+                                    write3dir(lval_ltrue + ":");
+                                    //write3dir("// label true");
+
+                                    write3dir("go to " + rval_ltrue + ";");
+                                    //write3dir(rval_ltrue + ":");
+                                    val.put("type", TType.BOOLEAN.toString());
+                                    val.put("tags", rtags);
+                                //val.put("ltrue", rval_ltrue);
+                                    //val.put("lfalse", rval_lfalse);
+                                    return val;
+                                }
+                            } catch (UnsupportedOperationException exc) {
+                                compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
+                            }
+
+                            return noActionsProcessed(TOperation.OR);
+                        }
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="AND">
+                    put(TOperation.AND, new Operation() {
+                        @Override
+                        public Object exec(Node node, Object actions) {
+                            final Dict ca = (Dict) actions;
+                            final CC cc = (CC) ca.get("cc");
+                            final Stack scope = ca.getStack("scope");
+                            final Sim method_sim = (Sim) scope.peek();
+                            final Object phase = ca.get("phase");
+
+                            final Dict ref = node.getDictRef();
+                            final Object ref_info = ref.get("info");
+                            final Dict val = new Dict();
+
+                            try {
+                                if (is3dirPhase(phase)) {
+                                    Node l = node.getLeft();
+                                    l.exec(actions);
+                                    Dict lval = l.getDictVal();
+
+                                    String lval_type = lval.getString("type");
+                                    BloqueCondicion ltags = lval.getTags("tags");
+                                    String lval_ltrue = ltags.etqVerdad;
+                                    String lval_lfalse = ltags.etqFalso;
+
+                                    if (!lval_type.equals(TType.BOOLEAN.toString())) {
+                                        throwException(String.format("Se esperaba tipo -> %s en -> %s || expr", TType.BOOLEAN, lval_type));
+                                    }
+
+                                    write3dir(lval_ltrue + ":");
+                                    //write3dir("// label true");
+
+                                    Node r = node.getRight();
+                                    r.exec(actions);
+                                    Dict rval = r.getDictVal();
+                                    String rval_type = rval.getString("type");
+                                    BloqueCondicion rtags = rval.getTags("tags");
+                                    String rval_ltrue = rtags.etqVerdad;
+                                    String rval_lfalse = rtags.etqFalso;
+
+                                    if (!rval_type.equals(TType.BOOLEAN.toString())) {
+                                        throwException(String.format("Se esperaba tipo -> %s en -> %s || %s", TType.BOOLEAN, lval_type, rval_type));
+                                    }
+                                    write3dir(lval_lfalse + ":");
+                                    //write3dir("// label false");
+
+                                    write3dir("go to " + rval_lfalse + ";");
+                                    //write3dir(rval_ltrue + ":");
+                                    val.put("type", TType.BOOLEAN.toString());
+                                    val.put("tags", rtags);
+                                //val.put("ltrue", rval_ltrue);
+                                    //val.put("lfalse", rval_lfalse);
+                                    return val;
+                                }
+                            } catch (UnsupportedOperationException exc) {
+                                compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
+                            }
+
+                            return noActionsProcessed(TOperation.AND);
+                        }
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="NOT">
+                    put(TOperation.NOT, (Operation) (Node node, Object actions) -> {
+
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        final Dict ref_params = ref.getDict("params");
+                        final Dict val = new Dict();
+                        Object info = ref_info;
+                        System.out.println("not");
+                        try {
+                            if (is3dirPhase(phase)) {
+                                Node l = node.getLeft();
+                                l.exec(actions);
+                                Dict lval = l.getDictVal();
+                                String lval_type = lval.getString("type");
+                                BloqueCondicion ltags = lval.getTags("tags");
+                                if (!lval_type.equals(TType.BOOLEAN.toString())) {
+                                    throwException(String.format("Se esperaba tipo -> %s en -> %s || expr", TType.BOOLEAN, lval_type));
+                                }
+                                BloqueCondicion rtags = new BloqueCondicion();
+                                rtags.etqFalso = ltags.etqVerdad;
+                                rtags.etqVerdad = ltags.etqFalso;
+                                System.out.println(rtags.etqFalso + "-" + rtags.etqVerdad + "-" + ltags.etqVerdad + "-" + ltags.etqFalso);
+                                val.put("type", TType.BOOLEAN.toString());
+                                val.put("tags", rtags);
+                                return val;
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.NOT);
+                    });
+                    //</editor-fold>
+
                     //<editor-fold defaultstate="collapsed" desc="LTHAN">
                     put(TOperation.LTHAN, new Operation() {//<
                         @Override
                         public Object exec(Node node, Object actions) {
                             final Dict ca = (Dict) actions;
-                            
-                            
+
                             final Dict ref = node.getDictRef();
                             final Object ref_info = ref.get("info");
                             final Object phase = ca.get("phase");
-                            
+
                             try {
                                 if (is3dirPhase(phase)) {
                                     String lval = node.getLeft().getDictVal().getString("val");
                                     String rval = node.getRight().getDictVal().getString("val");
-                                    
+
                                     String ltype = node.getLeft().getDictVal().getString("type");
                                     String rtype = node.getRight().getDictVal().getString("type");
                                     String tipo = TType.BOOLEAN.toString();
 
-                                    if(!(ltype.equals(TType.INT.toString())||!ltype.equals(TType.FLOAT.toString()))&&(!rtype.equals(TType.INT.toString())||!rtype.equals(TType.FLOAT.toString()))){
+                                    if (!(ltype.equals(TType.INT.toString()) || !ltype.equals(TType.FLOAT.toString())) && (!rtype.equals(TType.INT.toString()) || !rtype.equals(TType.FLOAT.toString()))) {
                                         throwException("No se puede comparar la expresiÃ³n, se esperaba INT, FLOAT O CHAR");
                                     }
 
                                     BloqueCondicion etqs = new BloqueCondicion();
                                     etqs.etqVerdad = getLabel(ca);
                                     etqs.etqFalso = getLabel(ca);
-                                    String tres = "\tif "+ lval + "<" + rval +" goto "+ etqs.etqVerdad + ";\n"+"\tgoto "+ etqs.etqFalso+";";
+                                    String tres = "\tif " + lval + "<" + rval + " goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
                                     write3dir(tres);
 
-                                        return new Dict("tags",etqs,"type",tipo);
+                                    return new Dict("tags", etqs, "type", tipo);
                                 }
-                        } catch (UnsupportedOperationException exc) {
-                            compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
-                        }
+                            } catch (UnsupportedOperationException exc) {
+                                compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
+                            }
                             return noActionsProcessed(TOperation.LTHAN);
                         }
                     });
                     //</editor-fold>
-                    
+
                     //<editor-fold defaultstate="collapsed" desc="LETHAN">
                     put(TOperation.LETHAN, new Operation() {//<=
                         @Override
                         public Object exec(Node node, Object actions) {
-                            final Dict ca = (Dict) actions;                            
-                            
+                            final Dict ca = (Dict) actions;
+
                             final Dict ref = node.getDictRef();
                             final Object ref_info = ref.get("info");
                             final Object phase = ca.get("phase");
-                            
+
                             try {
                                 if (is3dirPhase(phase)) {
-                                    
+
                                     String lval = node.getLeft().getDictVal().getString("val");
                                     String rval = node.getRight().getDictVal().getString("val");
-                                    
+
                                     String ltype = node.getLeft().getDictVal().getString("type");
                                     String rtype = node.getRight().getDictVal().getString("type");
                                     String tipo = TType.BOOLEAN.toString();
 
-                                    if(!(ltype.equals(TType.INT.toString())||!ltype.equals(TType.FLOAT.toString()))&&(!rtype.equals(TType.INT.toString())||!rtype.equals(TType.FLOAT.toString()))){
+                                    if (!(ltype.equals(TType.INT.toString()) || !ltype.equals(TType.FLOAT.toString())) && (!rtype.equals(TType.INT.toString()) || !rtype.equals(TType.FLOAT.toString()))) {
                                         throwException("No se puede comparar la expresiÃ³n, se esperaba INT, FLOAT O CHAR");
                                     }
 
                                     BloqueCondicion etqs = new BloqueCondicion();
                                     etqs.etqVerdad = getLabel(ca);
                                     etqs.etqFalso = getLabel(ca);
-                                    String tres = "\tif "+ lval + "<=" + rval +" goto "+ etqs.etqVerdad + ";\n"+"\tgoto "+ etqs.etqFalso+";";
+                                    String tres = "\tif " + lval + "<=" + rval + " goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
                                     write3dir(tres);
 
-                                    return new Dict("tags",etqs,"type",tipo);
+                                    return new Dict("tags", etqs, "type", tipo);
                                 }
-                        } catch (UnsupportedOperationException exc) {
-                            compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
-                        }
+                            } catch (UnsupportedOperationException exc) {
+                                compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
+                            }
                             return noActionsProcessed(TOperation.LETHAN);
-                    }
+                        }
                     });
                     //</editor-fold>
-                    
+
                     //<editor-fold defaultstate="collapsed" desc="BTHAN">
                     put(TOperation.BTHAN, new Operation() {//>
                         @Override
                         public Object exec(Node node, Object actions) {
-                            final Dict ca = (Dict) actions;                            
-                            
+                            final Dict ca = (Dict) actions;
+
                             final Dict ref = node.getDictRef();
                             final Object ref_info = ref.get("info");
                             final Object phase = ca.get("phase");
-                            
+
                             try {
                                 if (is3dirPhase(phase)) {
                                     String lval = node.getLeft().getDictVal().getString("val");
                                     String rval = node.getRight().getDictVal().getString("val");
-                                    
+
                                     String ltype = node.getLeft().getDictVal().getString("type");
                                     String rtype = node.getRight().getDictVal().getString("type");
                                     String tipo = TType.BOOLEAN.toString();
 
-                                    if(!(ltype.equals(TType.INT.toString())||!ltype.equals(TType.FLOAT.toString()))&&(!rtype.equals(TType.INT.toString())||!rtype.equals(TType.FLOAT.toString()))){
+                                    if (!(ltype.equals(TType.INT.toString()) || !ltype.equals(TType.FLOAT.toString())) && (!rtype.equals(TType.INT.toString()) || !rtype.equals(TType.FLOAT.toString()))) {
                                         throwException("No se puede comparar la expresiÃ³n, se esperaba INT, FLOAT O CHAR");
                                     }
 
                                     BloqueCondicion etqs = new BloqueCondicion();
                                     etqs.etqVerdad = getLabel(ca);
                                     etqs.etqFalso = getLabel(ca);
-                                    String tres = "\tif "+ lval + ">" + rval +" goto "+ etqs.etqVerdad + ";\n"+"\tgoto "+ etqs.etqFalso+";";
+                                    String tres = "\tif " + lval + ">" + rval + " goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
                                     write3dir(tres);
 
-                                    return new Dict("tags",etqs,"type",tipo);
+                                    return new Dict("tags", etqs, "type", tipo);
+                                }
+                            } catch (UnsupportedOperationException exc) {
+                                compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
                             }
-                        } catch (UnsupportedOperationException exc) {
-                            compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
-                        }
                             return noActionsProcessed(TOperation.BTHAN);
                         }
                     });
                     //</editor-fold>
-                    
+
                     //<editor-fold defaultstate="collapsed" desc="BETHAN">                    
                     put(TOperation.BETHAN, new Operation() {//>=
                         @Override
                         public Object exec(Node node, Object actions) {
-                            final Dict ca = (Dict) actions;                           
-                            
+                            final Dict ca = (Dict) actions;
+
                             final Dict ref = node.getDictRef();
                             final Object ref_info = ref.get("info");
                             final Object phase = ca.get("phase");
-                            
+
                             try {
                                 if (is3dirPhase(phase)) {
                                     String lval = node.getLeft().getDictVal().getString("val");
                                     String rval = node.getRight().getDictVal().getString("val");
-                                    
+
                                     String ltype = node.getLeft().getDictVal().getString("type");
                                     String rtype = node.getRight().getDictVal().getString("type");
                                     String tipo = TType.BOOLEAN.toString();
 
-                                    if(!(ltype.equals(TType.INT.toString())||!ltype.equals(TType.FLOAT.toString()))&&(!rtype.equals(TType.INT.toString())||!rtype.equals(TType.FLOAT.toString()))){
+                                    if (!(ltype.equals(TType.INT.toString()) || !ltype.equals(TType.FLOAT.toString())) && (!rtype.equals(TType.INT.toString()) || !rtype.equals(TType.FLOAT.toString()))) {
                                         throwException("No se puede comparar la expresiÃ³n, se esperaba INT, FLOAT O CHAR");
                                     }
 
                                     BloqueCondicion etqs = new BloqueCondicion();
                                     etqs.etqVerdad = getLabel(ca);
                                     etqs.etqFalso = getLabel(ca);
-                                    String tres = "\tif "+ lval + ">=" + rval +" goto "+ etqs.etqVerdad + ";\n"+"\tgoto "+ etqs.etqFalso+";";
+                                    String tres = "\tif " + lval + ">=" + rval + " goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
                                     write3dir(tres);
 
-                                    return new Dict("tags",etqs,"type",tipo);
+                                    return new Dict("tags", etqs, "type", tipo);
+                                }
+                            } catch (UnsupportedOperationException exc) {
+                                compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
                             }
-                        } catch (UnsupportedOperationException exc) {
-                            compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
-                        }
                             return noActionsProcessed(TOperation.BETHAN);
-                    }
+                        }
                     });
                     //</editor-fold>
-                    
+
                     //<editor-fold defaultstate="collapsed" desc="DEQUAL">                    
                     put(TOperation.DEQUAL, new Operation() {//>=
                         @Override
                         public Object exec(Node node, Object actions) {
                             final Dict ca = (Dict) actions;
-                            
+
                             final Dict ref = node.getDictRef();
                             final Object ref_info = ref.get("info");
                             final Object phase = ca.get("phase");
-                            
+
                             try {
                                 if (is3dirPhase(phase)) {
                                     String lval = node.getLeft().getDictVal().getString("val");
                                     String rval = node.getRight().getDictVal().getString("val");
-                                    
+
                                     String ltype = node.getLeft().getDictVal().getString("type");
                                     String rtype = node.getRight().getDictVal().getString("type");
                                     String tipo = TType.BOOLEAN.toString();
 
                                     /*if(!(ltype.equals(TType.INT.toString())||!ltype.equals(TType.FLOAT.toString()))&&(!rtype.equals(TType.INT.toString())||!rtype.equals(TType.FLOAT.toString()))){
-                                        throwException("No se puede comparar la expresiÃ³n, se esperaba INT, FLOAT O CHAR");
-                                    }*/
-
+                                     throwException("No se puede comparar la expresiÃ³n, se esperaba INT, FLOAT O CHAR");
+                                     }*/
                                     BloqueCondicion etqs = new BloqueCondicion();
                                     etqs.etqVerdad = getLabel(ca);
                                     etqs.etqFalso = getLabel(ca);
-                                    String tres = "\tif "+ lval + "==" + rval +" goto "+ etqs.etqVerdad + ";\n"+"\tgoto "+ etqs.etqFalso+";";
+                                    String tres = "\tif " + lval + "==" + rval + " goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
                                     write3dir(tres);
 
-                                    return new Dict("tags",etqs,"type",tipo);
+                                    return new Dict("tags", etqs, "type", tipo);
+                                }
+                            } catch (UnsupportedOperationException exc) {
+                                compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
                             }
-                        } catch (UnsupportedOperationException exc) {
-                            compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
-                        }
                             return noActionsProcessed(TOperation.DEQUAL);
                         }
                     });
                     //</editor-fold>
-                    
+
                     //<editor-fold defaultstate="collapsed" desc="NEQUAL">                    
                     put(TOperation.NEQUAL, new Operation() {//!=
                         @Override
                         public Object exec(Node node, Object actions) {
-                            final Dict ca = (Dict) actions;                            
-                            
+                            final Dict ca = (Dict) actions;
+
                             final Dict ref = node.getDictRef();
                             final Object ref_info = ref.get("info");
                             final Object phase = ca.get("phase");
-                            
+
                             try {
                                 if (is3dirPhase(phase)) {
                                     String lval = node.getLeft().getDictVal().getString("val");
                                     String rval = node.getRight().getDictVal().getString("val");
-                                    
+
                                     String ltype = node.getLeft().getDictVal().getString("type");
                                     String rtype = node.getRight().getDictVal().getString("type");
                                     String tipo = TType.BOOLEAN.toString();
 
-                                    if(!(ltype.equals(TType.INT.toString())||!ltype.equals(TType.FLOAT.toString()))&&(!rtype.equals(TType.INT.toString())||!rtype.equals(TType.FLOAT.toString()))){
+                                    if (!(ltype.equals(TType.INT.toString()) || !ltype.equals(TType.FLOAT.toString())) && (!rtype.equals(TType.INT.toString()) || !rtype.equals(TType.FLOAT.toString()))) {
                                         throwException("No se puede comparar la expresiÃ³n, se esperaba INT, FLOAT O CHAR");
                                     }
 
                                     BloqueCondicion etqs = new BloqueCondicion();
                                     etqs.etqVerdad = getLabel(ca);
                                     etqs.etqFalso = getLabel(ca);
-                                    String tres = "\tif "+ lval + "!=" + rval +" goto "+ etqs.etqVerdad + ";\n"+"\tgoto "+ etqs.etqFalso+";";
+                                    String tres = "\tif " + lval + "!=" + rval + " goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
                                     write3dir(tres);
 
-                                    return new Dict("tags",etqs,"type",tipo);
+                                    return new Dict("tags", etqs, "type", tipo);
                                 }
                             } catch (UnsupportedOperationException exc) {
                                 compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
@@ -4184,22 +4353,22 @@ public class Win extends javax.swing.JFrame {
                         }
                     });
                     //</editor-fold>
-                    
+
                     //<editor-fold defaultstate="collapsed" desc="PLUS">
                     put(TOperation.PLUS, new Operation() {
                         @Override
                         public Object exec(Node node, Object actions) {
                             write3dir("//Mas +++");
-                            
+
                             final Dict ca = (Dict) actions;
                             final Dict ref = node.getDictRef();
                             final Object ref_info = ref.get("info");
                             final Object phase = ca.get("phase");
-                            
+
                             try {
                                 if (is3dirPhase(phase)) {
                                     String lval = node.getLeft().getDictVal().getString("val");
-                                    String rval = node.getRight().getDictVal().getString("val");                            
+                                    String rval = node.getRight().getDictVal().getString("val");
 
                                     String ltype = node.getLeft().getDictVal().getString("type");
                                     String rtype = node.getRight().getDictVal().getString("type");
@@ -4228,34 +4397,34 @@ public class Win extends javax.swing.JFrame {
                                                     List<String> temporales = new ArrayList<String>();
 
                                                     //Procesando cadena derecha
-                                                    for (int i = 0; i < rlength+1; i++) {
+                                                    for (int i = 0; i < rlength + 1; i++) {
                                                         temp = getTemp(ca);
                                                         final String t2 = getTemp(ca);
-                                                        write3dir(temp + "=" + rval + "+" + i +";");
+                                                        write3dir(temp + "=" + rval + "+" + i + ";");
                                                         write3dir(t2 + "= heap[" + temp + "];");
                                                         temporales.add(t2);
                                                     }
 
                                                     String t_gl = getTemp(ca);
                                                     write3dir(t_gl + "=h;");
-                                                    write3dir("h = h+" + (int) (2 + rlength + 1)+";");
+                                                    write3dir("h = h+" + (int) (2 + rlength + 1) + ";");
 
                                                     temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl + "+" + 0+";");
-                                                    write3dir("heap[" + temp + "]=" + lval+";");
+                                                    write3dir(temp + "=" + t_gl + "+" + 0 + ";");
+                                                    write3dir("heap[" + temp + "]=" + lval + ";");
 
                                                     temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl + "+" + 1+";");
+                                                    write3dir(temp + "=" + t_gl + "+" + 1 + ";");
                                                     write3dir("heap[" + temp + "]=-101;");
 
                                                     //Modificando heap, se suma dos porque se agrego en entero y -100
-                                                    for (int i = 0; i < rlength+1; i++) {                                                
+                                                    for (int i = 0; i < rlength + 1; i++) {
                                                         final String t_nuevos = temporales.get(i);
                                                         temp = getTemp(ca);
-                                                        write3dir(temp + "=" + t_gl + "+" + (int)(i+2)+";");
-                                                        write3dir("heap[" + temp + "]=" + t_nuevos+";");
+                                                        write3dir(temp + "=" + t_gl + "+" + (int) (i + 2) + ";");
+                                                        write3dir("heap[" + temp + "]=" + t_nuevos + ";");
                                                     }
-                                                    length = 2+ rlength;
+                                                    length = 2 + rlength;
                                                     temp = t_gl;
                                                     type = TType.STRING.toString();
                                                     seConcateno = true;
@@ -4291,31 +4460,31 @@ public class Win extends javax.swing.JFrame {
                                                     for (int i = 0; i < rlength + 1; i++) {
                                                         temp = getTemp(ca);
                                                         final String t2 = getTemp(ca);
-                                                        write3dir(temp + "=" + rval + "+" + i+";");
+                                                        write3dir(temp + "=" + rval + "+" + i + ";");
                                                         write3dir(t2 + "= heap[" + temp + "];");
                                                         temporales.add(t2);
                                                     }
 
                                                     String t_gl = getTemp(ca);
                                                     write3dir(t_gl + "=h;");
-                                                    write3dir("h = h+" + (int) (2 + rlength + 1)+";");
+                                                    write3dir("h = h+" + (int) (2 + rlength + 1) + ";");
 
                                                     temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl + "+" + 0+";");
-                                                    write3dir("heap[" + temp + "]=" + lval+";");
+                                                    write3dir(temp + "=" + t_gl + "+" + 0 + ";");
+                                                    write3dir("heap[" + temp + "]=" + lval + ";");
 
                                                     temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl + "+" + 1+";");
+                                                    write3dir(temp + "=" + t_gl + "+" + 1 + ";");
                                                     write3dir("heap[" + temp + "]=-101;");
 
                                                     //Modificando heap, se suma dos porque se agrego en entero y -100
-                                                    for (int i = 0; i < rlength + 1; i++) {                                                
+                                                    for (int i = 0; i < rlength + 1; i++) {
                                                         final String t_nuevos = temporales.get(i);
                                                         temp = getTemp(ca);
-                                                        write3dir(temp + "=" + t_gl + "+" + (int)(i+2)+";");
-                                                        write3dir("heap[" + temp + "]=" + t_nuevos+";");
+                                                        write3dir(temp + "=" + t_gl + "+" + (int) (i + 2) + ";");
+                                                        write3dir("heap[" + temp + "]=" + t_nuevos + ";");
                                                     }
-                                                    length = 2+ rlength;
+                                                    length = 2 + rlength;
                                                     temp = t_gl;
                                                     type = TType.STRING.toString();
                                                     seConcateno = true;
@@ -4345,31 +4514,31 @@ public class Win extends javax.swing.JFrame {
                                                     for (int i = 0; i < rlength + 1; i++) {
                                                         temp = getTemp(ca);
                                                         final String t2 = getTemp(ca);
-                                                        write3dir(temp + "=" + rval + "+" + i+";");
-                                                        write3dir(t2 + "= heap[" + temp + "]"+";");
+                                                        write3dir(temp + "=" + rval + "+" + i + ";");
+                                                        write3dir(t2 + "= heap[" + temp + "]" + ";");
                                                         temporales.add(t2);
                                                     }
 
                                                     String t_gl = getTemp(ca);
                                                     write3dir(t_gl + "=h");
-                                                    write3dir("h = h+" + (int) (2 + rlength + 1)+";");
+                                                    write3dir("h = h+" + (int) (2 + rlength + 1) + ";");
 
                                                     temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl + "+" + 0+";");
-                                                    write3dir("heap[" + temp + "]=" + lval+";");
+                                                    write3dir(temp + "=" + t_gl + "+" + 0 + ";");
+                                                    write3dir("heap[" + temp + "]=" + lval + ";");
 
                                                     temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl + "+" + 1+";");
+                                                    write3dir(temp + "=" + t_gl + "+" + 1 + ";");
                                                     write3dir("heap[" + temp + "]=-102;");
 
                                                     //Modificando heap, se suma dos porque se agrego en entero y -100
-                                                    for (int i = 0; i < rlength + 1; i++) {                                                
+                                                    for (int i = 0; i < rlength + 1; i++) {
                                                         final String t_nuevos = temporales.get(i);
                                                         temp = getTemp(ca);
-                                                        write3dir(temp + "=" + t_gl + "+" + (int)(i+2)+";");
-                                                        write3dir("heap[" + temp + "]=" + t_nuevos+";");
+                                                        write3dir(temp + "=" + t_gl + "+" + (int) (i + 2) + ";");
+                                                        write3dir("heap[" + temp + "]=" + t_nuevos + ";");
                                                     }
-                                                    length = 2+ rlength;
+                                                    length = 2 + rlength;
                                                     temp = t_gl;
                                                     type = TType.STRING.toString();
                                                     seConcateno = true;
@@ -4390,36 +4559,36 @@ public class Win extends javax.swing.JFrame {
                                                     for (int i = 0; i < llength_i; i++) {
                                                         temp = getTemp(ca);
                                                         final String t2 = getTemp(ca);
-                                                        write3dir(temp + "=" + lval + "+" + i+";");
+                                                        write3dir(temp + "=" + lval + "+" + i + ";");
                                                         write3dir(t2 + "= heap[" + temp + "];");
                                                         temporales_i.add(t2);
                                                     }
 
                                                     String t_gl = getTemp(ca);
                                                     write3dir(t_gl + "=h;");
-                                                    write3dir("h = h+" + (int) (2 + llength_i + 1)+";");
+                                                    write3dir("h = h+" + (int) (2 + llength_i + 1) + ";");
 
                                                     //Modificando heap, se suma dos porque se agrego en entero y -100
                                                     for (int i = 0; i < llength_i; i++) {
                                                         final String t_nuevos = temporales_i.get(i);
                                                         temp = getTemp(ca);
-                                                        write3dir(temp + "=" + t_gl + "+" + (int)(i)+";");
-                                                        write3dir("heap[" + temp + "]=" + t_nuevos+";");
+                                                        write3dir(temp + "=" + t_gl + "+" + (int) (i) + ";");
+                                                        write3dir("heap[" + temp + "]=" + t_nuevos + ";");
                                                     }
 
                                                     temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl + "+" + llength_i+";");
-                                                    write3dir("heap[" + temp + "]=" + rval+";");
+                                                    write3dir(temp + "=" + t_gl + "+" + llength_i + ";");
+                                                    write3dir("heap[" + temp + "]=" + rval + ";");
 
                                                     temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl + "+" +(int)( llength_i + 1)+";");
+                                                    write3dir(temp + "=" + t_gl + "+" + (int) (llength_i + 1) + ";");
                                                     write3dir("heap[" + temp + "]=-101;");
 
                                                     temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl + "+" +(int)(llength_i + 2)+";");
+                                                    write3dir(temp + "=" + t_gl + "+" + (int) (llength_i + 2) + ";");
                                                     write3dir("heap[" + temp + "]=-1;");
 
-                                                    length = 2+ llength_i;
+                                                    length = 2 + llength_i;
                                                     temp = t_gl;
                                                     type = TType.STRING.toString();
                                                     seConcateno = true;
@@ -4433,36 +4602,36 @@ public class Win extends javax.swing.JFrame {
                                                     for (int i = 0; i < llength_f; i++) {
                                                         temp = getTemp(ca);
                                                         final String t2 = getTemp(ca);
-                                                        write3dir(temp + "=" + lval + "+" + i+";");
+                                                        write3dir(temp + "=" + lval + "+" + i + ";");
                                                         write3dir(t2 + "= heap[" + temp + "];");
                                                         temporales_f.add(t2);
                                                     }
 
                                                     String t_gl_f = getTemp(ca);
                                                     write3dir(t_gl_f + "=h;");
-                                                    write3dir("h = h+" + (int) (2 + llength_f + 1)+";");
+                                                    write3dir("h = h+" + (int) (2 + llength_f + 1) + ";");
 
                                                     //Modificando heap, se suma dos porque se agrego en entero y -100
-                                                    for (int i = 0; i < llength_f; i++) {                                                
+                                                    for (int i = 0; i < llength_f; i++) {
                                                         final String t_nuevos = temporales_f.get(i);
                                                         temp = getTemp(ca);
-                                                        write3dir(temp + "=" + t_gl_f + "+" + (int)(i)+";");
-                                                        write3dir("heap[" + temp + "]=" + t_nuevos+";");
+                                                        write3dir(temp + "=" + t_gl_f + "+" + (int) (i) + ";");
+                                                        write3dir("heap[" + temp + "]=" + t_nuevos + ";");
                                                     }
 
                                                     temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl_f + "+" + llength_f+";");
-                                                    write3dir("heap[" + temp + "]=" + rval+";");
+                                                    write3dir(temp + "=" + t_gl_f + "+" + llength_f + ";");
+                                                    write3dir("heap[" + temp + "]=" + rval + ";");
 
                                                     temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl_f + "+" +(int)( llength_f + 1)+";");
+                                                    write3dir(temp + "=" + t_gl_f + "+" + (int) (llength_f + 1) + ";");
                                                     write3dir("heap[" + temp + "]=-101;");
 
                                                     temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl_f + "+" +(int)( llength_f + 2)+";");
+                                                    write3dir(temp + "=" + t_gl_f + "+" + (int) (llength_f + 2) + ";");
                                                     write3dir("heap[" + temp + "]=-1;");
 
-                                                    length = 2+ llength_f;
+                                                    length = 2 + llength_f;
                                                     temp = t_gl_f;
                                                     type = TType.STRING.toString();
                                                     seConcateno = true;
@@ -4476,44 +4645,44 @@ public class Win extends javax.swing.JFrame {
                                                     for (int i = 0; i < llength_b; i++) {
                                                         temp = getTemp(ca);
                                                         final String t2 = getTemp(ca);
-                                                        write3dir(temp + "=" + lval + "+" + i+";");
+                                                        write3dir(temp + "=" + lval + "+" + i + ";");
                                                         write3dir(t2 + "= heap[" + temp + "];");
                                                         temporales_b.add(t2);
                                                     }
 
                                                     String t_gl_b = getTemp(ca);
                                                     write3dir(t_gl_b + "=h;");
-                                                    write3dir("h = h+" + (int) (2 + llength_b + 1)+";");
+                                                    write3dir("h = h+" + (int) (2 + llength_b + 1) + ";");
 
                                                     //Modificando heap, se suma dos porque se agrego en entero y -100
-                                                    for (int i = 0; i < llength_b; i++) {                                                
+                                                    for (int i = 0; i < llength_b; i++) {
                                                         final String t_nuevos = temporales_b.get(i);
                                                         temp = getTemp(ca);
-                                                        write3dir(temp + "=" + t_gl_b + "+" + (int)(i)+";");
-                                                        write3dir("heap[" + temp + "]=" + t_nuevos+";");
+                                                        write3dir(temp + "=" + t_gl_b + "+" + (int) (i) + ";");
+                                                        write3dir("heap[" + temp + "]=" + t_nuevos + ";");
                                                     }
 
                                                     temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl_b + "+" + llength_b+";");
-                                                    write3dir("heap[" + temp + "]=" + rval+";");
+                                                    write3dir(temp + "=" + t_gl_b + "+" + llength_b + ";");
+                                                    write3dir("heap[" + temp + "]=" + rval + ";");
 
                                                     temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl_b + "+" + (int)(llength_b + 1)+";");
+                                                    write3dir(temp + "=" + t_gl_b + "+" + (int) (llength_b + 1) + ";");
                                                     write3dir("heap[" + temp + "]=-102;");
 
                                                     temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl_b + "+" +(int)( llength_b + 2)+";");
+                                                    write3dir(temp + "=" + t_gl_b + "+" + (int) (llength_b + 2) + ";");
                                                     write3dir("heap[" + temp + "]=-1;");
 
-                                                    length = 2+ llength_b;
+                                                    length = 2 + llength_b;
                                                     temp = t_gl_b;
                                                     type = TType.STRING.toString();
                                                     seConcateno = true;
                                                     break;
                                                 case "STRING":
                                                     write3dir("//Concatenacion STRING + STRING");
-                                                    int llength_s = node.getLeft().getDictVal().getLenth("length");                                            
-                                                    int rlength_s = node.getRight().getDictVal().getLenth("length");                                            
+                                                    int llength_s = node.getLeft().getDictVal().getLenth("length");
+                                                    int rlength_s = node.getRight().getDictVal().getLenth("length");
                                                     List<String> temporales_s = new ArrayList<String>();
                                                     //temp = getTemp(ca);
                                                     String temp_1 = getTemp(ca);
@@ -4521,13 +4690,13 @@ public class Win extends javax.swing.JFrame {
                                                     for (int i = 0; i < llength_s; i++) {
                                                         if (i == 0) {
                                                             final String t2 = getTemp(ca);
-                                                            write3dir(temp_1 + "=" + lval + "+" + i+";");
-                                                            write3dir(t2 + "= heap[" + temp_1 + "]"+";");
+                                                            write3dir(temp_1 + "=" + lval + "+" + i + ";");
+                                                            write3dir(t2 + "= heap[" + temp_1 + "]" + ";");
                                                             temporales_s.add(t2);
                                                         } else {
                                                             temp_1 = getTemp(ca);
                                                             final String t2 = getTemp(ca);
-                                                            write3dir(temp_1 + "=" + lval + "+" + i+";");
+                                                            write3dir(temp_1 + "=" + lval + "+" + i + ";");
                                                             write3dir(t2 + "= heap[" + temp_1 + "];");
                                                             temporales_s.add(t2);
                                                         }
@@ -4536,23 +4705,23 @@ public class Win extends javax.swing.JFrame {
                                                     for (int i = 0; i < rlength_s + 1; i++) {
                                                         temp_1 = getTemp(ca);
                                                         final String t2 = getTemp(ca);
-                                                        write3dir(temp_1 + "=" + rval + "+" + i+";");
+                                                        write3dir(temp_1 + "=" + rval + "+" + i + ";");
                                                         write3dir(t2 + "= heap[" + temp_1 + "];");
                                                         temporales_s.add(t2);
                                                     }
 
                                                     t_gl = getTemp(ca);
                                                     write3dir(t_gl + "=h;");
-                                                    write3dir("h = h+" + (int) (llength_s + rlength_s + 1)+";");
+                                                    write3dir("h = h+" + (int) (llength_s + rlength_s + 1) + ";");
 
                                                     //Modificando heap
-                                                    for (int i = 0; i < llength_s + rlength_s + 1; i++) {                                                
+                                                    for (int i = 0; i < llength_s + rlength_s + 1; i++) {
                                                         final String t_nuevos = temporales_s.get(i);
                                                         temp = getTemp(ca);
-                                                        write3dir(temp + "=" + t_gl + "+" + i+";");
-                                                        write3dir("heap[" + temp + "]=" + t_nuevos+";");
+                                                        write3dir(temp + "=" + t_gl + "+" + i + ";");
+                                                        write3dir("heap[" + temp + "]=" + t_nuevos + ";");
                                                     }
-                                                    length = llength_s+ rlength_s;
+                                                    length = llength_s + rlength_s;
                                                     temp = t_gl;
 
                                                     type = TType.STRING.toString();
@@ -4567,33 +4736,32 @@ public class Win extends javax.swing.JFrame {
                                                     for (int i = 0; i < llength_c; i++) {
                                                         temp = getTemp(ca);
                                                         final String t2 = getTemp(ca);
-                                                        write3dir(temp + "=" + lval + "+" + i+";");
+                                                        write3dir(temp + "=" + lval + "+" + i + ";");
                                                         write3dir(t2 + "= heap[" + temp + "];");
                                                         temporales_c.add(t2);
                                                     }
 
                                                     String t_gl_c = getTemp(ca);
                                                     write3dir(t_gl_c + "=h;");
-                                                    write3dir("h = h+" + (int) (2 + llength_c + 1)+";");
+                                                    write3dir("h = h+" + (int) (2 + llength_c + 1) + ";");
 
                                                     //Modificando heap, se suma dos porque se agrego en entero y -100
-                                                    for (int i = 0; i < llength_c; i++) {                                                
+                                                    for (int i = 0; i < llength_c; i++) {
                                                         final String t_nuevos = temporales_c.get(i);
                                                         temp = getTemp(ca);
-                                                        write3dir(temp + "=" + t_gl_c + "+" + (int)(i)+";");
-                                                        write3dir("heap[" + temp + "]=" + t_nuevos+";");
+                                                        write3dir(temp + "=" + t_gl_c + "+" + (int) (i) + ";");
+                                                        write3dir("heap[" + temp + "]=" + t_nuevos + ";");
                                                     }
 
                                                     temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl_c + "+" + llength_c+";");
-                                                    write3dir("heap[" + temp + "]=" + rval+";");
+                                                    write3dir(temp + "=" + t_gl_c + "+" + llength_c + ";");
+                                                    write3dir("heap[" + temp + "]=" + rval + ";");
 
                                                     temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl_c + "+" + (int)(llength_c +1)+";");
+                                                    write3dir(temp + "=" + t_gl_c + "+" + (int) (llength_c + 1) + ";");
                                                     write3dir("heap[" + temp + "]=-1;");
 
-
-                                                    length = 1+ llength_c;
+                                                    length = 1 + llength_c;
                                                     temp = t_gl_c;
                                                     type = TType.STRING.toString();
                                                     seConcateno = true;
@@ -4623,25 +4791,25 @@ public class Win extends javax.swing.JFrame {
                                                     for (int i = 0; i < rlength + 1; i++) {
                                                         temp = getTemp(ca);
                                                         final String t2 = getTemp(ca);
-                                                        write3dir(temp + "=" + rval + "+" + i+";");
+                                                        write3dir(temp + "=" + rval + "+" + i + ";");
                                                         write3dir(t2 + "= heap[" + temp + "];");
                                                         temporales.add(t2);
                                                     }
 
                                                     String t_gl = getTemp(ca);
                                                     write3dir(t_gl + "=h;");
-                                                    write3dir("h = h+" + (int) (2 + rlength + 1)+";");
+                                                    write3dir("h = h+" + (int) (2 + rlength + 1) + ";");
 
                                                     temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl + "+" + 0+";");
-                                                    write3dir("heap[" + temp + "]=" + lval+";");
+                                                    write3dir(temp + "=" + t_gl + "+" + 0 + ";");
+                                                    write3dir("heap[" + temp + "]=" + lval + ";");
 
                                                     //Modificando heap, se suma dos porque se agrego en entero y -100
-                                                    for (int i = 0; i < rlength + 1; i++) {                                                
+                                                    for (int i = 0; i < rlength + 1; i++) {
                                                         final String t_nuevos = temporales.get(i);
                                                         temp = getTemp(ca);
-                                                        write3dir(temp + "=" + t_gl + "+" + (int)(i+2)+";");
-                                                        write3dir("heap[" + temp + "]=" + t_nuevos+";");
+                                                        write3dir(temp + "=" + t_gl + "+" + (int) (i + 2) + ";");
+                                                        write3dir("heap[" + temp + "]=" + t_nuevos + ";");
                                                     }
                                                     length = 1 + rlength;
                                                     temp = t_gl;
@@ -4658,12 +4826,12 @@ public class Win extends javax.swing.JFrame {
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
 
-                                    if (seConcateno==false){
+                                    if (seConcateno == false) {
                                         //Si no es concatenacion ejecutar lo siguiente
                                         String tres = String.format("%s = %s + %s;", temp, lval, rval);
                                         write3dir(tres);
                                     }
-                                    return new Dict("val", temp, "type", type, "length",length);
+                                    return new Dict("val", temp, "type", type, "length", length);
                                 }
                             } catch (UnsupportedOperationException exc) {
                                 compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
@@ -4673,7 +4841,6 @@ public class Win extends javax.swing.JFrame {
                     });
 
                     //</editor-fold>
-                    
                     //<editor-fold defaultstate="collapsed" desc="MINUS">
                     put(TOperation.MINUS, new Operation() {
                         @Override
@@ -4682,7 +4849,7 @@ public class Win extends javax.swing.JFrame {
                             final Dict ref = node.getDictRef();
                             final Object ref_info = ref.get("info");
                             final Object phase = ca.get("phase");
-                            
+
                             try {
                                 if (is3dirPhase(phase)) {
                                     String lval = node.getLeft().getDictVal().getString("val");
@@ -4757,216 +4924,215 @@ public class Win extends javax.swing.JFrame {
                                     String tres = String.format("%s = %s - %s;", temp, lval, rval);
                                     write3dir(tres);
                                     return new Dict("val", temp, "type", type);
+                                }
+                            } catch (UnsupportedOperationException exc) {
+                                compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
                             }
-                        } catch (UnsupportedOperationException exc) {
-                            compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
-                        }
                             return noActionsProcessed(TOperation.MINUS);
                         }
                     });
                     //</editor-fold>
-                    
-                    //<editor-fold defaultstate="collapsed" desc="MUL">
 
+                    //<editor-fold defaultstate="collapsed" desc="MUL">
                     put(TOperation.MULT, new Operation() {
                         @Override
                         public Object exec(Node node, Object actions) {
                             final Dict ca = (Dict) actions;
-                            
+
                             final Dict ref = node.getDictRef();
                             final Object ref_info = ref.get("info");
                             final Object phase = ca.get("phase");
-                            
+
                             try {
                                 if (is3dirPhase(phase)) {
-                            
-                            String lval = node.getLeft().getDictVal().getString("val");
-                            String rval = node.getRight().getDictVal().getString("val");
 
-                            String ltype = node.getLeft().getDictVal().getString("type");
-                            String rtype = node.getRight().getDictVal().getString("type");
+                                    String lval = node.getLeft().getDictVal().getString("val");
+                                    String rval = node.getRight().getDictVal().getString("val");
 
-                            String type;
-                            Object temp = getTemp(ca);
-                            switch (ltype) {
-                                case "INT":
-                                    switch (rtype) {
+                                    String ltype = node.getLeft().getDictVal().getString("type");
+                                    String rtype = node.getRight().getDictVal().getString("type");
+
+                                    String type;
+                                    Object temp = getTemp(ca);
+                                    switch (ltype) {
                                         case "INT":
-                                            type = TType.INT.toString();
+                                            switch (rtype) {
+                                                case "INT":
+                                                    type = TType.INT.toString();
+                                                    break;
+                                                case "FLOAT":
+                                                    type = TType.FLOAT.toString();
+                                                    break;
+                                                case "BOOLEAN":
+                                                    throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                                case "STRING":
+                                                    throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                                case "CHAR":
+                                                    type = TType.INT.toString();
+                                                    break;
+                                                default:
+                                                    throw new UnsupportedOperationException("Tipos incorrectos");
+                                            }
                                             break;
                                         case "FLOAT":
-                                            type = TType.FLOAT.toString();
+                                            switch (rtype) {
+                                                case "INT":
+                                                    type = TType.FLOAT.toString();
+                                                    break;
+                                                case "FLOAT":
+                                                    type = TType.FLOAT.toString();
+                                                    break;
+                                                case "BOOLEAN":
+                                                    throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                                case "STRING":
+                                                    throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                                case "CHAR":
+                                                    type = TType.FLOAT.toString();
+                                                default:
+                                                    throw new UnsupportedOperationException("Tipos incorrectos");
+                                            }
                                             break;
-                                        case "BOOLEAN":
-                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
-                                        case "STRING":
-                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                         case "CHAR":
-                                            type = TType.INT.toString();
+                                            switch (rtype) {
+                                                case "INT":
+                                                    type = TType.INT.toString();
+                                                    break;
+                                                case "FLOAT":
+                                                    type = TType.FLOAT.toString();
+                                                    break;
+                                                case "BOOLEAN":
+                                                    throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                                case "STRING":
+                                                    throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                                case "CHAR":
+                                                    type = TType.INT.toString();
+                                                    break;
+                                                default:
+                                                    throw new UnsupportedOperationException("Tipos incorrectos");
+                                            }
                                             break;
                                         default:
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
-                                    break;
-                                case "FLOAT":
-                                    switch (rtype) {
-                                        case "INT":
-                                            type = TType.FLOAT.toString();
-                                            break;
-                                        case "FLOAT":
-                                            type = TType.FLOAT.toString();
-                                            break;
-                                        case "BOOLEAN":
-                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
-                                        case "STRING":
-                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
-                                        case "CHAR":
-                                            type = TType.FLOAT.toString();
-                                        default:
-                                            throw new UnsupportedOperationException("Tipos incorrectos");
-                                    }
-                                    break;
-                                case "CHAR":
-                                    switch (rtype) {
-                                        case "INT":
-                                            type = TType.INT.toString();
-                                            break;
-                                        case "FLOAT":
-                                            type = TType.FLOAT.toString();
-                                            break;
-                                        case "BOOLEAN":
-                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
-                                        case "STRING":
-                                            throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
-                                        case "CHAR":
-                                            type = TType.INT.toString();
-                                            break;
-                                        default:
-                                            throw new UnsupportedOperationException("Tipos incorrectos");
-                                    }
-                                    break;
-                                default:
-                                    throw new UnsupportedOperationException("Tipos incorrectos");
+
+                                    String tres = String.format("%s = %s * %s;", temp, lval, rval);
+                                    write3dir(tres);
+
+                                    return new Dict("val", temp, "type", type);
+                                }
+                            } catch (UnsupportedOperationException exc) {
+                                compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
                             }
-
-                            String tres = String.format("%s = %s * %s;", temp, lval, rval);
-                            write3dir(tres);
-
-                            return new Dict("val", temp, "type", type);
-                             }
-                        } catch (UnsupportedOperationException exc) {
-                            compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
-                        }
                             return noActionsProcessed(TOperation.MULT);
                         }
                     });
                     //</editor-fold>
-                    
+
                     //<editor-fold defaultstate="collapsed" desc="DIV">
                     put(TOperation.DIV, new Operation() {
                         @Override
                         public Object exec(Node node, Object actions) {
                             final Dict ca = (Dict) actions;
-                            
+
                             final Dict ref = node.getDictRef();
                             final Object ref_info = ref.get("info");
                             final Object phase = ca.get("phase");
-                            
+
                             try {
                                 if (is3dirPhase(phase)) {
-                                
-                                String lval = node.getLeft().getDictVal().getString("val");
-                                String rval = node.getRight().getDictVal().getString("val");
 
-                                String ltype = node.getLeft().getDictVal().getString("type");
-                                String rtype = node.getRight().getDictVal().getString("type");
+                                    String lval = node.getLeft().getDictVal().getString("val");
+                                    String rval = node.getRight().getDictVal().getString("val");
 
-                                String type;
-                                Object temp = getTemp(ca);
-                                switch (ltype) {
-                                    case "INT":
-                                        switch (rtype) {
-                                            case "INT":
-                                                type = TType.FLOAT.toString();
-                                                break;
-                                            case "FLOAT":
-                                                type = TType.FLOAT.toString();
-                                                break;
-                                            case "BOOLEAN":
-                                                throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
-                                            case "STRING":
-                                                throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
-                                            case "CHAR":
-                                                type = TType.FLOAT.toString();
-                                                break;
-                                            default:
-                                                throw new UnsupportedOperationException("Tipos incorrectos");
-                                        }
-                                        break;
-                                    case "FLOAT":
-                                        switch (rtype) {
-                                            case "INT":
-                                                type = TType.FLOAT.toString();
-                                                break;
-                                            case "FLOAT":
-                                                type = TType.FLOAT.toString();
-                                                break;
-                                            case "BOOLEAN":
-                                                throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
-                                            case "STRING":
-                                                throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
-                                            case "CHAR":
-                                                type = TType.FLOAT.toString();
-                                            default:
-                                                throw new UnsupportedOperationException("Tipos incorrectos");
-                                        }
-                                        break;
-                                    case "CHAR":
-                                        switch (rtype) {
-                                            case "INT":
-                                                type = TType.FLOAT.toString();
-                                                break;
-                                            case "FLOAT":
-                                                type = TType.FLOAT.toString();
-                                                break;
-                                            case "BOOLEAN":
-                                                throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
-                                            case "STRING":
-                                                throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
-                                            case "CHAR":
-                                                type = TType.FLOAT.toString();
-                                                break;
-                                            default:
-                                                throw new UnsupportedOperationException("Tipos incorrectos");
-                                        }
-                                        break;
-                                    default:
-                                        throw new UnsupportedOperationException("Tipos incorrectos");
+                                    String ltype = node.getLeft().getDictVal().getString("type");
+                                    String rtype = node.getRight().getDictVal().getString("type");
+
+                                    String type;
+                                    Object temp = getTemp(ca);
+                                    switch (ltype) {
+                                        case "INT":
+                                            switch (rtype) {
+                                                case "INT":
+                                                    type = TType.FLOAT.toString();
+                                                    break;
+                                                case "FLOAT":
+                                                    type = TType.FLOAT.toString();
+                                                    break;
+                                                case "BOOLEAN":
+                                                    throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                                case "STRING":
+                                                    throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                                case "CHAR":
+                                                    type = TType.FLOAT.toString();
+                                                    break;
+                                                default:
+                                                    throw new UnsupportedOperationException("Tipos incorrectos");
+                                            }
+                                            break;
+                                        case "FLOAT":
+                                            switch (rtype) {
+                                                case "INT":
+                                                    type = TType.FLOAT.toString();
+                                                    break;
+                                                case "FLOAT":
+                                                    type = TType.FLOAT.toString();
+                                                    break;
+                                                case "BOOLEAN":
+                                                    throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                                case "STRING":
+                                                    throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                                case "CHAR":
+                                                    type = TType.FLOAT.toString();
+                                                default:
+                                                    throw new UnsupportedOperationException("Tipos incorrectos");
+                                            }
+                                            break;
+                                        case "CHAR":
+                                            switch (rtype) {
+                                                case "INT":
+                                                    type = TType.FLOAT.toString();
+                                                    break;
+                                                case "FLOAT":
+                                                    type = TType.FLOAT.toString();
+                                                    break;
+                                                case "BOOLEAN":
+                                                    throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                                case "STRING":
+                                                    throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
+                                                case "CHAR":
+                                                    type = TType.FLOAT.toString();
+                                                    break;
+                                                default:
+                                                    throw new UnsupportedOperationException("Tipos incorrectos");
+                                            }
+                                            break;
+                                        default:
+                                            throw new UnsupportedOperationException("Tipos incorrectos");
+                                    }
+
+                                    String tres = String.format("%s = %s / %s;", temp, lval, rval);
+                                    write3dir(tres);
+
+                                    return new Dict("val", temp, "type", type);
                                 }
-
-                                String tres = String.format("%s = %s / %s;", temp, lval, rval);
-                                write3dir(tres);
-
-                                return new Dict("val", temp, "type", type);
-                             }
-                        } catch (UnsupportedOperationException exc) {
-                            compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
-                        }
+                            } catch (UnsupportedOperationException exc) {
+                                compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
+                            }
                             return noActionsProcessed(TOperation.DIV);
                         }
                     });
                     //</editor-fold>
-                    
+
                     //<editor-fold defaultstate="collapsed" desc="EXP">
                     put(TOperation.EXP, new Operation() {
                         @Override
                         public Object exec(Node node, Object actions) {
                             final Dict ca = (Dict) actions;
-                            
+
                             final Dict ref = node.getDictRef();
                             final Object ref_info = ref.get("info");
                             final Object phase = ca.get("phase");
-                            
+
                             try {
                                 if (is3dirPhase(phase)) {
                                     String lval = node.getLeft().getDictVal().getString("val");
@@ -5042,57 +5208,408 @@ public class Win extends javax.swing.JFrame {
                                     write3dir(tres);
 
                                     return new Dict("val", temp, "type", type);
+                                }
+                            } catch (UnsupportedOperationException exc) {
+                                compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
                             }
-                        } catch (UnsupportedOperationException exc) {
-                            compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
-                        }
                             return noActionsProcessed(TOperation.EXP);
                         }
                     });
                     //</editor-fold>
+
                     
                     //<editor-fold defaultstate="collapsed" desc="CAST">
-                    put(TOperation.CAST, new Operation() {//CAST
-                     @Override
-                     public Object exec(Node node, Object actions) {
+                    put(TOperation.CAST, (Operation) (Node node, Object actions) -> {
+
                         final Dict ca = (Dict) actions;
                         final CC cc = (CC) ca.get("cc");
                         final Stack scope = ca.getStack("scope");
-                        final Sim method_sim = (Sim) scope.peek();
+                        final Sim methodsim = (Sim) scope.peek();
                         final Object phase = ca.get("phase");
 
                         final Dict ref = node.getDictRef();
                         final Object ref_info = ref.get("info");
-                        
+                        final Dict ref_params = ref.getDict("params");
+
+                        final Dict val = new Dict();
+                        Object info = ref_info;
+
                         try {
-                            if(isDefPhase(phase)){
-                                return null;
-                            }
                             if (is3dirPhase(phase)) {
-                                //Tipo a castear
+                                String tip = ref.getDict("type").getString("val");
                                 
-                                System.out.println(ref);
-                                return new Dict("type","gg");
-//                                String tipoP = ref.getDict("type").getString("val");
-//                                System.out.println("Tipo a castear: " + tipoP);
-//                                
-//                                //Expresion
-//                                /*String val_exp = node.getRight().getDictVal().getString("val");
-//                                String ltype = node.getRight().getDictVal().getString("type");
-//                                System.out.println(val_exp + "--->" + ltype);*/
-//                                
-//                                return new Dict("type",tipoP);
+                                
+                                String lval = node.getLeft().getDictVal().getString("val");
+                                String ltype = node.getLeft().getDictVal().getString("type");
+                                int length= 0;
+                                String tipo = null;
+                                Object temp = null;
+                                
+                                switch(ltype){//tipo original
+                                    case "INT":
+                                        switch(tip){//tipo destino
+                                            case "INT":
+                                                tipo = TType.INT.toString();
+                                                temp = lval;
+                                                break;
+                                            case "FLOAT":
+                                                write3dir("//CAST INT - FLOAT");
+                                                String t1 = getTemp(ca);
+                                                write3dir("%s = p + %d;", t1, methodsim.size);
+                                                
+                                                final String t2 = getTemp(actions);
+                                                write3dir("%s = %s + %d;", t2, t1, 0);
+                                                write3dir("pila[%s]= %s;", t2, lval );
+                                                
+                                                write3dir("p = p + %d;", methodsim.size);
+                                                write3dir("call int_to_float();");
+                                                write3dir("p = p - %d;", methodsim.size);                                                
+                                                String t_ult = getTemp(ca);
+                                                
+                                                write3dir("%s = p + %d;", t_ult, methodsim.size);
+                                                
+                                                String t4 = getTemp(ca);
+                                                write3dir("%s = %s + %d;", t4,t_ult,0);
+                                                
+                                                String t5 = getTemp(ca);
+                                                write3dir("%s = pila[%s]", t5, t4);
+                                                
+                                                tipo = TType.FLOAT.toString();
+                                                temp = t5;
+                                                break;
+                                            case "BOOLEAN":
+                                                throw new UnsupportedOperationException("No se puede convertir entero a booleano");
+                                            case "STRING":
+                                                    String t_gl = getTemp(ca);
+                                                    write3dir(t_gl + "=h;");
+                                                    write3dir("h = h+" + (int) (3)+";");
+
+                                                    temp = getTemp(ca);
+                                                    write3dir(temp + "=" + t_gl + "+" + 0+";");
+                                                    write3dir("heap[" + temp + "]=" + lval+";");
+
+                                                    temp = getTemp(ca);
+                                                    write3dir(temp + "=" + t_gl + "+" + 1+";");
+                                                    write3dir("heap[" + temp + "]=-101;");
+                                                    
+                                                    temp = getTemp(ca);
+                                                    write3dir(temp + "=" + t_gl + "+" + 2+";");
+                                                    write3dir("heap[" + temp + "]=-1;");
+
+                                                    //Modificando heap, se suma dos porque se agrego en entero y -100
+                                                    length = 3;
+                                                    temp = t_gl;
+                                                    tipo = TType.STRING.toString();
+                                                break;
+                                            case "CHAR":
+                                                write3dir("//CAST INT - CHAR");
+                                                String t1_c = getTemp(ca);
+                                                write3dir("%s = p + %d;", t1_c, methodsim.size);
+                                                
+                                                final String t2_c = getTemp(actions);
+                                                write3dir("%s = %s + %d;", t2_c, t1_c, 0);
+                                                write3dir("pila[%s]= %s;", t2_c, lval );
+                                                
+                                                write3dir("p = p + %d;", methodsim.size);
+                                                write3dir("call int_to_char();");
+                                                write3dir("p = p - %d;", methodsim.size);                                                
+                                                String t_ult_c = getTemp(ca);
+                                                
+                                                write3dir("%s = p + %d;", t_ult_c, methodsim.size);
+                                                
+                                                String t4_c = getTemp(ca);
+                                                write3dir("%s = %s + %d;", t4_c,t_ult_c,0);
+                                                
+                                                String t5_c = getTemp(ca);
+                                                write3dir("%s = pila[%s]", t5_c, t4_c);
+                                                
+                                                tipo = TType.CHAR.toString();
+                                                temp = t5_c;
+                                                break;
+                                            default:
+                                                throw new UnsupportedOperationException("Tipos incorrectos");
+                                        }
+                                        break;
+                                    case "FLOAT":
+                                        switch(tip){//tipo destino
+                                            case "INT":
+                                                write3dir("//CAST FLOAT - INT");
+                                                String t1 = getTemp(ca);
+                                                write3dir("%s = p + %d;", t1, methodsim.size);
+                                                
+                                                final String t2 = getTemp(actions);
+                                                write3dir("%s = %s + %d;", t2, t1, 0);
+                                                write3dir("pila[%s]= %s;", t2, lval );
+                                                
+                                                write3dir("p = p + %d;", methodsim.size);
+                                                write3dir("call float_to_int();");
+                                                write3dir("p = p - %d;", methodsim.size);                                                
+                                                String t_ult = getTemp(ca);
+                                                
+                                                write3dir("%s = p + %d;", t_ult, methodsim.size);
+                                                
+                                                String t4 = getTemp(ca);
+                                                write3dir("%s = %s + %d;", t4,t_ult,0);
+                                                
+                                                String t5 = getTemp(ca);
+                                                write3dir("%s = pila[%s]", t5, t4);                                                
+                                                
+                                                tipo = TType.INT.toString();
+                                                temp = t5;
+                                                break;
+                                            case "FLOAT":
+                                                tipo = TType.FLOAT.toString();
+                                                temp = lval;
+                                                break;
+                                            case "BOOLEAN":
+                                                throw new UnsupportedOperationException("No se puede convertir INT a FLOAT");
+                                            case "STRING":
+                                                    String t_gl = getTemp(ca);
+                                                    write3dir(t_gl + "=h;");
+                                                    write3dir("h = h+" + (int) (3)+";");
+
+                                                    temp = getTemp(ca);
+                                                    write3dir(temp + "=" + t_gl + "+" + 0+";");
+                                                    write3dir("heap[" + temp + "]=" + lval+";");
+
+                                                    temp = getTemp(ca);
+                                                    write3dir(temp + "=" + t_gl + "+" + 1+";");
+                                                    write3dir("heap[" + temp + "]=-101;");
+                                                    
+                                                    temp = getTemp(ca);
+                                                    write3dir(temp + "=" + t_gl + "+" + 2+";");
+                                                    write3dir("heap[" + temp + "]=-1;");
+
+                                                    //Modificando heap, se suma dos porque se agrego en entero y -100
+                                                    length = 3;
+                                                    temp = t_gl;
+                                                    tipo = TType.STRING.toString();
+                                                break;
+                                            case "CHAR":
+                                                throw new UnsupportedOperationException("No se puede convertir FLOAT a CHAR");
+                                            default:
+                                                throw new UnsupportedOperationException("Tipos incorrectos");
+                                        }
+                                        break;
+                                    case "BOOLEAN":
+                                        switch(tip){//tipo destino
+                                            case "INT":                                                
+                                                throw new UnsupportedOperationException("No se puede convertir BOOLEAN A INT");                                                
+                                            case "FLOAT":
+                                                throw new UnsupportedOperationException("No se puede convertir BOOLEAN a FLOAT");
+                                            case "BOOLEAN":
+                                                tipo = TType.BOOLEAN.toString();
+                                                temp = lval;
+                                                break;
+                                            case "STRING":
+                                                    String t_gl = getTemp(ca);
+                                                    write3dir(t_gl + "=h;");
+                                                    write3dir("h = h+" + (int) (3)+";");
+
+                                                    temp = getTemp(ca);
+                                                    write3dir(temp + "=" + t_gl + "+" + 0+";");
+                                                    write3dir("heap[" + temp + "]=" + lval+";");
+
+                                                    temp = getTemp(ca);
+                                                    write3dir(temp + "=" + t_gl + "+" + 1+";");
+                                                    write3dir("heap[" + temp + "]=-102;");
+                                                    
+                                                    temp = getTemp(ca);
+                                                    write3dir(temp + "=" + t_gl + "+" + 2+";");
+                                                    write3dir("heap[" + temp + "]=-1;");
+
+                                                    //Modificando heap, se suma dos porque se agrego en entero y -100
+                                                    length = 3;
+                                                    temp = t_gl;
+                                                    tipo = TType.STRING.toString();
+                                                break;
+                                            case "CHAR":
+                                                throw new UnsupportedOperationException("No se puede convertir BOOLEAN a CHAR");                                                
+                                            default:
+                                                throw new UnsupportedOperationException("Tipos incorrectos");
+                                        }
+                                        break;
+                                    case "STRING":
+                                        switch(tip){//tipo destino
+                                            case "INT":
+                                                write3dir("//CAST STRING - INT");
+                                                String t1 = getTemp(ca);
+                                                write3dir("%s = p + %d;", t1, methodsim.size);
+                                                
+                                                final String t2 = getTemp(actions);
+                                                write3dir("%s = %s + %d;", t2, t1, 0);
+                                                write3dir("pila[%s]= %s;", t2, lval );
+                                                
+                                                write3dir("p = p + %d;", methodsim.size);
+                                                write3dir("call string_to_int();");
+                                                write3dir("p = p - %d;", methodsim.size);                                                
+                                                String t_ult = getTemp(ca);
+                                                
+                                                write3dir("%s = p + %d;", t_ult, methodsim.size);
+                                                
+                                                String t4 = getTemp(ca);
+                                                write3dir("%s = %s + %d;", t4,t_ult,0);
+                                                
+                                                String t5 = getTemp(ca);
+                                                write3dir("%s = pila[%s]", t5, t4);                                                
+                                                
+                                                tipo = TType.INT.toString();
+                                                temp = t5;
+                                                break;
+                                            case "FLOAT":
+                                                write3dir("//CAST STRING - FLOAT");
+                                                String t1_f = getTemp(ca);
+                                                write3dir("%s = p + %d;", t1_f, methodsim.size);
+                                                
+                                                final String t2_f = getTemp(actions);
+                                                write3dir("%s = %s + %d;", t2_f, t1_f, 0);
+                                                write3dir("pila[%s]= %s;", t2_f, lval );
+                                                
+                                                write3dir("p = p + %d;", methodsim.size);
+                                                write3dir("call string_to_float();");
+                                                write3dir("p = p - %d;", methodsim.size);                                                
+                                                String t_ult_f = getTemp(ca);
+                                                
+                                                write3dir("%s = p + %d;", t_ult_f, methodsim.size);
+                                                
+                                                String t4_f = getTemp(ca);
+                                                write3dir("%s = %s + %d;", t4_f,t_ult_f,0);
+                                                
+                                                String t5_f = getTemp(ca);
+                                                write3dir("%s = pila[%s]", t5_f, t4_f);
+                                                
+                                                tipo = TType.FLOAT.toString();
+                                                temp = t5_f;
+                                                break;
+                                            case "BOOLEAN":
+                                                write3dir("//CAST STRING - BOOLEAN");
+                                                String t1_b = getTemp(ca);
+                                                write3dir("%s = p + %d;", t1_b, methodsim.size);
+                                                
+                                                final String t2_b = getTemp(actions);
+                                                write3dir("%s = %s + %d;", t2_b, t1_b, 0);
+                                                write3dir("pila[%s]= %s;", t2_b, lval );
+                                                
+                                                write3dir("p = p + %d;", methodsim.size);
+                                                write3dir("call string_to_int();");
+                                                write3dir("p = p - %d;", methodsim.size);                                                
+                                                String t_ult_b = getTemp(ca);
+                                                
+                                                write3dir("%s = p + %d;", t_ult_b, methodsim.size);
+                                                
+                                                String t4_b = getTemp(ca);
+                                                write3dir("%s = %s + %d;", t4_b,t_ult_b,0);
+                                                
+                                                String t5_b = getTemp(ca);
+                                                write3dir("%s = pila[%s]", t5_b, t4_b);                                                
+                                                
+                                                tipo = TType.INT.toString();
+                                                temp = t5_b;
+                                                break;
+                                            case "STRING":
+                                                tipo = TType.STRING.toString();
+                                                temp = val;
+                                                break;
+                                            case "CHAR":
+                                                write3dir("//CAST STRING - CHAR");
+                                                String t1_c = getTemp(ca);
+                                                write3dir("%s = p + %d;", t1_c, methodsim.size);
+                                                
+                                                final String t2_c = getTemp(actions);
+                                                write3dir("%s = %s + %d;", t2_c, t1_c, 0);
+                                                write3dir("pila[%s]= %s;", t2_c, lval );
+                                                
+                                                write3dir("p = p + %d;", methodsim.size);
+                                                write3dir("call string_to_float();");
+                                                write3dir("p = p - %d;", methodsim.size);
+                                                String t_ult_c = getTemp(ca);
+                                                
+                                                write3dir("%s = p + %d;", t_ult_c, methodsim.size);
+                                                
+                                                String t4_c = getTemp(ca);
+                                                write3dir("%s = %s + %d;", t4_c,t_ult_c,0);
+                                                
+                                                String t5_c = getTemp(ca);
+                                                write3dir("%s = pila[%s]", t5_c, t4_c);
+                                                
+                                                tipo = TType.CHAR.toString();
+                                                temp = t5_c;
+                                                break;
+                                            default:
+                                                throw new UnsupportedOperationException("Tipos incorrectos");
+                                        }
+                                        break;
+                                    case "CHAR":
+                                        switch(tip){//tipo destino
+                                            case "INT":
+                                                write3dir("//CAST CHAR - INT");
+                                                String t1 = getTemp(ca);
+                                                write3dir("%s = p + %d;", t1, methodsim.size);
+                                                
+                                                final String t2 = getTemp(actions);
+                                                write3dir("%s = %s + %d;", t2, t1, 0);
+                                                write3dir("pila[%s]= %s;", t2, lval );
+                                                
+                                                write3dir("p = p + %d;", methodsim.size);
+                                                write3dir("call char_to_int();");
+                                                write3dir("p = p - %d;", methodsim.size);                                                
+                                                String t_ult = getTemp(ca);
+                                                
+                                                write3dir("%s = p + %d;", t_ult, methodsim.size);
+                                                
+                                                String t4 = getTemp(ca);
+                                                write3dir("%s = %s + %d;", t4,t_ult,0);
+                                                
+                                                String t5 = getTemp(ca);
+                                                write3dir("%s = pila[%s]", t5, t4);                                                
+                                                
+                                                tipo = TType.INT.toString();
+                                                temp = t5;
+                                                break;
+                                            case "FLOAT":
+                                                throw new UnsupportedOperationException("No se puede convertir CHAR a FLOAT");
+                                            case "BOOLEAN":
+                                                throw new UnsupportedOperationException("No se puede convertir CHAR a BOOLEAN");
+                                            case "STRING":
+                                                    String t_gl = getTemp(ca);
+                                                    write3dir(t_gl + "=h;");
+                                                    write3dir("h = h+" + (int) (3)+";");
+
+                                                    temp = getTemp(ca);
+                                                    write3dir(temp + "=" + t_gl + "+" + 0+";");
+                                                    write3dir("heap[" + temp + "]=" + lval+";");                                                    
+                                                    
+                                                    temp = getTemp(ca);
+                                                    write3dir(temp + "=" + t_gl + "+" + 1+";");
+                                                    write3dir("heap[" + temp + "]=-1;");
+
+                                                    //Modificando heap, se suma dos porque se agrego en entero y -100
+                                                    length = 3;
+                                                    temp = t_gl;
+                                                    tipo = TType.STRING.toString();
+                                                break;
+                                            case "CHAR":
+                                                tipo = TType.CHAR.toString();
+                                                temp = lval;
+                                                break;
+                                            default:
+                                                throw new UnsupportedOperationException("Tipos incorrectos");
+                                        }
+                                        break;
+                                    default:
+                                        throw new UnsupportedOperationException("Tipos incorrectos");
+                                }
+                                write3dir("//" +temp + " tipo " + tipo + " length " + length);
+                                return new Dict("type",tipo,"val",temp,"length",length);
                             }
                         } catch (UnsupportedOperationException exc) {
-                            compiler_error(exc, TErr.SEMANTICO, ref_info, actions);
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
                         }
 
                         return noActionsProcessed(TOperation.CAST);
-                     }
-                     });
+                    });
                     //</editor-fold>
-                    
-                    
+
 
                     //<editor-fold defaultstate="collapsed" desc="LEAF">
                     put(TOperation.LEAF, (Operation) (Node node, Object actions) -> {
@@ -5482,7 +5999,6 @@ public class Win extends javax.swing.JFrame {
                     });
                     //</editor-fold>
 
-
                     //<editor-fold defaultstate="collapsed" desc="METHOD_CALL">
                     put(TOperation.METHOD_CALL, (Operation) (Node node, Object actions) -> {
                         final Dict ca = (Dict) actions;
@@ -5608,7 +6124,6 @@ public class Win extends javax.swing.JFrame {
                     });
                     //</editor-fold>
 
-                   
                     //<editor-fold defaultstate="collapsed" desc="WHILE">
                     put(TOperation.STMT_WHILE, (Operation) (Node node, Object actions) -> {
                         //<editor-fold defaultstate="collapsed" desc="old sam">
