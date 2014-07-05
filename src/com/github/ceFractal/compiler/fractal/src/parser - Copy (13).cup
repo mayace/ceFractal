@@ -617,7 +617,7 @@ expr_assign ::=	expr_name:x expr_assign_oper:a expr:v
 expr_cond 	::=	expr_cond_or:x 	{:RESULT = x;:}
 				|expr_cond_or:x Q expr:vt DPUNTOS expr:vf
 				{:
-					Dict ref = new Dict("condition",x,"vtrue",vt,"vfalse",vf,"info",CUP$Parser$stack.elementAt(CUP$Parser$top-3));
+					Dict ref = new Dict("condition",x,"vtrue",vt,"vfalse",vf);
 					RESULT = new Dict("nodo",new Node(TOperation.TERNARY,null,null,ref));
 				:}
 				;

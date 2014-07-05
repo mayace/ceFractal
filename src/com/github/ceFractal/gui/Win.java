@@ -3149,6 +3149,95 @@ public class Win extends javax.swing.JFrame {
             "operations", new HashMap<TOperation, Operation>() {
                 {
 
+                    //<editor-fold defaultstate="collapsed" desc="TERNARIO">
+                    put(TOperation.TERNARY, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+                        final Stack flow_control = ca.getStack("flow_control");
+                        final String flow_control_peek = (String) flow_control.peek();
+
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        final Dict ref_condition = ref.getDict("condition");
+                        final Dict ref_vtrue = ref.getDict("vtrue");
+                        final Dict ref_vfalse = ref.getDict("vfalse");
+
+                        final Dict val = new Dict();
+                        Object info = ref_info;
+                        try {
+                            if (is3dirPhase(phase)) {
+
+                                poolOn(actions);
+                                write3dir("// !!!!!!!! ternario !!!!!!!! //");
+                                write3dir("// !!!! condicion");
+                                final Node ref_condition_node = ref_condition.getNode("nodo");
+                                ref_condition_node.exec(actions);
+                                final Dict ref_condition_node_val = ref_condition_node.getDictVal();
+                                if (ref_condition_node_val == null) {
+                                    throwException("No se pudo calcular la condicion...");
+                                }
+                                final String ref_condition_node_val_type = ref_condition_node_val.getString("type");
+                                final String ref_condition_node_val_val = ref_condition_node_val.getString("val");
+                                final BloqueCondicion ref_condition_node_val_tags = ref_condition_node_val.getTags("tags");
+
+                                if (!ref_condition_node_val_type.equals(TType.BOOLEAN.toString())) {
+                                    throwException("Se esperaba tipo de dato -> %s, se obtuvo -> %s", TType.BOOLEAN, ref_condition_node_val_type);
+                                }
+
+                                final String l1 = getLabel(actions);
+                                final String t1 = getTemp(actions);
+
+                                write3dir("// !!!! condicion true");
+                                write3dir("%s:", ref_condition_node_val_tags.etqVerdad);
+
+                                final Node ref_vtrue_node = ref_vtrue.getNode("nodo");
+                                ref_vtrue_node.exec(actions);
+                                final Dict ref_vtrue_node_val = ref_vtrue_node.getDictVal();
+                                if (ref_vtrue_node_val == null) {
+                                    throwException("No se pudo calcula el valor de verdadero...");
+                                }
+                                final String ref_vtrue_node_val_val = ref_vtrue_node_val.getString("val");
+                                final String ref_vtrue_node_val_type = ref_vtrue_node_val.getString("type");
+                                write3dir("%s = %s;", t1, ref_vtrue_node_val_val);
+
+                                write3dir("goto %s;", l1);
+                                write3dir("// !!!! condicion false");
+                                write3dir("%s:", ref_condition_node_val_tags.etqFalso);
+                                final Node ref_vfalse_node = ref_vfalse.getNode("nodo");
+                                ref_vfalse_node.exec(actions);
+                                final Dict ref_vfalse_node_val = ref_vfalse_node.getDictVal();
+                                if (ref_vfalse_node_val == null) {
+                                    throwException("No se pudo calcular el valor false...");
+                                }
+                                final String ref_vfalse_node_val_val = ref_vfalse_node_val.getString("val");
+                                final String ref_vfalse_node_val_type = ref_vfalse_node_val.getString("type");
+                                write3dir("%s = %s;", t1, ref_vfalse_node_val_val);
+
+                                if (!ref_vtrue_node_val_type.equals(ref_vfalse_node_val_type)) {
+                                    throwException("Tipos no compatibles -> %s ? %s : %s", TType.BOOLEAN, ref_vtrue_node_val_type, ref_vfalse_node_val_type);
+                                }
+
+                                write3dir("%s:", l1);
+                                write3dir("// !!!!!!!! ternario !!!!!!!! //");
+                                write3dir(poolCommit(actions));
+
+                                val.put("val", t1);
+                                val.put("type", ref_vtrue_node_val_type);
+
+                                return val;
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            poolRollback(actions);
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.TERNARY);
+                    });
+                    //</editor-fold>
+
                     //<editor-fold defaultstate="collapsed" desc="METHOD_FTEXTO">
                     put(TOperation.NM_TEXTO, (Operation) (Node node, Object actions) -> {
                         final Dict ca = (Dict) actions;
@@ -5148,7 +5237,6 @@ public class Win extends javax.swing.JFrame {
                     });
 
                     //</editor-fold>
-                    
                     //<editor-fold defaultstate="collapsed" desc="MINUS">
                     put(TOperation.MINUS, new Operation() {
                         @Override
@@ -7618,7 +7706,7 @@ public class Win extends javax.swing.JFrame {
                                             final String param_node_val_pointer = param_node_val.getString("pointer");
                                             write3dir("%s = 0;", tc);
                                             write3dir("%s:", li);
-                                            write3dir("%s = %s + %s;", t3, param_node_val_pointer, tc);
+                                            write3dir("%s = %s + %s;", t3, param_node_val_val, tc);
                                             write3dir("%s = heap[%s];", t4, t3);
                                             write3dir("if %s != -1 then goto %s;", t4, lv);
                                             write3dir("goto %s;", lf);
