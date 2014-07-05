@@ -2145,6 +2145,7 @@ public class Win extends javax.swing.JFrame {
                         final Dict ca = (Dict) actions;
                         final Object ca_phase = ca.get("phase");
                         final CC ca_cc = (CC) ca.get("cc");
+                        final Stack<String> ca_scope = ca.getStack("scope");
 
                         final Dict node_ref = node.getDictRef();
                         final Object node_ref_info = node_ref.get("info");
@@ -2167,7 +2168,9 @@ public class Win extends javax.swing.JFrame {
 
                                 final Dict method = ca_cc.getMethods().get(node_ref_name_node_ref_val);
 
+                                ca_scope.push(node_ref_name_node_ref_val);
                                 frc_compiler_stmts_exec(method.getDict("stmts"), ca);
+                                ca_scope.pop();
 
                                 return null;
                             }
@@ -2474,7 +2477,8 @@ public class Win extends javax.swing.JFrame {
                         final Dict ca = (Dict) actions;
                         final Object ca_phase = ca.get("phase");
                         final CC ca_cc = (CC) ca.get("cc");
-                        final String ca_scope = ca.getString("scope");
+                        final Stack ca_scope = ca.getStack("scope");
+                        final String ca_scope_peek = ca_scope.peek().toString();
 
                         final Dict node_ref = node.getDictRef();
                         final Object node_ref_info = node_ref.get("info");
@@ -2491,11 +2495,11 @@ public class Win extends javax.swing.JFrame {
                                 final Dict node_ref_name_node_ref = node_ref_name_node.getDictRef();
                                 final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
 
-                                final Dict method = ca_cc.getMethods().get(ca_scope);
+                                final Dict method = ca_cc.getMethods().get(ca_scope_peek);
                                 final Dict method_labels = method.getDict("labels");
 
                                 if (!method_labels.containsKey(node_ref_name_node_ref_val)) {
-                                    throwException("No existe la etiqueta -> %s en el metodo -> %s", node_ref_name_node_ref_val, ca_scope);
+                                    throwException("No existe la etiqueta -> %s en el metodo -> %s", node_ref_name_node_ref_val, ca_scope_peek);
                                 }
 
                                 final int method_labels_position = method_labels.getInt(node_ref_name_node_ref_val);
@@ -2518,7 +2522,8 @@ public class Win extends javax.swing.JFrame {
                         final Dict ca = (Dict) actions;
                         final Object ca_phase = ca.get("phase");
                         final CC ca_cc = (CC) ca.get("cc");
-                        final String ca_scope = ca.getString("scope");
+                        final Stack ca_scope = ca.getStack("scope");
+                        final String ca_scope_peek = ca_scope.peek().toString();
 
                         final Dict node_ref = node.getDictRef();
                         final Object node_ref_info = node_ref.get("info");
@@ -2529,7 +2534,7 @@ public class Win extends javax.swing.JFrame {
                             if (isDefPhase(ca_phase)) {
                                 final Dict node_ref_name_node_ref = node_ref_name.getNode("nodo").getDictRef();
                                 final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
-                                final Dict method = ca_cc.getMethods().get(ca_scope);
+                                final Dict method = ca_cc.getMethods().get(ca_scope_peek);
                                 final Dict method_labels = method.getDict("labels");
                                 method_labels.put(node_ref_name_node_ref_val, node_ref_position);
 
@@ -2567,16 +2572,22 @@ public class Win extends javax.swing.JFrame {
 
                             if (isDefPhase(ca_phase)) {
                                 ca_cc.getMethods().put(node_ref_name_node_ref_val, new Dict("stmts", node_ref_stmts, "labels", new Dict()));
-                                ca.put("scope", node_ref_name_node_ref_val);
+                                final Stack<String> scope = new Stack();
+                                ca.put("scope", scope);
+                                scope.push(node_ref_name_node_ref_val);
                                 frc_compiler_stmts_exec(node_ref_stmts, ca);
+                                scope.push(node_ref_name_node_ref_val);
                                 ca.remove("scope");
                                 return null;
                             }
 
                             if (isExecPhase(ca_phase)) {
                                 if (node_ref_name_node_ref_val.equals("void_main_1__1")) {
-                                    ca.put("scope", node_ref_name_node_ref_val);
+                                    final Stack<String> scope = new Stack();
+                                    ca.put("scope", scope);
+                                    scope.push(node_ref_name_node_ref_val);
                                     frc_compiler_stmts_exec(node_ref_stmts, ca);
+                                    scope.push(node_ref_name_node_ref_val);
                                     ca.remove("scope");
                                 }
                                 return null;
@@ -4167,7 +4178,7 @@ public class Win extends javax.swing.JFrame {
                                                 throwException(String.format("Tipos incompatibles -> %s = %s", _type_val, _val_node_val_type));
                                             }
                                             write3dir("// asignacion");
-                                            write3dir(String.format("pila[%s] = %s;", name_nodo.getDictVal().get("val"), _val_node.getDictVal().get("val")));
+                                            write3dir(String.format("stack[%s] = %s;", name_nodo.getDictVal().get("val"), _val_node.getDictVal().get("val")));
                                         }
                                     }
                                     break;
@@ -4373,13 +4384,13 @@ public class Win extends javax.swing.JFrame {
                                     String tipo = TType.BOOLEAN.toString();
 
                                     if (!(ltype.equals(TType.INT.toString()) || !ltype.equals(TType.FLOAT.toString())) && (!rtype.equals(TType.INT.toString()) || !rtype.equals(TType.FLOAT.toString()))) {
-                                        throwException("No se puede comparar la expresiÃ³n, se esperaba INT, FLOAT O CHAR");
+                                        throwException("No se puede comparar la expresiÃƒÂ³n, se esperaba INT, FLOAT O CHAR");
                                     }
 
                                     BloqueCondicion etqs = new BloqueCondicion();
                                     etqs.etqVerdad = getLabel(ca);
                                     etqs.etqFalso = getLabel(ca);
-                                    String tres = "\tif " + lval + "<" + rval + " goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
+                                    String tres = "\tif " + lval + "<" + rval + " then goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
                                     write3dir(tres);
 
                                     return new Dict("tags", etqs, "type", tipo);
@@ -4413,13 +4424,13 @@ public class Win extends javax.swing.JFrame {
                                     String tipo = TType.BOOLEAN.toString();
 
                                     if (!(ltype.equals(TType.INT.toString()) || !ltype.equals(TType.FLOAT.toString())) && (!rtype.equals(TType.INT.toString()) || !rtype.equals(TType.FLOAT.toString()))) {
-                                        throwException("No se puede comparar la expresiÃ³n, se esperaba INT, FLOAT O CHAR");
+                                        throwException("No se puede comparar la expresiÃƒÂ³n, se esperaba INT, FLOAT O CHAR");
                                     }
 
                                     BloqueCondicion etqs = new BloqueCondicion();
                                     etqs.etqVerdad = getLabel(ca);
                                     etqs.etqFalso = getLabel(ca);
-                                    String tres = "\tif " + lval + "<=" + rval + " goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
+                                    String tres = "\tif " + lval + "<=" + rval + " then goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
                                     write3dir(tres);
 
                                     return new Dict("tags", etqs, "type", tipo);
@@ -4452,13 +4463,13 @@ public class Win extends javax.swing.JFrame {
                                     String tipo = TType.BOOLEAN.toString();
 
                                     if (!(ltype.equals(TType.INT.toString()) || !ltype.equals(TType.FLOAT.toString())) && (!rtype.equals(TType.INT.toString()) || !rtype.equals(TType.FLOAT.toString()))) {
-                                        throwException("No se puede comparar la expresiÃ³n, se esperaba INT, FLOAT O CHAR");
+                                        throwException("No se puede comparar la expresiÃƒÂ³n, se esperaba INT, FLOAT O CHAR");
                                     }
 
                                     BloqueCondicion etqs = new BloqueCondicion();
                                     etqs.etqVerdad = getLabel(ca);
                                     etqs.etqFalso = getLabel(ca);
-                                    String tres = "\tif " + lval + ">" + rval + " goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
+                                    String tres = "\tif " + lval + ">" + rval + " then goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
                                     write3dir(tres);
 
                                     return new Dict("tags", etqs, "type", tipo);
@@ -4491,13 +4502,13 @@ public class Win extends javax.swing.JFrame {
                                     String tipo = TType.BOOLEAN.toString();
 
                                     if (!(ltype.equals(TType.INT.toString()) || !ltype.equals(TType.FLOAT.toString())) && (!rtype.equals(TType.INT.toString()) || !rtype.equals(TType.FLOAT.toString()))) {
-                                        throwException("No se puede comparar la expresiÃ³n, se esperaba INT, FLOAT O CHAR");
+                                        throwException("No se puede comparar la expresiÃƒÂ³n, se esperaba INT, FLOAT O CHAR");
                                     }
 
                                     BloqueCondicion etqs = new BloqueCondicion();
                                     etqs.etqVerdad = getLabel(ca);
                                     etqs.etqFalso = getLabel(ca);
-                                    String tres = "\tif " + lval + ">=" + rval + " goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
+                                    String tres = "\tif " + lval + ">=" + rval + " then goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
                                     write3dir(tres);
 
                                     return new Dict("tags", etqs, "type", tipo);
@@ -4530,12 +4541,12 @@ public class Win extends javax.swing.JFrame {
                                     String tipo = TType.BOOLEAN.toString();
 
                                     /*if(!(ltype.equals(TType.INT.toString())||!ltype.equals(TType.FLOAT.toString()))&&(!rtype.equals(TType.INT.toString())||!rtype.equals(TType.FLOAT.toString()))){
-                                     throwException("No se puede comparar la expresiÃ³n, se esperaba INT, FLOAT O CHAR");
+                                     throwException("No se puede comparar la expresiÃƒÂ³n, se esperaba INT, FLOAT O CHAR");
                                      }*/
                                     BloqueCondicion etqs = new BloqueCondicion();
                                     etqs.etqVerdad = getLabel(ca);
                                     etqs.etqFalso = getLabel(ca);
-                                    String tres = "\tif " + lval + "==" + rval + " goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
+                                    String tres = "\tif " + lval + "==" + rval + " then goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
                                     write3dir(tres);
 
                                     return new Dict("tags", etqs, "type", tipo);
@@ -4568,13 +4579,13 @@ public class Win extends javax.swing.JFrame {
                                     String tipo = TType.BOOLEAN.toString();
 
                                     if (!(ltype.equals(TType.INT.toString()) || !ltype.equals(TType.FLOAT.toString())) && (!rtype.equals(TType.INT.toString()) || !rtype.equals(TType.FLOAT.toString()))) {
-                                        throwException("No se puede comparar la expresiÃ³n, se esperaba INT, FLOAT O CHAR");
+                                        throwException("No se puede comparar la expresiÃƒÂ³n, se esperaba INT, FLOAT O CHAR");
                                     }
 
                                     BloqueCondicion etqs = new BloqueCondicion();
                                     etqs.etqVerdad = getLabel(ca);
                                     etqs.etqFalso = getLabel(ca);
-                                    String tres = "\tif " + lval + "!=" + rval + " goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
+                                    String tres = "\tif " + lval + "!=" + rval + " then goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
                                     write3dir(tres);
 
                                     return new Dict("tags", etqs, "type", tipo);
@@ -4587,7 +4598,6 @@ public class Win extends javax.swing.JFrame {
                     });
                     //</editor-fold>
 
-
                     //<editor-fold defaultstate="collapsed" desc="PLUS">
                     put(TOperation.PLUS, new Operation() {
                         @Override
@@ -4598,7 +4608,7 @@ public class Win extends javax.swing.JFrame {
                             final Dict ref = node.getDictRef();
                             final Object ref_info = ref.get("info");
                             final Object phase = ca.get("phase");
-                            
+
                             final CC cc = (CC) ca.get("cc");
                             final Stack scope = ca.getStack("scope");
                             final Sim methodsim = (Sim) scope.peek();
@@ -4629,24 +4639,24 @@ public class Win extends javax.swing.JFrame {
                                                     write3dir("//CAST INT - FLOAT");
                                                     String t1_i = getTemp(ca);
                                                     write3dir("%s = p + %d;", t1_i, methodsim.size);
-                                                
+
                                                     final String t2_i = getTemp(actions);
                                                     write3dir("%s = %s + %d;", t2_i, t1_i, 0);
-                                                    write3dir("stack[%s]= %s;", t2_i, lval );
+                                                    write3dir("stack[%s]= %s;", t2_i, lval);
 
                                                     write3dir("p = p + %d;", methodsim.size);
                                                     write3dir("call int_to_float();");
-                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    write3dir("p = p - %d;", methodsim.size);
                                                     String t_ult_i = getTemp(ca);
 
                                                     write3dir("%s = p + %d;", t_ult_i, methodsim.size);
 
                                                     String t4_i = getTemp(ca);
-                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+                                                    write3dir("%s = %s + %d;", t4_i, t_ult_i, 0);
 
                                                     String t5_i = getTemp(ca);
                                                     write3dir("%s = stack[%s];", t5_i, t4_i);
-                                                    
+
                                                     temp = getTemp(ca);
                                                     tres = String.format("%s = %s + %s;", temp, t5_i, rval);
                                                     write3dir(tres);
@@ -4676,11 +4686,11 @@ public class Win extends javax.swing.JFrame {
 
                                                     temp = getTemp(ca);
                                                     write3dir(temp + "=" + t_gl + "+" + 0 + ";");
-                                                    write3dir("heap[" + temp + "]=" + lval + ";");
+                                                    write3dir("heap[" + temp + "]=-101;");
 
                                                     temp = getTemp(ca);
                                                     write3dir(temp + "=" + t_gl + "+" + 1 + ";");
-                                                    write3dir("heap[" + temp + "]=-101;");
+                                                    write3dir("heap[" + temp + "]=" + lval + ";");
 
                                                     //Modificando heap, se suma dos porque se agrego en entero y -100
                                                     for (int i = 0; i < rlength + 1; i++) {
@@ -4710,24 +4720,24 @@ public class Win extends javax.swing.JFrame {
                                                     write3dir("//CAST INT - FLOAT");
                                                     String t1_i = getTemp(ca);
                                                     write3dir("%s = p + %d;", t1_i, methodsim.size);
-                                                
+
                                                     final String t2_i = getTemp(actions);
                                                     write3dir("%s = %s + %d;", t2_i, t1_i, 0);
-                                                    write3dir("stack[%s]= %s;", t2_i, rval );
+                                                    write3dir("stack[%s]= %s;", t2_i, rval);
 
                                                     write3dir("p = p + %d;", methodsim.size);
                                                     write3dir("call int_to_float();");
-                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    write3dir("p = p - %d;", methodsim.size);
                                                     String t_ult_i = getTemp(ca);
 
                                                     write3dir("%s = p + %d;", t_ult_i, methodsim.size);
 
                                                     String t4_i = getTemp(ca);
-                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+                                                    write3dir("%s = %s + %d;", t4_i, t_ult_i, 0);
 
                                                     String t5_i = getTemp(ca);
                                                     write3dir("%s = stack[%s];", t5_i, t4_i);
-                                                    
+
                                                     temp = getTemp(ca);
                                                     tres = String.format("%s = %s + %s;", temp, lval, t5_i);
                                                     write3dir(tres);
@@ -4763,11 +4773,11 @@ public class Win extends javax.swing.JFrame {
 
                                                     temp = getTemp(ca);
                                                     write3dir(temp + "=" + t_gl + "+" + 0 + ";");
-                                                    write3dir("heap[" + temp + "]=" + lval + ";");
+                                                    write3dir("heap[" + temp + "]=-101;");
 
                                                     temp = getTemp(ca);
                                                     write3dir(temp + "=" + t_gl + "+" + 1 + ";");
-                                                    write3dir("heap[" + temp + "]=-101;");
+                                                    write3dir("heap[" + temp + "]=" + lval + ";");
 
                                                     //Modificando heap, se suma dos porque se agrego en entero y -100
                                                     for (int i = 0; i < rlength + 1; i++) {
@@ -4817,11 +4827,11 @@ public class Win extends javax.swing.JFrame {
 
                                                     temp = getTemp(ca);
                                                     write3dir(temp + "=" + t_gl + "+" + 0 + ";");
-                                                    write3dir("heap[" + temp + "]=" + lval + ";");
+                                                    write3dir("heap[" + temp + "]=-102;");
 
                                                     temp = getTemp(ca);
                                                     write3dir(temp + "=" + t_gl + "+" + 1 + ";");
-                                                    write3dir("heap[" + temp + "]=-102;");
+                                                    write3dir("heap[" + temp + "]=" + lval + ";");
 
                                                     //Modificando heap, se suma dos porque se agrego en entero y -100
                                                     for (int i = 0; i < rlength + 1; i++) {
@@ -4870,11 +4880,11 @@ public class Win extends javax.swing.JFrame {
 
                                                     temp = getTemp(ca);
                                                     write3dir(temp + "=" + t_gl + "+" + llength_i + ";");
-                                                    write3dir("heap[" + temp + "]=" + rval + ";");
+                                                    write3dir("heap[" + temp + "]=-101;");
 
                                                     temp = getTemp(ca);
                                                     write3dir(temp + "=" + t_gl + "+" + (int) (llength_i + 1) + ";");
-                                                    write3dir("heap[" + temp + "]=-101;");
+                                                    write3dir("heap[" + temp + "]=" + rval + ";");
 
                                                     temp = getTemp(ca);
                                                     write3dir(temp + "=" + t_gl + "+" + (int) (llength_i + 2) + ";");
@@ -4913,11 +4923,11 @@ public class Win extends javax.swing.JFrame {
 
                                                     temp = getTemp(ca);
                                                     write3dir(temp + "=" + t_gl_f + "+" + llength_f + ";");
-                                                    write3dir("heap[" + temp + "]=" + rval + ";");
+                                                    write3dir("heap[" + temp + "]=-101;");
 
                                                     temp = getTemp(ca);
                                                     write3dir(temp + "=" + t_gl_f + "+" + (int) (llength_f + 1) + ";");
-                                                    write3dir("heap[" + temp + "]=-101;");
+                                                    write3dir("heap[" + temp + "]=" + rval + ";");
 
                                                     temp = getTemp(ca);
                                                     write3dir(temp + "=" + t_gl_f + "+" + (int) (llength_f + 2) + ";");
@@ -4956,11 +4966,11 @@ public class Win extends javax.swing.JFrame {
 
                                                     temp = getTemp(ca);
                                                     write3dir(temp + "=" + t_gl_b + "+" + llength_b + ";");
-                                                    write3dir("heap[" + temp + "]=" + rval + ";");
+                                                    write3dir("heap[" + temp + "]=-102;");
 
                                                     temp = getTemp(ca);
                                                     write3dir(temp + "=" + t_gl_b + "+" + (int) (llength_b + 1) + ";");
-                                                    write3dir("heap[" + temp + "]=-102;");
+                                                    write3dir("heap[" + temp + "]=" + rval + ";");
 
                                                     temp = getTemp(ca);
                                                     write3dir(temp + "=" + t_gl_b + "+" + (int) (llength_b + 2) + ";");
@@ -5125,9 +5135,9 @@ public class Win extends javax.swing.JFrame {
                                     }
 
                                     /*if (seConcateno == false) {
-                                        //Si no es concatenacion ejecutar lo siguiente
+                                     //Si no es concatenacion ejecutar lo siguiente
                                         
-                                    }*/
+                                     }*/
                                     return new Dict("val", temp, "type", type, "length", length);
                                 }
                             } catch (UnsupportedOperationException exc) {
@@ -5138,6 +5148,7 @@ public class Win extends javax.swing.JFrame {
                     });
 
                     //</editor-fold>
+                    
                     //<editor-fold defaultstate="collapsed" desc="MINUS">
                     put(TOperation.MINUS, new Operation() {
                         @Override
@@ -5146,7 +5157,7 @@ public class Win extends javax.swing.JFrame {
                             final Dict ref = node.getDictRef();
                             final Object ref_info = ref.get("info");
                             final Object phase = ca.get("phase");
-                            
+
                             final CC cc = (CC) ca.get("cc");
                             final Stack scope = ca.getStack("scope");
                             final Sim methodsim = (Sim) scope.peek();
@@ -5175,24 +5186,24 @@ public class Win extends javax.swing.JFrame {
                                                     write3dir("//CAST INT - FLOAT");
                                                     String t1_i = getTemp(ca);
                                                     write3dir("%s = p + %d;", t1_i, methodsim.size);
-                                                
+
                                                     final String t2_i = getTemp(actions);
                                                     write3dir("%s = %s + %d;", t2_i, t1_i, 0);
-                                                    write3dir("stack[%s]= %s;", t2_i, lval );
+                                                    write3dir("stack[%s]= %s;", t2_i, lval);
 
                                                     write3dir("p = p + %d;", methodsim.size);
                                                     write3dir("call int_to_float();");
-                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    write3dir("p = p - %d;", methodsim.size);
                                                     String t_ult_i = getTemp(ca);
 
                                                     write3dir("%s = p + %d;", t_ult_i, methodsim.size);
 
                                                     String t4_i = getTemp(ca);
-                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+                                                    write3dir("%s = %s + %d;", t4_i, t_ult_i, 0);
 
                                                     String t5_i = getTemp(ca);
                                                     write3dir("%s = stack[%s];", t5_i, t4_i);
-                                                    
+
                                                     temp = getTemp(ca);
                                                     tres = String.format("%s = %s - %s;", temp, t5_i, rval);
                                                     write3dir(tres);
@@ -5218,24 +5229,24 @@ public class Win extends javax.swing.JFrame {
                                                     write3dir("//CAST INT - FLOAT");
                                                     String t1_i = getTemp(ca);
                                                     write3dir("%s = p + %d;", t1_i, methodsim.size);
-                                                
+
                                                     final String t2_i = getTemp(actions);
                                                     write3dir("%s = %s + %d;", t2_i, t1_i, 0);
-                                                    write3dir("stack[%s]= %s;", t2_i, rval );
+                                                    write3dir("stack[%s]= %s;", t2_i, rval);
 
                                                     write3dir("p = p + %d;", methodsim.size);
                                                     write3dir("call int_to_float();");
-                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    write3dir("p = p - %d;", methodsim.size);
                                                     String t_ult_i = getTemp(ca);
 
                                                     write3dir("%s = p + %d;", t_ult_i, methodsim.size);
 
                                                     String t4_i = getTemp(ca);
-                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+                                                    write3dir("%s = %s + %d;", t4_i, t_ult_i, 0);
 
                                                     String t5_i = getTemp(ca);
                                                     write3dir("%s = stack[%s];", t5_i, t4_i);
-                                                    
+
                                                     temp = getTemp(ca);
                                                     tres = String.format("%s = %s - %s;", temp, lval, t5_i);
                                                     write3dir(tres);
@@ -5255,24 +5266,24 @@ public class Win extends javax.swing.JFrame {
                                                     write3dir("//CAST CHAR - FLOAT");
                                                     String t1_c = getTemp(ca);
                                                     write3dir("%s = p + %d;", t1_c, methodsim.size);
-                                                
+
                                                     final String t2_c = getTemp(actions);
                                                     write3dir("%s = %s + %d;", t2_c, t1_c, 0);
-                                                    write3dir("stack[%s]= %s;", t2_c, rval );
+                                                    write3dir("stack[%s]= %s;", t2_c, rval);
 
                                                     write3dir("p = p + %d;", methodsim.size);
                                                     write3dir("call int_to_float();");
-                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    write3dir("p = p - %d;", methodsim.size);
                                                     String t_ult_c = getTemp(ca);
 
                                                     write3dir("%s = p + %d;", t_ult_c, methodsim.size);
 
                                                     String t4_c = getTemp(ca);
-                                                    write3dir("%s = %s + %d;", t4_c,t_ult_c,0);
+                                                    write3dir("%s = %s + %d;", t4_c, t_ult_c, 0);
 
                                                     String t5_c = getTemp(ca);
                                                     write3dir("%s = stack[%s];", t5_c, t4_c);
-                                                    
+
                                                     temp = getTemp(ca);
                                                     tres = String.format("%s = %s - %s;", temp, lval, t5_c);
                                                     write3dir(tres);
@@ -5294,24 +5305,24 @@ public class Win extends javax.swing.JFrame {
                                                     write3dir("//CAST INT - FLOAT");
                                                     String t1_i = getTemp(ca);
                                                     write3dir("%s = p + %d;", t1_i, methodsim.size);
-                                                
+
                                                     final String t2_i = getTemp(actions);
                                                     write3dir("%s = %s + %d;", t2_i, t1_i, 0);
-                                                    write3dir("stack[%s]= %s;", t2_i, lval );
+                                                    write3dir("stack[%s]= %s;", t2_i, lval);
 
                                                     write3dir("p = p + %d;", methodsim.size);
                                                     write3dir("call int_to_float();");
-                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    write3dir("p = p - %d;", methodsim.size);
                                                     String t_ult_i = getTemp(ca);
 
                                                     write3dir("%s = p + %d;", t_ult_i, methodsim.size);
 
                                                     String t4_i = getTemp(ca);
-                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+                                                    write3dir("%s = %s + %d;", t4_i, t_ult_i, 0);
 
                                                     String t5_i = getTemp(ca);
                                                     write3dir("%s = stack[%s];", t5_i, t4_i);
-                                                    
+
                                                     temp = getTemp(ca);
                                                     tres = String.format("%s = %s - %s;", temp, t5_i, rval);
                                                     write3dir(tres);
@@ -5335,7 +5346,6 @@ public class Win extends javax.swing.JFrame {
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
 
-                                    
                                     return new Dict("val", temp, "type", type);
                                 }
                             } catch (UnsupportedOperationException exc) {
@@ -5354,7 +5364,7 @@ public class Win extends javax.swing.JFrame {
                             final Dict ref = node.getDictRef();
                             final Object ref_info = ref.get("info");
                             final Object phase = ca.get("phase");
-                            
+
                             final CC cc = (CC) ca.get("cc");
                             final Stack scope = ca.getStack("scope");
                             final Sim methodsim = (Sim) scope.peek();
@@ -5383,24 +5393,24 @@ public class Win extends javax.swing.JFrame {
                                                     write3dir("//CAST INT - FLOAT");
                                                     String t1_i = getTemp(ca);
                                                     write3dir("%s = p + %d;", t1_i, methodsim.size);
-                                                
+
                                                     final String t2_i = getTemp(actions);
                                                     write3dir("%s = %s + %d;", t2_i, t1_i, 0);
-                                                    write3dir("stack[%s]= %s;", t2_i, lval );
+                                                    write3dir("stack[%s]= %s;", t2_i, lval);
 
                                                     write3dir("p = p + %d;", methodsim.size);
                                                     write3dir("call int_to_float();");
-                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    write3dir("p = p - %d;", methodsim.size);
                                                     String t_ult_i = getTemp(ca);
 
                                                     write3dir("%s = p + %d;", t_ult_i, methodsim.size);
 
                                                     String t4_i = getTemp(ca);
-                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+                                                    write3dir("%s = %s + %d;", t4_i, t_ult_i, 0);
 
                                                     String t5_i = getTemp(ca);
                                                     write3dir("%s = stack[%s];", t5_i, t4_i);
-                                                    
+
                                                     temp = getTemp(ca);
                                                     tres = String.format("%s = %s * %s;", temp, t5_i, rval);
                                                     write3dir(tres);
@@ -5426,24 +5436,24 @@ public class Win extends javax.swing.JFrame {
                                                     write3dir("//CAST INT - FLOAT");
                                                     String t1_i = getTemp(ca);
                                                     write3dir("%s = p + %d;", t1_i, methodsim.size);
-                                                
+
                                                     final String t2_i = getTemp(actions);
                                                     write3dir("%s = %s + %d;", t2_i, t1_i, 0);
-                                                    write3dir("stack[%s]= %s;", t2_i, rval );
+                                                    write3dir("stack[%s]= %s;", t2_i, rval);
 
                                                     write3dir("p = p + %d;", methodsim.size);
                                                     write3dir("call int_to_float();");
-                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    write3dir("p = p - %d;", methodsim.size);
                                                     String t_ult_i = getTemp(ca);
 
                                                     write3dir("%s = p + %d;", t_ult_i, methodsim.size);
 
                                                     String t4_i = getTemp(ca);
-                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+                                                    write3dir("%s = %s + %d;", t4_i, t_ult_i, 0);
 
                                                     String t5_i = getTemp(ca);
                                                     write3dir("%s = stack[%s];", t5_i, t4_i);
-                                                    
+
                                                     temp = getTemp(ca);
                                                     tres = String.format("%s = %s * %s;", temp, lval, t5_i);
                                                     write3dir(tres);
@@ -5463,24 +5473,24 @@ public class Win extends javax.swing.JFrame {
                                                     write3dir("//CAST CHAR - FLOAT");
                                                     String t1_c = getTemp(ca);
                                                     write3dir("%s = p + %d;", t1_c, methodsim.size);
-                                                
+
                                                     final String t2_c = getTemp(actions);
                                                     write3dir("%s = %s + %d;", t2_c, t1_c, 0);
-                                                    write3dir("stack[%s]= %s;", t2_c, rval );
+                                                    write3dir("stack[%s]= %s;", t2_c, rval);
 
                                                     write3dir("p = p + %d;", methodsim.size);
                                                     write3dir("call int_to_float();");
-                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    write3dir("p = p - %d;", methodsim.size);
                                                     String t_ult_c = getTemp(ca);
 
                                                     write3dir("%s = p + %d;", t_ult_c, methodsim.size);
 
                                                     String t4_c = getTemp(ca);
-                                                    write3dir("%s = %s + %d;", t4_c,t_ult_c,0);
+                                                    write3dir("%s = %s + %d;", t4_c, t_ult_c, 0);
 
                                                     String t5_c = getTemp(ca);
                                                     write3dir("%s = stack[%s];", t5_c, t4_c);
-                                                    
+
                                                     temp = getTemp(ca);
                                                     tres = String.format("%s = %s * %s;", temp, lval, t5_c);
                                                     write3dir(tres);
@@ -5502,24 +5512,24 @@ public class Win extends javax.swing.JFrame {
                                                     write3dir("//CAST INT - FLOAT");
                                                     String t1_i = getTemp(ca);
                                                     write3dir("%s = p + %d;", t1_i, methodsim.size);
-                                                
+
                                                     final String t2_i = getTemp(actions);
                                                     write3dir("%s = %s + %d;", t2_i, t1_i, 0);
-                                                    write3dir("stack[%s]= %s;", t2_i, lval );
+                                                    write3dir("stack[%s]= %s;", t2_i, lval);
 
                                                     write3dir("p = p + %d;", methodsim.size);
                                                     write3dir("call int_to_float();");
-                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    write3dir("p = p - %d;", methodsim.size);
                                                     String t_ult_i = getTemp(ca);
 
                                                     write3dir("%s = p + %d;", t_ult_i, methodsim.size);
 
                                                     String t4_i = getTemp(ca);
-                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+                                                    write3dir("%s = %s + %d;", t4_i, t_ult_i, 0);
 
                                                     String t5_i = getTemp(ca);
                                                     write3dir("%s = stack[%s];", t5_i, t4_i);
-                                                    
+
                                                     temp = getTemp(ca);
                                                     tres = String.format("%s = %s * %s;", temp, t5_i, rval);
                                                     write3dir(tres);
@@ -5543,7 +5553,6 @@ public class Win extends javax.swing.JFrame {
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
 
-                                    
                                     return new Dict("val", temp, "type", type);
                                 }
                             } catch (UnsupportedOperationException exc) {
@@ -5563,7 +5572,7 @@ public class Win extends javax.swing.JFrame {
                             final Dict ref = node.getDictRef();
                             final Object ref_info = ref.get("info");
                             final Object phase = ca.get("phase");
-                            
+
                             final CC cc = (CC) ca.get("cc");
                             final Stack scope = ca.getStack("scope");
                             final Sim methodsim = (Sim) scope.peek();
@@ -5584,7 +5593,7 @@ public class Win extends javax.swing.JFrame {
                                         case "INT":
                                             switch (rtype) {
                                                 case "INT":
-                                                    final String t_in = getTemp(ca);                                                    
+                                                    final String t_in = getTemp(ca);
                                                     tres = String.format("%s = %s / %s;", t_in, lval, rval);
                                                     write3dir(tres);
                                                     //Conversion a float
@@ -5594,21 +5603,21 @@ public class Win extends javax.swing.JFrame {
 
                                                     final String t2 = getTemp(actions);
                                                     write3dir("%s = %s + %d;", t2, t1, 0);
-                                                    write3dir("stack[%s]= %s;", t2, t_in );
+                                                    write3dir("stack[%s]= %s;", t2, t_in);
 
                                                     write3dir("p = p + %d;", methodsim.size);
                                                     write3dir("call int_to_float();");
-                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    write3dir("p = p - %d;", methodsim.size);
                                                     String t_ult = getTemp(ca);
 
                                                     write3dir("%s = p + %d;", t_ult, methodsim.size);
 
                                                     String t4 = getTemp(ca);
-                                                    write3dir("%s = %s + %d;", t4,t_ult,0);
+                                                    write3dir("%s = %s + %d;", t4, t_ult, 0);
 
                                                     String t5 = getTemp(ca);
-                                                    write3dir("%s = stack[%s];", t5, t4);                                                    
-                                                    
+                                                    write3dir("%s = stack[%s];", t5, t4);
+
                                                     temp = t5;
                                                     type = TType.FLOAT.toString();
                                                     break;
@@ -5616,24 +5625,24 @@ public class Win extends javax.swing.JFrame {
                                                     write3dir("//CAST INT - FLOAT");
                                                     String t1_i = getTemp(ca);
                                                     write3dir("%s = p + %d;", t1_i, methodsim.size);
-                                                
+
                                                     final String t2_i = getTemp(actions);
                                                     write3dir("%s = %s + %d;", t2_i, t1_i, 0);
-                                                    write3dir("stack[%s]= %s;", t2_i, lval );
+                                                    write3dir("stack[%s]= %s;", t2_i, lval);
 
                                                     write3dir("p = p + %d;", methodsim.size);
                                                     write3dir("call int_to_float();");
-                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    write3dir("p = p - %d;", methodsim.size);
                                                     String t_ult_i = getTemp(ca);
 
                                                     write3dir("%s = p + %d;", t_ult_i, methodsim.size);
 
                                                     String t4_i = getTemp(ca);
-                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+                                                    write3dir("%s = %s + %d;", t4_i, t_ult_i, 0);
 
                                                     String t5_i = getTemp(ca);
                                                     write3dir("%s = stack[%s];", t5_i, t4_i);
-                                                    
+
                                                     temp = getTemp(ca);
                                                     tres = String.format("%s = %s / %s;", temp, t5_i, rval);
                                                     write3dir(tres);
@@ -5644,7 +5653,7 @@ public class Win extends javax.swing.JFrame {
                                                 case "STRING":
                                                     throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                                 case "CHAR":
-                                                    final String t_in_c = getTemp(ca);                                                    
+                                                    final String t_in_c = getTemp(ca);
                                                     tres = String.format("%s = %s / %s;", t_in_c, lval, rval);
                                                     write3dir(tres);
                                                     //Conversion a float
@@ -5654,21 +5663,21 @@ public class Win extends javax.swing.JFrame {
 
                                                     final String t2_c = getTemp(actions);
                                                     write3dir("%s = %s + %d;", t2_c, t1_c, 0);
-                                                    write3dir("stack[%s]= %s;", t2_c, t_in_c );
+                                                    write3dir("stack[%s]= %s;", t2_c, t_in_c);
 
                                                     write3dir("p = p + %d;", methodsim.size);
                                                     write3dir("call int_to_float();");
-                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    write3dir("p = p - %d;", methodsim.size);
                                                     String t_ult_c = getTemp(ca);
 
                                                     write3dir("%s = p + %d;", t_ult_c, methodsim.size);
 
                                                     String t4_c = getTemp(ca);
-                                                    write3dir("%s = %s + %d;", t4_c,t_ult_c,0);
+                                                    write3dir("%s = %s + %d;", t4_c, t_ult_c, 0);
 
                                                     String t5_c = getTemp(ca);
                                                     write3dir("%s = stack[%s];", t5_c, t4_c);
-                                                    
+
                                                     temp = t5_c;
                                                     type = TType.FLOAT.toString();
                                                     break;
@@ -5682,24 +5691,24 @@ public class Win extends javax.swing.JFrame {
                                                     write3dir("//CAST INT - FLOAT");
                                                     String t1_i = getTemp(ca);
                                                     write3dir("%s = p + %d;", t1_i, methodsim.size);
-                                                
+
                                                     final String t2_i = getTemp(actions);
                                                     write3dir("%s = %s + %d;", t2_i, t1_i, 0);
-                                                    write3dir("stack[%s]= %s;", t2_i, rval );
+                                                    write3dir("stack[%s]= %s;", t2_i, rval);
 
                                                     write3dir("p = p + %d;", methodsim.size);
                                                     write3dir("call int_to_float();");
-                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    write3dir("p = p - %d;", methodsim.size);
                                                     String t_ult_i = getTemp(ca);
 
                                                     write3dir("%s = p + %d;", t_ult_i, methodsim.size);
 
                                                     String t4_i = getTemp(ca);
-                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+                                                    write3dir("%s = %s + %d;", t4_i, t_ult_i, 0);
 
                                                     String t5_i = getTemp(ca);
                                                     write3dir("%s = stack[%s];", t5_i, t4_i);
-                                                    
+
                                                     temp = getTemp(ca);
                                                     tres = String.format("%s = %s / %s;", temp, lval, t5_i);
                                                     write3dir(tres);
@@ -5719,24 +5728,24 @@ public class Win extends javax.swing.JFrame {
                                                     write3dir("//CAST CHAR - FLOAT");
                                                     String t1_c = getTemp(ca);
                                                     write3dir("%s = p + %d;", t1_c, methodsim.size);
-                                                
+
                                                     final String t2_c = getTemp(actions);
                                                     write3dir("%s = %s + %d;", t2_c, t1_c, 0);
-                                                    write3dir("stack[%s]= %s;", t2_c, rval );
+                                                    write3dir("stack[%s]= %s;", t2_c, rval);
 
                                                     write3dir("p = p + %d;", methodsim.size);
                                                     write3dir("call int_to_float();");
-                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    write3dir("p = p - %d;", methodsim.size);
                                                     String t_ult_c = getTemp(ca);
 
                                                     write3dir("%s = p + %d;", t_ult_c, methodsim.size);
 
                                                     String t4_c = getTemp(ca);
-                                                    write3dir("%s = %s + %d;", t4_c,t_ult_c,0);
+                                                    write3dir("%s = %s + %d;", t4_c, t_ult_c, 0);
 
                                                     String t5_c = getTemp(ca);
                                                     write3dir("%s = stack[%s];", t5_c, t4_c);
-                                                    
+
                                                     temp = getTemp(ca);
                                                     tres = String.format("%s = %s / %s;", temp, lval, t5_c);
                                                     write3dir(tres);
@@ -5748,7 +5757,7 @@ public class Win extends javax.swing.JFrame {
                                         case "CHAR":
                                             switch (rtype) {
                                                 case "INT":
-                                                    final String t_in = getTemp(ca);                                                    
+                                                    final String t_in = getTemp(ca);
                                                     tres = String.format("%s = %s / %s;", t_in, lval, rval);
                                                     write3dir(tres);
                                                     //Conversion a float
@@ -5758,21 +5767,21 @@ public class Win extends javax.swing.JFrame {
 
                                                     final String t2 = getTemp(actions);
                                                     write3dir("%s = %s + %d;", t2, t1, 0);
-                                                    write3dir("stack[%s]= %s;", t2, t_in );
+                                                    write3dir("stack[%s]= %s;", t2, t_in);
 
                                                     write3dir("p = p + %d;", methodsim.size);
                                                     write3dir("call int_to_float();");
-                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    write3dir("p = p - %d;", methodsim.size);
                                                     String t_ult = getTemp(ca);
 
                                                     write3dir("%s = p + %d;", t_ult, methodsim.size);
 
                                                     String t4 = getTemp(ca);
-                                                    write3dir("%s = %s + %d;", t4,t_ult,0);
+                                                    write3dir("%s = %s + %d;", t4, t_ult, 0);
 
                                                     String t5 = getTemp(ca);
-                                                    write3dir("%s = stack[%s];", t5, t4);                                                    
-                                                    
+                                                    write3dir("%s = stack[%s];", t5, t4);
+
                                                     temp = t5;
                                                     type = TType.FLOAT.toString();
                                                     break;
@@ -5780,24 +5789,24 @@ public class Win extends javax.swing.JFrame {
                                                     write3dir("//CAST INT - FLOAT");
                                                     String t1_i = getTemp(ca);
                                                     write3dir("%s = p + %d;", t1_i, methodsim.size);
-                                                
+
                                                     final String t2_i = getTemp(actions);
                                                     write3dir("%s = %s + %d;", t2_i, t1_i, 0);
-                                                    write3dir("stack[%s]= %s;", t2_i, lval );
+                                                    write3dir("stack[%s]= %s;", t2_i, lval);
 
                                                     write3dir("p = p + %d;", methodsim.size);
                                                     write3dir("call int_to_float();");
-                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    write3dir("p = p - %d;", methodsim.size);
                                                     String t_ult_i = getTemp(ca);
 
                                                     write3dir("%s = p + %d;", t_ult_i, methodsim.size);
 
                                                     String t4_i = getTemp(ca);
-                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+                                                    write3dir("%s = %s + %d;", t4_i, t_ult_i, 0);
 
                                                     String t5_i = getTemp(ca);
                                                     write3dir("%s = stack[%s];", t5_i, t4_i);
-                                                    
+
                                                     temp = getTemp(ca);
                                                     tres = String.format("%s = %s / %s;", temp, t5_i, rval);
                                                     write3dir(tres);
@@ -5808,7 +5817,7 @@ public class Win extends javax.swing.JFrame {
                                                 case "STRING":
                                                     throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                                 case "CHAR":
-                                                    final String t_in_c = getTemp(ca);                                                    
+                                                    final String t_in_c = getTemp(ca);
                                                     tres = String.format("%s = %s / %s;", t_in_c, lval, rval);
                                                     write3dir(tres);
                                                     //Conversion a float
@@ -5818,21 +5827,21 @@ public class Win extends javax.swing.JFrame {
 
                                                     final String t2_c = getTemp(actions);
                                                     write3dir("%s = %s + %d;", t2_c, t1_c, 0);
-                                                    write3dir("stack[%s]= %s;", t2_c, t_in_c );
+                                                    write3dir("stack[%s]= %s;", t2_c, t_in_c);
 
                                                     write3dir("p = p + %d;", methodsim.size);
                                                     write3dir("call int_to_float();");
-                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    write3dir("p = p - %d;", methodsim.size);
                                                     String t_ult_c = getTemp(ca);
 
                                                     write3dir("%s = p + %d;", t_ult_c, methodsim.size);
 
                                                     String t4_c = getTemp(ca);
-                                                    write3dir("%s = %s + %d;", t4_c,t_ult_c,0);
+                                                    write3dir("%s = %s + %d;", t4_c, t_ult_c, 0);
 
                                                     String t5_c = getTemp(ca);
                                                     write3dir("%s = stack[%s];", t5_c, t4_c);
-                                                    
+
                                                     temp = t5_c;
                                                     type = TType.FLOAT.toString();
                                                     break;
@@ -5843,7 +5852,7 @@ public class Win extends javax.swing.JFrame {
                                         default:
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
-                                    
+
                                     return new Dict("val", temp, "type", type);
                                 }
                             } catch (UnsupportedOperationException exc) {
@@ -5862,7 +5871,7 @@ public class Win extends javax.swing.JFrame {
                             final Dict ref = node.getDictRef();
                             final Object ref_info = ref.get("info");
                             final Object phase = ca.get("phase");
-                            
+
                             final CC cc = (CC) ca.get("cc");
                             final Stack scope = ca.getStack("scope");
                             final Sim methodsim = (Sim) scope.peek();
@@ -5891,24 +5900,24 @@ public class Win extends javax.swing.JFrame {
                                                     write3dir("//CAST INT - FLOAT");
                                                     String t1_i = getTemp(ca);
                                                     write3dir("%s = p + %d;", t1_i, methodsim.size);
-                                                
+
                                                     final String t2_i = getTemp(actions);
                                                     write3dir("%s = %s + %d;", t2_i, t1_i, 0);
-                                                    write3dir("stack[%s]= %s;", t2_i, lval );
+                                                    write3dir("stack[%s]= %s;", t2_i, lval);
 
                                                     write3dir("p = p + %d;", methodsim.size);
                                                     write3dir("call int_to_float();");
-                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    write3dir("p = p - %d;", methodsim.size);
                                                     String t_ult_i = getTemp(ca);
 
                                                     write3dir("%s = p + %d;", t_ult_i, methodsim.size);
 
                                                     String t4_i = getTemp(ca);
-                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+                                                    write3dir("%s = %s + %d;", t4_i, t_ult_i, 0);
 
                                                     String t5_i = getTemp(ca);
                                                     write3dir("%s = stack[%s];", t5_i, t4_i);
-                                                    
+
                                                     temp = getTemp(ca);
                                                     tres = String.format("%s = %s ^ %s;", temp, t5_i, rval);
                                                     write3dir(tres);
@@ -5934,24 +5943,24 @@ public class Win extends javax.swing.JFrame {
                                                     write3dir("//CAST INT - FLOAT");
                                                     String t1_i = getTemp(ca);
                                                     write3dir("%s = p + %d;", t1_i, methodsim.size);
-                                                
+
                                                     final String t2_i = getTemp(actions);
                                                     write3dir("%s = %s + %d;", t2_i, t1_i, 0);
-                                                    write3dir("stack[%s]= %s;", t2_i, rval );
+                                                    write3dir("stack[%s]= %s;", t2_i, rval);
 
                                                     write3dir("p = p + %d;", methodsim.size);
                                                     write3dir("call int_to_float();");
-                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    write3dir("p = p - %d;", methodsim.size);
                                                     String t_ult_i = getTemp(ca);
 
                                                     write3dir("%s = p + %d;", t_ult_i, methodsim.size);
 
                                                     String t4_i = getTemp(ca);
-                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+                                                    write3dir("%s = %s + %d;", t4_i, t_ult_i, 0);
 
                                                     String t5_i = getTemp(ca);
                                                     write3dir("%s = stack[%s];", t5_i, t4_i);
-                                                    
+
                                                     temp = getTemp(ca);
                                                     tres = String.format("%s = %s ^ %s;", temp, lval, t5_i);
                                                     write3dir(tres);
@@ -5971,24 +5980,24 @@ public class Win extends javax.swing.JFrame {
                                                     write3dir("//CAST CHAR - FLOAT");
                                                     String t1_c = getTemp(ca);
                                                     write3dir("%s = p + %d;", t1_c, methodsim.size);
-                                                
+
                                                     final String t2_c = getTemp(actions);
                                                     write3dir("%s = %s + %d;", t2_c, t1_c, 0);
-                                                    write3dir("stack[%s]= %s;", t2_c, rval );
+                                                    write3dir("stack[%s]= %s;", t2_c, rval);
 
                                                     write3dir("p = p + %d;", methodsim.size);
                                                     write3dir("call int_to_float();");
-                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    write3dir("p = p - %d;", methodsim.size);
                                                     String t_ult_c = getTemp(ca);
 
                                                     write3dir("%s = p + %d;", t_ult_c, methodsim.size);
 
                                                     String t4_c = getTemp(ca);
-                                                    write3dir("%s = %s + %d;", t4_c,t_ult_c,0);
+                                                    write3dir("%s = %s + %d;", t4_c, t_ult_c, 0);
 
                                                     String t5_c = getTemp(ca);
                                                     write3dir("%s = stack[%s];", t5_c, t4_c);
-                                                    
+
                                                     temp = getTemp(ca);
                                                     tres = String.format("%s = %s ^ %s;", temp, lval, t5_c);
                                                     write3dir(tres);
@@ -6010,24 +6019,24 @@ public class Win extends javax.swing.JFrame {
                                                     write3dir("//CAST INT - FLOAT");
                                                     String t1_i = getTemp(ca);
                                                     write3dir("%s = p + %d;", t1_i, methodsim.size);
-                                                
+
                                                     final String t2_i = getTemp(actions);
                                                     write3dir("%s = %s + %d;", t2_i, t1_i, 0);
-                                                    write3dir("stack[%s]= %s;", t2_i, lval );
+                                                    write3dir("stack[%s]= %s;", t2_i, lval);
 
                                                     write3dir("p = p + %d;", methodsim.size);
                                                     write3dir("call int_to_float();");
-                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    write3dir("p = p - %d;", methodsim.size);
                                                     String t_ult_i = getTemp(ca);
 
                                                     write3dir("%s = p + %d;", t_ult_i, methodsim.size);
 
                                                     String t4_i = getTemp(ca);
-                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+                                                    write3dir("%s = %s + %d;", t4_i, t_ult_i, 0);
 
                                                     String t5_i = getTemp(ca);
                                                     write3dir("%s = stack[%s];", t5_i, t4_i);
-                                                    
+
                                                     temp = getTemp(ca);
                                                     tres = String.format("%s = %s ^ %s;", temp, t5_i, rval);
                                                     write3dir(tres);
@@ -6051,7 +6060,6 @@ public class Win extends javax.swing.JFrame {
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
 
-                                    
                                     return new Dict("val", temp, "type", type);
                                 }
                             } catch (UnsupportedOperationException exc) {
@@ -6062,7 +6070,6 @@ public class Win extends javax.swing.JFrame {
                     });
                     //</editor-fold>
 
-                    
                     //<editor-fold defaultstate="collapsed" desc="CAST">
                     put(TOperation.CAST, (Operation) (Node node, Object actions) -> {
 
@@ -6082,17 +6089,16 @@ public class Win extends javax.swing.JFrame {
                         try {
                             if (is3dirPhase(phase)) {
                                 String tip = ref.getDict("type").getString("val");
-                                
-                                
+
                                 String lval = node.getLeft().getDictVal().getString("val");
                                 String ltype = node.getLeft().getDictVal().getString("type");
-                                int length= 0;
+                                int length = 0;
                                 String tipo = null;
                                 Object temp = null;
-                                
-                                switch(ltype){//tipo original
+
+                                switch (ltype) {//tipo original
                                     case "INT":
-                                        switch(tip){//tipo destino
+                                        switch (tip) {//tipo destino
                                             case "INT":
                                                 tipo = TType.INT.toString();
                                                 temp = lval;
@@ -6101,73 +6107,73 @@ public class Win extends javax.swing.JFrame {
                                                 write3dir("//CAST INT - FLOAT");
                                                 String t1 = getTemp(ca);
                                                 write3dir("%s = p + %d;", t1, methodsim.size);
-                                                
+
                                                 final String t2 = getTemp(actions);
                                                 write3dir("%s = %s + %d;", t2, t1, 0);
-                                                write3dir("stack[%s]= %s;", t2, lval );
-                                                
+                                                write3dir("stack[%s]= %s;", t2, lval);
+
                                                 write3dir("p = p + %d;", methodsim.size);
                                                 write3dir("call int_to_float();");
-                                                write3dir("p = p - %d;", methodsim.size);                                                
+                                                write3dir("p = p - %d;", methodsim.size);
                                                 String t_ult = getTemp(ca);
-                                                
+
                                                 write3dir("%s = p + %d;", t_ult, methodsim.size);
-                                                
+
                                                 String t4 = getTemp(ca);
-                                                write3dir("%s = %s + %d;", t4,t_ult,0);
-                                                
+                                                write3dir("%s = %s + %d;", t4, t_ult, 0);
+
                                                 String t5 = getTemp(ca);
                                                 write3dir("%s = stack[%s];", t5, t4);
-                                                
+
                                                 tipo = TType.FLOAT.toString();
                                                 temp = t5;
                                                 break;
                                             case "BOOLEAN":
                                                 throw new UnsupportedOperationException("No se puede convertir entero a booleano");
                                             case "STRING":
-                                                    String t_gl = getTemp(ca);
-                                                    write3dir(t_gl + "=h;");
-                                                    write3dir("h = h+" + (int) (3)+";");
+                                                String t_gl = getTemp(ca);
+                                                write3dir(t_gl + "=h;");
+                                                write3dir("h = h+" + (int) (3) + ";");
 
-                                                    temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl + "+" + 0+";");
-                                                    write3dir("heap[" + temp + "]=" + lval+";");
+                                                temp = getTemp(ca);
+                                                write3dir(temp + "=" + t_gl + "+" + 0 + ";");
+                                                write3dir("heap[" + temp + "]=-101;");
 
-                                                    temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl + "+" + 1+";");
-                                                    write3dir("heap[" + temp + "]=-101;");
-                                                    
-                                                    temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl + "+" + 2+";");
-                                                    write3dir("heap[" + temp + "]=-1;");
+                                                temp = getTemp(ca);
+                                                write3dir(temp + "=" + t_gl + "+" + 1 + ";");
+                                                write3dir("heap[" + temp + "]=" + lval + ";");
 
-                                                    //Modificando heap, se suma dos porque se agrego en entero y -100
-                                                    length = 3;
-                                                    temp = t_gl;
-                                                    tipo = TType.STRING.toString();
+                                                temp = getTemp(ca);
+                                                write3dir(temp + "=" + t_gl + "+" + 2 + ";");
+                                                write3dir("heap[" + temp + "]=-1;");
+
+                                                //Modificando heap, se suma dos porque se agrego en entero y -100
+                                                length = 3;
+                                                temp = t_gl;
+                                                tipo = TType.STRING.toString();
                                                 break;
                                             case "CHAR":
                                                 write3dir("//CAST INT - CHAR");
                                                 String t1_c = getTemp(ca);
                                                 write3dir("%s = p + %d;", t1_c, methodsim.size);
-                                                
+
                                                 final String t2_c = getTemp(actions);
                                                 write3dir("%s = %s + %d;", t2_c, t1_c, 0);
-                                                write3dir("stack[%s]= %s;", t2_c, lval );
-                                                
+                                                write3dir("stack[%s]= %s;", t2_c, lval);
+
                                                 write3dir("p = p + %d;", methodsim.size);
                                                 write3dir("call int_to_char();");
-                                                write3dir("p = p - %d;", methodsim.size);                                                
+                                                write3dir("p = p - %d;", methodsim.size);
                                                 String t_ult_c = getTemp(ca);
-                                                
+
                                                 write3dir("%s = p + %d;", t_ult_c, methodsim.size);
-                                                
+
                                                 String t4_c = getTemp(ca);
-                                                write3dir("%s = %s + %d;", t4_c,t_ult_c,0);
-                                                
+                                                write3dir("%s = %s + %d;", t4_c, t_ult_c, 0);
+
                                                 String t5_c = getTemp(ca);
                                                 write3dir("%s = stack[%s];", t5_c, t4_c);
-                                                
+
                                                 tipo = TType.CHAR.toString();
                                                 temp = t5_c;
                                                 break;
@@ -6176,29 +6182,29 @@ public class Win extends javax.swing.JFrame {
                                         }
                                         break;
                                     case "FLOAT":
-                                        switch(tip){//tipo destino
+                                        switch (tip) {//tipo destino
                                             case "INT":
                                                 write3dir("//CAST FLOAT - INT");
                                                 String t1 = getTemp(ca);
                                                 write3dir("%s = p + %d;", t1, methodsim.size);
-                                                
+
                                                 final String t2 = getTemp(actions);
                                                 write3dir("%s = %s + %d;", t2, t1, 0);
-                                                write3dir("stack[%s]= %s;", t2, lval );
-                                                
+                                                write3dir("stack[%s]= %s;", t2, lval);
+
                                                 write3dir("p = p + %d;", methodsim.size);
                                                 write3dir("call float_to_int();");
-                                                write3dir("p = p - %d;", methodsim.size);                                                
+                                                write3dir("p = p - %d;", methodsim.size);
                                                 String t_ult = getTemp(ca);
-                                                
+
                                                 write3dir("%s = p + %d;", t_ult, methodsim.size);
-                                                
+
                                                 String t4 = getTemp(ca);
-                                                write3dir("%s = %s + %d;", t4,t_ult,0);
-                                                
+                                                write3dir("%s = %s + %d;", t4, t_ult, 0);
+
                                                 String t5 = getTemp(ca);
-                                                write3dir("%s = stack[%s];", t5, t4);                                                
-                                                
+                                                write3dir("%s = stack[%s];", t5, t4);
+
                                                 tipo = TType.INT.toString();
                                                 temp = t5;
                                                 break;
@@ -6209,26 +6215,26 @@ public class Win extends javax.swing.JFrame {
                                             case "BOOLEAN":
                                                 throw new UnsupportedOperationException("No se puede convertir INT a FLOAT");
                                             case "STRING":
-                                                    String t_gl = getTemp(ca);
-                                                    write3dir(t_gl + "=h;");
-                                                    write3dir("h = h+" + (int) (3)+";");
+                                                String t_gl = getTemp(ca);
+                                                write3dir(t_gl + "=h;");
+                                                write3dir("h = h+" + (int) (3) + ";");
 
-                                                    temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl + "+" + 0+";");
-                                                    write3dir("heap[" + temp + "]=" + lval+";");
+                                                temp = getTemp(ca);
+                                                write3dir(temp + "=" + t_gl + "+" + 0 + ";");
+                                                write3dir("heap[" + temp + "]=-101;");
 
-                                                    temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl + "+" + 1+";");
-                                                    write3dir("heap[" + temp + "]=-101;");
-                                                    
-                                                    temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl + "+" + 2+";");
-                                                    write3dir("heap[" + temp + "]=-1;");
+                                                temp = getTemp(ca);
+                                                write3dir(temp + "=" + t_gl + "+" + 1 + ";");
+                                                write3dir("heap[" + temp + "]=" + lval + ";");
 
-                                                    //Modificando heap, se suma dos porque se agrego en entero y -100
-                                                    length = 3;
-                                                    temp = t_gl;
-                                                    tipo = TType.STRING.toString();
+                                                temp = getTemp(ca);
+                                                write3dir(temp + "=" + t_gl + "+" + 2 + ";");
+                                                write3dir("heap[" + temp + "]=-1;");
+
+                                                //Modificando heap, se suma dos porque se agrego en entero y -100
+                                                length = 3;
+                                                temp = t_gl;
+                                                tipo = TType.STRING.toString();
                                                 break;
                                             case "CHAR":
                                                 throw new UnsupportedOperationException("No se puede convertir FLOAT a CHAR");
@@ -6237,9 +6243,9 @@ public class Win extends javax.swing.JFrame {
                                         }
                                         break;
                                     case "BOOLEAN":
-                                        switch(tip){//tipo destino
-                                            case "INT":                                                
-                                                throw new UnsupportedOperationException("No se puede convertir BOOLEAN A INT");                                                
+                                        switch (tip) {//tipo destino
+                                            case "INT":
+                                                throw new UnsupportedOperationException("No se puede convertir BOOLEAN A INT");
                                             case "FLOAT":
                                                 throw new UnsupportedOperationException("No se puede convertir BOOLEAN a FLOAT");
                                             case "BOOLEAN":
@@ -6247,57 +6253,57 @@ public class Win extends javax.swing.JFrame {
                                                 temp = lval;
                                                 break;
                                             case "STRING":
-                                                    String t_gl = getTemp(ca);
-                                                    write3dir(t_gl + "=h;");
-                                                    write3dir("h = h+" + (int) (3)+";");
+                                                String t_gl = getTemp(ca);
+                                                write3dir(t_gl + "=h;");
+                                                write3dir("h = h+" + (int) (3) + ";");
 
-                                                    temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl + "+" + 0+";");
-                                                    write3dir("heap[" + temp + "]=" + lval+";");
+                                                temp = getTemp(ca);
+                                                write3dir(temp + "=" + t_gl + "+" + 0 + ";");
+                                                write3dir("heap[" + temp + "]=-102;");
 
-                                                    temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl + "+" + 1+";");
-                                                    write3dir("heap[" + temp + "]=-102;");
-                                                    
-                                                    temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl + "+" + 2+";");
-                                                    write3dir("heap[" + temp + "]=-1;");
+                                                temp = getTemp(ca);
+                                                write3dir(temp + "=" + t_gl + "+" + 1 + ";");
+                                                write3dir("heap[" + temp + "]=" + lval + ";");
 
-                                                    //Modificando heap, se suma dos porque se agrego en entero y -100
-                                                    length = 3;
-                                                    temp = t_gl;
-                                                    tipo = TType.STRING.toString();
+                                                temp = getTemp(ca);
+                                                write3dir(temp + "=" + t_gl + "+" + 2 + ";");
+                                                write3dir("heap[" + temp + "]=-1;");
+
+                                                //Modificando heap, se suma dos porque se agrego en entero y -100
+                                                length = 3;
+                                                temp = t_gl;
+                                                tipo = TType.STRING.toString();
                                                 break;
                                             case "CHAR":
-                                                throw new UnsupportedOperationException("No se puede convertir BOOLEAN a CHAR");                                                
+                                                throw new UnsupportedOperationException("No se puede convertir BOOLEAN a CHAR");
                                             default:
                                                 throw new UnsupportedOperationException("Tipos incorrectos");
                                         }
                                         break;
                                     case "STRING":
-                                        switch(tip){//tipo destino
+                                        switch (tip) {//tipo destino
                                             case "INT":
                                                 write3dir("//CAST STRING - INT");
                                                 String t1 = getTemp(ca);
                                                 write3dir("%s = p + %d;", t1, methodsim.size);
-                                                
+
                                                 final String t2 = getTemp(actions);
                                                 write3dir("%s = %s + %d;", t2, t1, 0);
-                                                write3dir("stack[%s]= %s;", t2, lval );
-                                                
+                                                write3dir("stack[%s]= %s;", t2, lval);
+
                                                 write3dir("p = p + %d;", methodsim.size);
                                                 write3dir("call string_to_int();");
-                                                write3dir("p = p - %d;", methodsim.size);                                                
+                                                write3dir("p = p - %d;", methodsim.size);
                                                 String t_ult = getTemp(ca);
-                                                
+
                                                 write3dir("%s = p + %d;", t_ult, methodsim.size);
-                                                
+
                                                 String t4 = getTemp(ca);
-                                                write3dir("%s = %s + %d;", t4,t_ult,0);
-                                                
+                                                write3dir("%s = %s + %d;", t4, t_ult, 0);
+
                                                 String t5 = getTemp(ca);
-                                                write3dir("%s = stack[%s];", t5, t4);                                                
-                                                
+                                                write3dir("%s = stack[%s];", t5, t4);
+
                                                 tipo = TType.INT.toString();
                                                 temp = t5;
                                                 break;
@@ -6305,24 +6311,24 @@ public class Win extends javax.swing.JFrame {
                                                 write3dir("//CAST STRING - FLOAT");
                                                 String t1_f = getTemp(ca);
                                                 write3dir("%s = p + %d;", t1_f, methodsim.size);
-                                                
+
                                                 final String t2_f = getTemp(actions);
                                                 write3dir("%s = %s + %d;", t2_f, t1_f, 0);
-                                                write3dir("stack[%s]= %s;", t2_f, lval );
-                                                
+                                                write3dir("stack[%s]= %s;", t2_f, lval);
+
                                                 write3dir("p = p + %d;", methodsim.size);
                                                 write3dir("call string_to_float();");
-                                                write3dir("p = p - %d;", methodsim.size);                                                
+                                                write3dir("p = p - %d;", methodsim.size);
                                                 String t_ult_f = getTemp(ca);
-                                                
+
                                                 write3dir("%s = p + %d;", t_ult_f, methodsim.size);
-                                                
+
                                                 String t4_f = getTemp(ca);
-                                                write3dir("%s = %s + %d;", t4_f,t_ult_f,0);
-                                                
+                                                write3dir("%s = %s + %d;", t4_f, t_ult_f, 0);
+
                                                 String t5_f = getTemp(ca);
                                                 write3dir("%s = stack[%s];", t5_f, t4_f);
-                                                
+
                                                 tipo = TType.FLOAT.toString();
                                                 temp = t5_f;
                                                 break;
@@ -6330,24 +6336,24 @@ public class Win extends javax.swing.JFrame {
                                                 write3dir("//CAST STRING - BOOLEAN");
                                                 String t1_b = getTemp(ca);
                                                 write3dir("%s = p + %d;", t1_b, methodsim.size);
-                                                
+
                                                 final String t2_b = getTemp(actions);
                                                 write3dir("%s = %s + %d;", t2_b, t1_b, 0);
-                                                write3dir("stack[%s]= %s;", t2_b, lval );
-                                                
+                                                write3dir("stack[%s]= %s;", t2_b, lval);
+
                                                 write3dir("p = p + %d;", methodsim.size);
                                                 write3dir("call string_to_int();");
-                                                write3dir("p = p - %d;", methodsim.size);                                                
+                                                write3dir("p = p - %d;", methodsim.size);
                                                 String t_ult_b = getTemp(ca);
-                                                
+
                                                 write3dir("%s = p + %d;", t_ult_b, methodsim.size);
-                                                
+
                                                 String t4_b = getTemp(ca);
-                                                write3dir("%s = %s + %d;", t4_b,t_ult_b,0);
-                                                
+                                                write3dir("%s = %s + %d;", t4_b, t_ult_b, 0);
+
                                                 String t5_b = getTemp(ca);
-                                                write3dir("%s = stack[%s];", t5_b, t4_b);                                                
-                                                
+                                                write3dir("%s = stack[%s];", t5_b, t4_b);
+
                                                 tipo = TType.INT.toString();
                                                 temp = t5_b;
                                                 break;
@@ -6359,24 +6365,24 @@ public class Win extends javax.swing.JFrame {
                                                 write3dir("//CAST STRING - CHAR");
                                                 String t1_c = getTemp(ca);
                                                 write3dir("%s = p + %d;", t1_c, methodsim.size);
-                                                
+
                                                 final String t2_c = getTemp(actions);
                                                 write3dir("%s = %s + %d;", t2_c, t1_c, 0);
-                                                write3dir("stack[%s]= %s;", t2_c, lval );
-                                                
+                                                write3dir("stack[%s]= %s;", t2_c, lval);
+
                                                 write3dir("p = p + %d;", methodsim.size);
                                                 write3dir("call string_to_float();");
                                                 write3dir("p = p - %d;", methodsim.size);
                                                 String t_ult_c = getTemp(ca);
-                                                
+
                                                 write3dir("%s = p + %d;", t_ult_c, methodsim.size);
-                                                
+
                                                 String t4_c = getTemp(ca);
-                                                write3dir("%s = %s + %d;", t4_c,t_ult_c,0);
-                                                
+                                                write3dir("%s = %s + %d;", t4_c, t_ult_c, 0);
+
                                                 String t5_c = getTemp(ca);
                                                 write3dir("%s = stack[%s];", t5_c, t4_c);
-                                                
+
                                                 tipo = TType.CHAR.toString();
                                                 temp = t5_c;
                                                 break;
@@ -6385,29 +6391,29 @@ public class Win extends javax.swing.JFrame {
                                         }
                                         break;
                                     case "CHAR":
-                                        switch(tip){//tipo destino
+                                        switch (tip) {//tipo destino
                                             case "INT":
                                                 write3dir("//CAST CHAR - INT");
                                                 String t1 = getTemp(ca);
                                                 write3dir("%s = p + %d;", t1, methodsim.size);
-                                                
+
                                                 final String t2 = getTemp(actions);
                                                 write3dir("%s = %s + %d;", t2, t1, 0);
-                                                write3dir("stack[%s]= %s;", t2, lval );
-                                                
+                                                write3dir("stack[%s]= %s;", t2, lval);
+
                                                 write3dir("p = p + %d;", methodsim.size);
                                                 write3dir("call char_to_int();");
-                                                write3dir("p = p - %d;", methodsim.size);                                                
+                                                write3dir("p = p - %d;", methodsim.size);
                                                 String t_ult = getTemp(ca);
-                                                
+
                                                 write3dir("%s = p + %d;", t_ult, methodsim.size);
-                                                
+
                                                 String t4 = getTemp(ca);
-                                                write3dir("%s = %s + %d;", t4,t_ult,0);
-                                                
+                                                write3dir("%s = %s + %d;", t4, t_ult, 0);
+
                                                 String t5 = getTemp(ca);
-                                                write3dir("%s = stack[%s];", t5, t4);                                                
-                                                
+                                                write3dir("%s = stack[%s];", t5, t4);
+
                                                 tipo = TType.INT.toString();
                                                 temp = t5;
                                                 break;
@@ -6416,22 +6422,22 @@ public class Win extends javax.swing.JFrame {
                                             case "BOOLEAN":
                                                 throw new UnsupportedOperationException("No se puede convertir CHAR a BOOLEAN");
                                             case "STRING":
-                                                    String t_gl = getTemp(ca);
-                                                    write3dir(t_gl + "=h;");
-                                                    write3dir("h = h+" + (int) (3)+";");
+                                                String t_gl = getTemp(ca);
+                                                write3dir(t_gl + "=h;");
+                                                write3dir("h = h+" + (int) (3) + ";");
 
-                                                    temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl + "+" + 0+";");
-                                                    write3dir("heap[" + temp + "]=" + lval+";");                                                    
-                                                    
-                                                    temp = getTemp(ca);
-                                                    write3dir(temp + "=" + t_gl + "+" + 1+";");
-                                                    write3dir("heap[" + temp + "]=-1;");
+                                                temp = getTemp(ca);
+                                                write3dir(temp + "=" + t_gl + "+" + 0 + ";");
+                                                write3dir("heap[" + temp + "]=" + lval + ";");
 
-                                                    //Modificando heap, se suma dos porque se agrego en entero y -100
-                                                    length = 3;
-                                                    temp = t_gl;
-                                                    tipo = TType.STRING.toString();
+                                                temp = getTemp(ca);
+                                                write3dir(temp + "=" + t_gl + "+" + 1 + ";");
+                                                write3dir("heap[" + temp + "]=-1;");
+
+                                                //Modificando heap, se suma dos porque se agrego en entero y -100
+                                                length = 3;
+                                                temp = t_gl;
+                                                tipo = TType.STRING.toString();
                                                 break;
                                             case "CHAR":
                                                 tipo = TType.CHAR.toString();
@@ -6444,8 +6450,8 @@ public class Win extends javax.swing.JFrame {
                                     default:
                                         throw new UnsupportedOperationException("Tipos incorrectos");
                                 }
-                                write3dir("//" +temp + " tipo " + tipo + " length " + length);
-                                return new Dict("type",tipo,"val",temp,"length",length);
+                                write3dir("//" + temp + " tipo " + tipo + " length " + length);
+                                return new Dict("type", tipo, "val", temp, "length", length);
                             }
                         } catch (UnsupportedOperationException exc) {
                             compiler_error(exc, TErr.SEMANTICO, info, actions);
@@ -6455,8 +6461,6 @@ public class Win extends javax.swing.JFrame {
                     });
                     //</editor-fold>
 
-                    
-                    
                     //<editor-fold defaultstate="collapsed" desc="LEAF">
                     put(TOperation.LEAF, (Operation) (Node node, Object actions) -> {
 
@@ -6556,6 +6560,7 @@ public class Win extends javax.swing.JFrame {
                                             if (ref_pointer == null || !ref_pointer) {
                                                 final String t2 = getTemp(ca);
                                                 write3dir(String.format("%s = stack[%s];", t2, t1));
+                                                val_pointer = t1;
                                                 val_val = t2;
                                                 val_type = id_sim.type;
                                             }
@@ -6572,11 +6577,12 @@ public class Win extends javax.swing.JFrame {
                                         Sim field_sim = cc.getSims().getPublicField(temp_sim.type, id_val);
 
                                         String t1 = getTemp(ca);
-                                        write3dir(String.format("%s = %s + %d", t1, val_val, field_sim.position));
+                                        write3dir(String.format("%s = %s + %d;", t1, val_val, field_sim.position));
                                         val_val = t1;
                                         if (ref_pointer == null || !ref_pointer) {
                                             String t2 = getTemp(ca);
                                             write3dir(String.format("%s = heap[%s];", t2, t1));
+                                            val_pointer = t1;
                                             val_val = t2;
                                             val_type = field_sim.type;
                                         }
@@ -6635,7 +6641,7 @@ public class Win extends javax.swing.JFrame {
                                         }
 
                                         val_val = t1;
-//                                        val.put("length", ref_val_chars.length);
+                                        val.put("length", ref_val_chars.length);
                                     } else {
                                         Object temp = getTemp(ca);
                                         write3dir("// int,float -> " + ref_val);
@@ -6896,7 +6902,7 @@ public class Win extends javax.swing.JFrame {
                                 poolOn(actions);
 //                                String t1 = getTemp(actions);
 //                                write3dir("%s = p + %d;", t1, methodsim.size);
-                                write3dir("// LLAMADA A METODO...");
+                                write3dir("// ######## llamada metodo ######## //");
 
                                 for (int i = 0; i < name_list.size(); i++) {
                                     Dict name = (Dict) name_list.get(i);
@@ -6919,7 +6925,7 @@ public class Win extends javax.swing.JFrame {
                                         String t3 = getTemp(actions);
 
                                         write3dir("%s = p + %d;", t2, localvarsim.position);
-                                        write3dir("%s = pila[%s];", t3, t2);
+                                        write3dir("%s = stack[%s];", t3, t2);
                                         val_val = t3;
                                         val_type = localvarsim.type;
                                         continue;
@@ -6942,7 +6948,7 @@ public class Win extends javax.swing.JFrame {
                                     write3dir("%s = p + %d;", t2, methodsim.size);
                                     write3dir("// parametro -> 0 (this)");
                                     write3dir("%s = %s + 0;", t3, t2);
-                                    write3dir("pila[%s] = %s;", t3, val_val);
+                                    write3dir("stack[%s] = %s;", t3, val_val);
 
                                     ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
                                     Object[] params = new Object[param_list.size()];
@@ -6958,13 +6964,13 @@ public class Win extends javax.swing.JFrame {
                                         final String param_nodo_val_type = param_nodo_val.getString("type");
                                         final String param_nodo_val_val = param_nodo_val.getString("val");
                                         params[j] = param_nodo_val_type;
-                                        write3dir("pila[%s] = %s;", t4, param_nodo_val_val);
+                                        write3dir("stack[%s] = %s;", t4, param_nodo_val_val);
                                     }
 
                                     Sim callsim = cc.getSims().getPublicMethod(val_type, name_val, params);
                                     write3dir(poolCommit(actions));
                                     write3dir("p = p + %d;", methodsim.size);
-                                    write3dir("%s_%s_%s();", callsim.type, callsim.name, Arrays.toString(params));
+                                    write3dir("call %s();", getMethodName(callsim));
                                     write3dir("p = p - %d;", methodsim.size);
 
                                     val_val = null;
@@ -6976,11 +6982,13 @@ public class Win extends javax.swing.JFrame {
                                         String t7 = getTemp(actions);
                                         write3dir("%s = p + %d;", t5, methodsim.size);
                                         write3dir("%s = %s + 0;", t6, t5);
-                                        write3dir("%s = pila[%s];", t7, t6);
+                                        write3dir("%s = stack[%s];", t7, t6);
                                         val_val = t7;
                                     }
 
                                 }
+
+                                write3dir("// ######## llamada metodo ######## //");
 
                                 val.put("val", val_val);
                                 val.put("type", val_type);
@@ -7032,8 +7040,12 @@ public class Win extends javax.swing.JFrame {
                                 if (!condition_node_val_type.equals(TType.BOOLEAN.toString())) {
                                     throwException("Se esperaba un tipo de dato -> %s en la condicion no un -> %s...", TType.BOOLEAN, condition_node_val_type);
                                 }
-                                final String condition_node_val_ltrue = condition_node_val.getString("ltrue");
-                                final String condition_node_val_lfalse = condition_node_val.getString("lfalse");
+                                BloqueCondicion etqs = condition_node_val.getTags("tags");
+                                //final String condition_node_val_ltrue = condition_node_val.getString("ltrue");
+                                //final String condition_node_val_lfalse = condition_node_val.getString("lfalse");
+
+                                final String condition_node_val_ltrue = etqs.etqVerdad;
+                                final String condition_node_val_lfalse = etqs.etqFalso;
 
                                 write3dir("// >>>> while - true");
                                 write3dir("%s:", condition_node_val_ltrue);
@@ -7107,8 +7119,12 @@ public class Win extends javax.swing.JFrame {
                                 final Dict condition_node_val = condition_node.getDictVal();
                                 final String condition_node_val_val = condition_node_val.getString("val");
                                 final String condition_node_val_type = condition_node_val.getString("type");
-                                final String condition_node_val_ltrue = condition_node_val.getString("ltrue");
-                                final String condition_node_val_lfalse = condition_node_val.getString("lfalse");
+
+                                BloqueCondicion etqs = condition_node_val.getTags("tags");
+
+                                final String condition_node_val_ltrue = etqs.etqVerdad;
+                                final String condition_node_val_lfalse = etqs.etqFalso;
+
                                 if (!condition_node_val_type.equals(TType.BOOLEAN.toString())) {
                                     throwException("Se esperaba un tipo de dato -> %s, se obtuvo -> %s", TType.BOOLEAN, condition_node_val_type);
                                 }
@@ -7188,7 +7204,7 @@ public class Win extends javax.swing.JFrame {
                                 if (!inicio_node_val_type.equals(TType.INT.toString())) {
                                     throwException("Se requiere tipo de dato -> %s, se obtuvo -> %s ", TType.INT, inicio_node_val_type);
                                 }
-                                write3dir("pila[%s] = %s;", t1, inicio_node_val_val);
+                                write3dir("stack[%s] = %s;", t1, inicio_node_val_val);
                                 final String l1 = getLabel(actions);
                                 final String l2 = getLabel(actions);
                                 write3dir("// >>>> for - label");
@@ -7198,8 +7214,13 @@ public class Win extends javax.swing.JFrame {
                                 final Dict condition_node_val = condition_node.getDictVal();
                                 final String condition_node_val_val = condition_node_val.getString("val");
                                 final String condition_node_val_type = condition_node_val.getString("type");
-                                final String condition_node_val_ltrue = condition_node_val.getString("ltrue");
-                                final String condition_node_val_lfalse = condition_node_val.getString("lfalse");
+
+                                BloqueCondicion etqs = condition_node_val.getTags("tags");
+
+                                //final String condition_node_val_ltrue = condition_node_val.getString("ltrue");
+                                //final String condition_node_val_lfalse = condition_node_val.getString("lfalse");
+                                final String condition_node_val_ltrue = etqs.etqVerdad;
+                                final String condition_node_val_lfalse = etqs.etqFalso;
 
                                 if (!condition_node_val_type.equals(TType.BOOLEAN.toString())) {
                                     throwException("Se esperaba tipo de dato -> %s, se encontro -> %s", TType.BOOLEAN, condition_node_val_type);
@@ -7221,9 +7242,9 @@ public class Win extends javax.swing.JFrame {
                                 final String t3 = getTemp(actions);
                                 final String t4 = getTemp(actions);
                                 write3dir("%s = p + %d;", t2, increment_sim.position);
-                                write3dir("%s = pila[%s];", t3, t2);
+                                write3dir("%s = stack[%s];", t3, t2);
                                 write3dir("%s = %s + 1; //++", t4, t3);
-                                write3dir("pila[%s] = %s;", t2, t4);
+                                write3dir("stack[%s] = %s;", t2, t4);
 
                                 write3dir("// >>>> for - label return");
                                 write3dir("goto %s;", l1);
@@ -7281,8 +7302,11 @@ public class Win extends javax.swing.JFrame {
                                     _if_condition_node.exec(actions);
                                     final Dict _if_condition_node_val = _if_condition_node.getDictVal();
                                     final String _if_condition_node_val_type = _if_condition_node_val.getString("type");
-                                    final String _if_condition_node_val_ltrue = _if_condition_node_val.getString("ltrue");
-                                    final String _if_condition_node_val_lfalse = _if_condition_node_val.getString("lfalse");
+
+                                    BloqueCondicion etqs = _if_condition_node_val.getTags("tags");
+
+                                    final String _if_condition_node_val_ltrue = etqs.etqVerdad;
+                                    final String _if_condition_node_val_lfalse = etqs.etqFalso;
 
                                     if (!_if_condition_node_val_type.equals(TType.BOOLEAN.toString())) {
                                         throwException("Se esperaba un tipo de dato -> %s, se encontro -> %s", TType.BOOLEAN, _if_condition_node_val_type);
@@ -7387,7 +7411,7 @@ public class Win extends javax.swing.JFrame {
                                     final String l2 = getLabel(actions);
                                     final String l3 = getLabel(actions);
                                     write3dir("// >>>> switch - comparacion (%d)", i);
-                                    write3dir("if ( %s == %s) goto %s;", base_node_val_val, _case_condition_node_val_val, l2);
+                                    write3dir("if %s == %s then goto %s;", base_node_val_val, _case_condition_node_val_val, l2);
                                     write3dir("goto %s;", l3);
 
                                     write3dir("// >>>> switch - true (%d)", i);
@@ -7501,7 +7525,7 @@ public class Win extends javax.swing.JFrame {
                                     }
                                     final String t1 = getTemp(actions);
                                     write3dir("%s = p + 0;", t1);
-                                    write3dir("pila[%s] = %s;", t1, _return_node_val_val);
+                                    write3dir("stack[%s] = %s;", t1, _return_node_val_val);
                                 }
 
                                 write3dir("goto %s;", flow_control_peek);
@@ -7544,15 +7568,20 @@ public class Win extends javax.swing.JFrame {
 
                                 ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
                                 for (int i = 0; i < param_list.size(); i++) {
+                                    //<editor-fold defaultstate="collapsed" desc="parametros">
+                                    final String t2 = getTemp(actions);
+                                    write3dir("// .... parametro %d", i);
+                                    write3dir("%s = %s + %d;", t2, t1, i);
+
                                     final Dict param = param_list.get(i);
                                     final Node param_node = param.getNode("nodo");
+                                    write3dir("// .... paremtro val %d", i);
+//                                    param_node.getDictRef().put("pointer", true);
                                     param_node.exec(actions);
                                     final Dict param_node_val = param_node.getDictVal();
                                     final String param_node_val_type = param_node_val.getString("type");
                                     final String param_node_val_val = param_node_val.getString("val");
 
-                                    final String t2 = getTemp(actions);
-                                    write3dir("%s = %s + %d;", t2, t1, i);
                                     if (param_node_val_type.equals(TType.INT.toString())) {
                                         write3dir("stack[%s] = %s;", t2, param_node_val_val);
                                         write3dir("p = p + %d;", methodsim.size);
@@ -7586,11 +7615,12 @@ public class Win extends javax.swing.JFrame {
                                             final String tc = getTemp(actions);
                                             final String t3 = getTemp(actions);
                                             final String t4 = getTemp(actions);
+                                            final String param_node_val_pointer = param_node_val.getString("pointer");
                                             write3dir("%s = 0;", tc);
                                             write3dir("%s:", li);
-                                            write3dir("%s = %s + %s;", t3, param_node_val_val, tc);
+                                            write3dir("%s = %s + %s;", t3, param_node_val_pointer, tc);
                                             write3dir("%s = heap[%s];", t4, t3);
-                                            write3dir("if %s != -1 then goto %s;",t4, lv);
+                                            write3dir("if %s != -1 then goto %s;", t4, lv);
                                             write3dir("goto %s;", lf);
                                             write3dir("%s:", lv);
 
@@ -7621,6 +7651,7 @@ public class Win extends javax.swing.JFrame {
                                     }
 
                                     break;
+                                    //</editor-fold>
                                 }
 
                                 write3dir("//........ llamada %s ........ //", ref_name);
