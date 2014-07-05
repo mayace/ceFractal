@@ -3138,8 +3138,8 @@ public class Win extends javax.swing.JFrame {
             "operations", new HashMap<TOperation, Operation>() {
                 {
 
-                    //<editor-fold defaultstate="collapsed" desc="METHOD_FRectangulo">
-                    put(TOperation.NM_RECTANGULO, (Operation) (Node node, Object actions) -> {
+                    //<editor-fold defaultstate="collapsed" desc="METHOD_FTEXTO">
+                    put(TOperation.NM_TEXTO, (Operation) (Node node, Object actions) -> {
                         final Dict ca = (Dict) actions;
                         final CC cc = (CC) ca.get("cc");
                         final Stack scope = ca.getStack("scope");
@@ -3151,21 +3151,15 @@ public class Win extends javax.swing.JFrame {
                         final String ref_name = ref.getString("name");
                         final Dict ref_params = ref.getDict("params");
 
-
                         Object info = ref_info;
                         try {
-                            
-                            if(isDefPhase(phase)){
+
+                            if (isDefPhase(phase)) {
                                 return null;
                             }
-                            
+
                             if (is3dirPhase(phase)) {
 
-//                                ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
-//                                Object[] params = new Object[param_list.size()];
-//                                if (param_list.size() != 8) {
-//                                    throwException("Numero de parametros no validos");
-//                                }
                                 final ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
                                 final Object[] params = new Object[param_list.size()];
 
@@ -3186,35 +3180,208 @@ public class Win extends javax.swing.JFrame {
                                     final String param_node_val_val = param_node_val.getString("val");
                                     final String param_node_val_type = param_node_val.getString("type");
 
-                                    write3dir("stack[%s] = %s;", t2, param_node_val_val);
-                                    params[i] = param_node_val_type;
+                                    if (param_node_val_type.equals(TType.BOOLEAN.toString())) {
+                                        final String param_node_val_ltrue = param_node_val.getString("ltrue");
+                                        final String param_node_val_lfalse = param_node_val.getString("lfalse");
+                                        final String l1 = getLabel(actions);
+                                        final String t3 = getTemp(actions);
+                                        write3dir("// **** true");
+                                        write3dir("%s:", param_node_val_ltrue);
+                                        write3dir("%s = 1;", t3);
+                                        write3dir("goto %s;", l1);
+                                        write3dir("// **** false");
+                                        write3dir("%s:", param_node_val_lfalse);
+                                        write3dir("%s = 0;", t3);
+                                        write3dir("%s:", l1);
+                                        write3dir("stack[%s] = %s;", t2, t3);
 
+                                    } else {
+                                        write3dir("stack[%s] = %s;", t2, param_node_val_val);
+                                    }
+                                    params[i] = param_node_val_type;
+                                }
+                                final Object[] method_params = new Object[]{TType.STRING, TType.INT, TType.INT, TType.INT, TType.INT, TType.INT};
+                                final String params_str = Arrays.toString(params);
+                                final String method_params_str = Arrays.toString(method_params);
+
+                                if (!params_str.equals(method_params_str)) {
+                                    throwException("Se esperaba parametros con tipos de dato -> %s , se recibio -> %s", method_params_str, params_str);
                                 }
 
-//                                for (int i = 0; i < param_list.size(); i++) {
-//                                    
-//                                    final Dict param = param_list.get(i);
-//                                    final Node param_node = param.getNode("nodo");
-//                                    param_node.exec(actions);
-//                                    String parama_valor = param_node.getDictVal().getString("val");
-//                                    String tipo = param_node.getDictVal().getString("type");
-//                                    System.out.println(tipo);
-//                                    //valido que el ultimo parametro se de tipo Booleano
-//                                    /*if (!tipo.equals(TType.BOOLEAN.toString()) && i==param_list.size()-1) {
-//                                        throwException("Se esperaba un tipo de dato Booleano");
-//                                    }*/
-//                                    //valido q el resto de parametros sea de tipo int
-//                                    if (!tipo.equals(TType.INT.toString()) && i<param_list.size()-2) {
-//                                        throwException("Se esperaba un tipo de dato Int");
-//                                    }
-//                                    
-//                                    
-//                                    final String t2 = getTemp(actions);
-//                                    //String t1 = t+"="+t3+j;
-//                                    write3dir("%s = %s + %d;", t2, t1, i);
-//                                    write3dir("pila[%s]= %s;", t2, parama_valor);
-//
-//                                }
+                                write3dir("p = p + %d;", methodsim.size);
+                                write3dir("call %s();", ref_name);
+                                write3dir("p = p - %d;", methodsim.size);
+                                write3dir("// ******** llamada %s ******** //", ref_name);
+                                write3dir(poolCommit(actions));
+
+                                return null;
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            poolRollback(actions);
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.NM_TEXTO);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="METHOD_FLIENZO">
+                    put(TOperation.NM_LIENZO, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        final String ref_name = ref.getString("name");
+                        final Dict ref_params = ref.getDict("params");
+
+                        Object info = ref_info;
+                        try {
+
+                            if (isDefPhase(phase)) {
+                                return null;
+                            }
+
+                            if (is3dirPhase(phase)) {
+
+                                final ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
+                                final Object[] params = new Object[param_list.size()];
+
+                                poolOn(actions);
+                                final String t1 = getTemp(actions);
+                                write3dir("// ******** llamada %s ******** //", ref_name);
+                                write3dir("%s = p + %d;", t1, methodsim.size);
+
+                                for (int i = 0; i < param_list.size(); i++) {
+                                    final Dict param = param_list.get(i);
+                                    final Node param_node = param.getNode("nodo");
+                                    final String t2 = getTemp(actions);
+
+                                    write3dir("// **** parametro %d", i);
+                                    write3dir("%s = %s + %d;", t2, t1, i);
+                                    param_node.exec(actions);
+                                    final Dict param_node_val = param_node.getDictVal();
+                                    final String param_node_val_val = param_node_val.getString("val");
+                                    final String param_node_val_type = param_node_val.getString("type");
+
+                                    if (param_node_val_type.equals(TType.BOOLEAN.toString())) {
+                                        final String param_node_val_ltrue = param_node_val.getString("ltrue");
+                                        final String param_node_val_lfalse = param_node_val.getString("lfalse");
+                                        final String l1 = getLabel(actions);
+                                        final String t3 = getTemp(actions);
+                                        write3dir("// **** true");
+                                        write3dir("%s:", param_node_val_ltrue);
+                                        write3dir("%s = 1;", t3);
+                                        write3dir("goto %s;", l1);
+                                        write3dir("// **** false");
+                                        write3dir("%s:", param_node_val_lfalse);
+                                        write3dir("%s = 0;", t3);
+                                        write3dir("%s:", l1);
+                                        write3dir("stack[%s] = %s;", t2, t3);
+
+                                    } else {
+                                        write3dir("stack[%s] = %s;", t2, param_node_val_val);
+                                    }
+                                    params[i] = param_node_val_type;
+                                }
+                                final Object[] method_params = new Object[]{TType.INT, TType.INT, TType.INT, TType.INT, TType.INT};
+                                final String params_str = Arrays.toString(params);
+                                final String method_params_str = Arrays.toString(method_params);
+
+                                if (!params_str.equals(method_params_str)) {
+                                    throwException("Se esperaba parametros con tipos de dato -> %s , se recibio -> %s", method_params_str, params_str);
+                                }
+
+                                write3dir("p = p + %d;", methodsim.size);
+                                write3dir("call %s();", ref_name);
+                                write3dir("p = p - %d;", methodsim.size);
+                                write3dir("// ******** llamada %s ******** //", ref_name);
+                                write3dir(poolCommit(actions));
+
+                                return null;
+                            }
+                        } catch (UnsupportedOperationException exc) {
+                            poolRollback(actions);
+                            compiler_error(exc, TErr.SEMANTICO, info, actions);
+                        }
+
+                        return noActionsProcessed(TOperation.NM_LIENZO);
+                    });
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="METHOD_FRectangulo">
+                    put(TOperation.NM_RECTANGULO, (Operation) (Node node, Object actions) -> {
+                        final Dict ca = (Dict) actions;
+                        final CC cc = (CC) ca.get("cc");
+                        final Stack scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) scope.peek();
+                        final Object phase = ca.get("phase");
+
+                        final Dict ref = node.getDictRef();
+                        final Object ref_info = ref.get("info");
+                        final String ref_name = ref.getString("name");
+                        final Dict ref_params = ref.getDict("params");
+
+                        Object info = ref_info;
+                        try {
+
+                            if (isDefPhase(phase)) {
+                                return null;
+                            }
+
+                            if (is3dirPhase(phase)) {
+
+                                final ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
+                                final Object[] params = new Object[param_list.size()];
+
+                                poolOn(actions);
+                                final String t1 = getTemp(actions);
+                                write3dir("// ******** llamada %s ******** //", ref_name);
+                                write3dir("%s = p + %d;", t1, methodsim.size);
+
+                                for (int i = 0; i < param_list.size(); i++) {
+                                    final Dict param = param_list.get(i);
+                                    final Node param_node = param.getNode("nodo");
+                                    final String t2 = getTemp(actions);
+
+                                    write3dir("// **** parametro %d", i);
+                                    write3dir("%s = %s + %d;", t2, t1, i);
+                                    param_node.exec(actions);
+                                    final Dict param_node_val = param_node.getDictVal();
+                                    final String param_node_val_val = param_node_val.getString("val");
+                                    final String param_node_val_type = param_node_val.getString("type");
+
+                                    if (param_node_val_type.equals(TType.BOOLEAN.toString())) {
+                                        final String param_node_val_ltrue = param_node_val.getString("ltrue");
+                                        final String param_node_val_lfalse = param_node_val.getString("lfalse");
+                                        final String l1 = getLabel(actions);
+                                        final String t3 = getTemp(actions);
+                                        write3dir("// **** true");
+                                        write3dir("%s:", param_node_val_ltrue);
+                                        write3dir("%s = 1;", t3);
+                                        write3dir("goto %s;", l1);
+                                        write3dir("// **** false");
+                                        write3dir("%s:", param_node_val_lfalse);
+                                        write3dir("%s = 0;", t3);
+                                        write3dir("%s:", l1);
+                                        write3dir("stack[%s] = %s;", t2, t3);
+
+                                    } else {
+                                        write3dir("stack[%s] = %s;", t2, param_node_val_val);
+                                    }
+                                    params[i] = param_node_val_type;
+                                }
+                                final Object[] method_params = new Object[]{TType.INT, TType.INT, TType.INT, TType.INT, TType.INT, TType.INT, TType.INT, TType.BOOLEAN};
+                                final String params_str = Arrays.toString(params);
+                                final String method_params_str = Arrays.toString(method_params);
+
+                                if (!params_str.equals(method_params_str)) {
+                                    throwException("Se esperaba parametros con tipos de dato -> %s , se recibio -> %s", method_params_str, params_str);
+                                }
+
                                 write3dir("p = p + %d;", methodsim.size);
                                 write3dir("call %s();", ref_name);
                                 write3dir("p = p - %d;", methodsim.size);
@@ -3245,59 +3412,74 @@ public class Win extends javax.swing.JFrame {
                         final String ref_name = ref.getString("name");
                         final Dict ref_params = ref.getDict("params");
 
-                        final Dict val = new Dict();
                         Object info = ref_info;
-                        Object val_val = null;
-                        Object val_type = null;
 
                         try {
+
+                            if (isDefPhase(phase)) {
+                                return null;
+                            }
+
                             if (is3dirPhase(phase)) {
 
-                                ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
-                                Object[] params = new Object[param_list.size()];
-                                System.out.println(param_list.size());
-                                if (param_list.size() != 10) {
-                                    throwException("Numero de parametros no validos");
-                                }
+                                final ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
+                                final Object[] params = new Object[param_list.size()];
+
                                 poolOn(actions);
                                 final String t1 = getTemp(actions);
-                                write3dir("// ************ llamada Arco********* //");
+                                write3dir("// ******** llamada %s ******** //", ref_name);
                                 write3dir("%s = p + %d;", t1, methodsim.size);
 
                                 for (int i = 0; i < param_list.size(); i++) {
-
                                     final Dict param = param_list.get(i);
                                     final Node param_node = param.getNode("nodo");
-                                    param_node.exec(actions);
-                                    String parama_valor = param_node.getDictVal().getString("val");
-                                    String tipo = param_node.getDictVal().getString("type");
-
-                                    //valido que el ultimo parametro sea de tipo Booleano
-                                    /*if (tipo != TType.BOOLEAN && i==param_list.size()-1) {
-                                     throwException("Se esperaba un tipo de dato Booleano");
-                                     }*/
-                                    //valido q los parametros sea de tipo int
-                                    if (!tipo.equals(TType.INT.toString()) && i < param_list.size() - 2) {
-                                        throwException("Se esperaba un tipo de dato Int");
-                                    }
                                     final String t2 = getTemp(actions);
-                                    //String t1 = t+"="+t3+j;
-                                    write3dir("%s = %s + %d;", t2, t1, i);
-                                    write3dir("pila[%s]= %s;", t2, parama_valor);
 
+                                    write3dir("// **** parametro %d", i);
+                                    write3dir("%s = %s + %d;", t2, t1, i);
+                                    param_node.exec(actions);
+                                    final Dict param_node_val = param_node.getDictVal();
+                                    final String param_node_val_val = param_node_val.getString("val");
+                                    final String param_node_val_type = param_node_val.getString("type");
+
+                                    if (param_node_val_type.equals(TType.BOOLEAN.toString())) {
+                                        final String param_node_val_ltrue = param_node_val.getString("ltrue");
+                                        final String param_node_val_lfalse = param_node_val.getString("lfalse");
+                                        final String l1 = getLabel(actions);
+                                        final String t3 = getTemp(actions);
+                                        write3dir("// **** true");
+                                        write3dir("%s:", param_node_val_ltrue);
+                                        write3dir("%s = 1;", t3);
+                                        write3dir("goto %s;", l1);
+                                        write3dir("// **** false");
+                                        write3dir("%s:", param_node_val_lfalse);
+                                        write3dir("%s = 0;", t3);
+                                        write3dir("%s:", l1);
+                                        write3dir("stack[%s] = %s;", t2, t3);
+
+                                    } else {
+                                        write3dir("stack[%s] = %s;", t2, param_node_val_val);
+                                    }
+                                    params[i] = param_node_val_type;
+                                }
+                                final Object[] method_params = new Object[]{TType.INT, TType.INT, TType.INT, TType.INT, TType.INT, TType.INT, TType.INT, TType.INT, TType.INT, TType.BOOLEAN};
+                                final String params_str = Arrays.toString(params);
+                                final String method_params_str = Arrays.toString(method_params);
+
+                                if (!params_str.equals(method_params_str)) {
+                                    throwException("Se esperaba parametros con tipos de dato -> %s , se recibio -> %s", method_params_str, params_str);
                                 }
 
                                 write3dir("p = p + %d;", methodsim.size);
-                                write3dir("call Arco();");
+                                write3dir("call %s();", ref_name);
                                 write3dir("p = p - %d;", methodsim.size);
-                                write3dir("// ************ fin llamada a Arco********* //");
+                                write3dir("// ******** llamada %s ******** //", ref_name);
                                 write3dir(poolCommit(actions));
-                                val.put("val", val_val);
-                                val.put("type", val_type);
-                                return val;
+
+                                return null;
                             }
                         } catch (UnsupportedOperationException exc) {
-                            //poolRollback(actions);
+                            poolRollback(actions);
                             compiler_error(exc, TErr.SEMANTICO, info, actions);
                         }
 
@@ -3319,58 +3501,72 @@ public class Win extends javax.swing.JFrame {
                         final String ref_name = ref.getString("name");
                         final Dict ref_params = ref.getDict("params");
 
-                        final Dict val = new Dict();
                         Object info = ref_info;
-                        Object val_val = null;
-                        Object val_type = null;
 
                         try {
+                            if (isDefPhase(phase)) {
+                                return null;
+                            }
+
                             if (is3dirPhase(phase)) {
 
-                                ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
+                                final ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
+                                final Object[] params = new Object[param_list.size()];
 
-                                Object[] params = new Object[param_list.size()];
-                                if (param_list.size() != 8) {
-                                    throwException("Numero de parametros no validos");
-                                }
                                 poolOn(actions);
                                 final String t1 = getTemp(actions);
-                                write3dir("// ************ llamada Ovalo ********* //");
+                                write3dir("// ******** llamada %s ******** //", ref_name);
                                 write3dir("%s = p + %d;", t1, methodsim.size);
 
                                 for (int i = 0; i < param_list.size(); i++) {
                                     final Dict param = param_list.get(i);
                                     final Node param_node = param.getNode("nodo");
-                                    param_node.exec(actions);
-                                    String parama_valor = param_node.getDictVal().getString("val");
-                                    //revisar validacion de tipos
-                                    String tipo = param_node.getDictVal().getString("type");
-
-                                    //valido q el ultimo parametro sea de tipo Booleano
-                                    /*if(tipo !=TType.BOOLEAN && i == param_list.size()-1){
-                                     throwException("Se esperaba un tipo de dato Booleano como ultimo parametro");
-                                     }*/
-                                    //valido q los parametros sean de tipo int
-                                    if (!tipo.equals(TType.INT.toString()) && i < param_list.size() - 2) {
-                                        throwException("Se esperaba un tipo de dato int");
-                                    }
                                     final String t2 = getTemp(actions);
-                                    //String t1 = t+"="+t3+j;
-                                    write3dir("%s = %s + %d;", t2, t1, i);
-                                    write3dir("pila[%s]= %s;", t2, parama_valor);
 
+                                    write3dir("// **** parametro %d", i);
+                                    write3dir("%s = %s + %d;", t2, t1, i);
+                                    param_node.exec(actions);
+                                    final Dict param_node_val = param_node.getDictVal();
+                                    final String param_node_val_val = param_node_val.getString("val");
+                                    final String param_node_val_type = param_node_val.getString("type");
+
+                                    if (param_node_val_type.equals(TType.BOOLEAN.toString())) {
+                                        final String param_node_val_ltrue = param_node_val.getString("ltrue");
+                                        final String param_node_val_lfalse = param_node_val.getString("lfalse");
+                                        final String l1 = getLabel(actions);
+                                        final String t3 = getTemp(actions);
+                                        write3dir("// **** true");
+                                        write3dir("%s:", param_node_val_ltrue);
+                                        write3dir("%s = 1;", t3);
+                                        write3dir("goto %s;", l1);
+                                        write3dir("// **** false");
+                                        write3dir("%s:", param_node_val_lfalse);
+                                        write3dir("%s = 0;", t3);
+                                        write3dir("%s:", l1);
+                                        write3dir("stack[%s] = %s;", t2, t3);
+
+                                    } else {
+                                        write3dir("stack[%s] = %s;", t2, param_node_val_val);
+                                    }
+                                    params[i] = param_node_val_type;
+                                }
+                                final Object[] method_params = new Object[]{TType.INT, TType.INT, TType.INT, TType.INT, TType.INT, TType.INT, TType.INT, TType.BOOLEAN};
+                                final String params_str = Arrays.toString(params);
+                                final String method_params_str = Arrays.toString(method_params);
+
+                                if (!params_str.equals(method_params_str)) {
+                                    throwException("Se esperaba parametros con tipos de dato -> %s , se recibio -> %s", method_params_str, params_str);
                                 }
 
-                                //  write3dir(poolCommit(actions));
                                 write3dir("p = p + %d;", methodsim.size);
-                                write3dir("call Ovalo();");
+                                write3dir("call %s();", ref_name);
                                 write3dir("p = p - %d;", methodsim.size);
-                                write3dir("// ************ fin llamada a ovalo********* //");
+                                write3dir("// ******** llamada %s ******** //", ref_name);
                                 write3dir(poolCommit(actions));
-                                val.put("val", val_val);
-                                val.put("type", val_type);
-                                return val;
+
+                                return null;
                             }
+
                         } catch (UnsupportedOperationException exc) {
                             poolRollback(actions);
                             compiler_error(exc, TErr.SEMANTICO, info, actions);
@@ -3394,54 +3590,70 @@ public class Win extends javax.swing.JFrame {
                         final String ref_name = ref.getString("name");
                         final Dict ref_params = ref.getDict("params");
 
-                        final Dict val = new Dict();
                         Object info = ref_info;
-                        Object val_val = null;
-                        Object val_type = null;
 
                         try {
+                            if (isDefPhase(phase)) {
+                                return null;
+                            }
+
                             if (is3dirPhase(phase)) {
 
-                                ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
+                                final ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
+                                final Object[] params = new Object[param_list.size()];
 
-                                Object[] params = new Object[param_list.size()];
-                                if (param_list.size() != 7) {
-                                    throwException("Numero de parametros no validos");
-                                }
                                 poolOn(actions);
                                 final String t1 = getTemp(actions);
-                                write3dir("// ************ llamada LINEA ********* //");
+                                write3dir("// ******** llamada %s ******** //", ref_name);
                                 write3dir("%s = p + %d;", t1, methodsim.size);
 
                                 for (int i = 0; i < param_list.size(); i++) {
                                     final Dict param = param_list.get(i);
                                     final Node param_node = param.getNode("nodo");
-                                    param_node.exec(actions);
-                                    String parama_valor = param_node.getDictVal().getString("val");
-                                    //revisar validacion de tipos 
-                                    String tipo = param_node.getDictVal().getString("type");
-
-                                    //valido q los parametros sean de tipo int
-                                    if (!tipo.equals(TType.INT.toString()) && i < param_list.size()) {
-                                        throwException("Se esperaba un tipo de dato int");
-                                    }
                                     final String t2 = getTemp(actions);
-                                    //String t1 = t+"="+t3+j;
+
+                                    write3dir("// **** parametro %d", i);
                                     write3dir("%s = %s + %d;", t2, t1, i);
-                                    write3dir("pila[%s]= %s;", t2, parama_valor);
+                                    param_node.exec(actions);
+                                    final Dict param_node_val = param_node.getDictVal();
+                                    final String param_node_val_val = param_node_val.getString("val");
+                                    final String param_node_val_type = param_node_val.getString("type");
 
+                                    if (param_node_val_type.equals(TType.BOOLEAN.toString())) {
+                                        final String param_node_val_ltrue = param_node_val.getString("ltrue");
+                                        final String param_node_val_lfalse = param_node_val.getString("lfalse");
+                                        final String l1 = getLabel(actions);
+                                        final String t3 = getTemp(actions);
+                                        write3dir("// **** true");
+                                        write3dir("%s:", param_node_val_ltrue);
+                                        write3dir("%s = 1;", t3);
+                                        write3dir("goto %s;", l1);
+                                        write3dir("// **** false");
+                                        write3dir("%s:", param_node_val_lfalse);
+                                        write3dir("%s = 0;", t3);
+                                        write3dir("%s:", l1);
+                                        write3dir("stack[%s] = %s;", t2, t3);
+
+                                    } else {
+                                        write3dir("stack[%s] = %s;", t2, param_node_val_val);
+                                    }
+                                    params[i] = param_node_val_type;
                                 }
-                                System.err.println("Pasando por aqui");
+                                final Object[] method_params = new Object[]{TType.INT, TType.INT, TType.INT, TType.INT, TType.INT, TType.INT, TType.INT};
+                                final String params_str = Arrays.toString(params);
+                                final String method_params_str = Arrays.toString(method_params);
 
-                                //  write3dir(poolCommit(actions));
+                                if (!params_str.equals(method_params_str)) {
+                                    throwException("Se esperaba parametros con tipos de dato -> %s , se recibio -> %s", method_params_str, params_str);
+                                }
+
                                 write3dir("p = p + %d;", methodsim.size);
-                                write3dir("call Ovalo();");
+                                write3dir("call %s();", ref_name);
                                 write3dir("p = p - %d;", methodsim.size);
-                                write3dir("// ************ fin llamada a LINEA********* //");
+                                write3dir("// ******** llamada %s ******** //", ref_name);
                                 write3dir(poolCommit(actions));
-                                val.put("val", val_val);
-                                val.put("type", val_type);
-                                return val;
+
+                                return null;
                             }
                         } catch (UnsupportedOperationException exc) {
                             poolRollback(actions);
@@ -3466,53 +3678,70 @@ public class Win extends javax.swing.JFrame {
                         final String ref_name = ref.getString("name");
                         final Dict ref_params = ref.getDict("params");
 
-                        final Dict val = new Dict();
                         Object info = ref_info;
-                        Object val_val = null;
-                        Object val_type = null;
 
                         try {
+                            if (isDefPhase(phase)) {
+                                return null;
+                            }
+
                             if (is3dirPhase(phase)) {
 
-                                ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
+                                final ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
+                                final Object[] params = new Object[param_list.size()];
 
-                                Object[] params = new Object[param_list.size()];
-                                if (param_list.size() != 6) {
-                                    throwException("Numero de parametros no validos");
-                                }
                                 poolOn(actions);
                                 final String t1 = getTemp(actions);
-                                write3dir("// ************ llamada LINEA ********* //");
+                                write3dir("// ******** llamada %s ******** //", ref_name);
                                 write3dir("%s = p + %d;", t1, methodsim.size);
 
                                 for (int i = 0; i < param_list.size(); i++) {
                                     final Dict param = param_list.get(i);
                                     final Node param_node = param.getNode("nodo");
-                                    param_node.exec(actions);
-                                    String parama_valor = param_node.getDictVal().getString("val");
-                                    //revisar validacion de tipos 
-                                    String tipo = param_node.getDictVal().getString("type");
-                                    System.out.println(tipo);
-                                    //valido q los parametros sean de tipo int
-                                    /*if (!tipo.equals(TType.INT.toString()) && i < param_list.size()) {
-                                     throwException("Se esperaba un tipo de dato int");
-                                     }*/
                                     final String t2 = getTemp(actions);
-                                    //String t1 = t+"="+t3+j;
-                                    write3dir("%s = %s + %d;", t2, t1, i);
-                                    write3dir("pila[%s]= %s;", t2, parama_valor);
 
+                                    write3dir("// **** parametro %d", i);
+                                    write3dir("%s = %s + %d;", t2, t1, i);
+                                    param_node.exec(actions);
+                                    final Dict param_node_val = param_node.getDictVal();
+                                    final String param_node_val_val = param_node_val.getString("val");
+                                    final String param_node_val_type = param_node_val.getString("type");
+
+                                    if (param_node_val_type.equals(TType.BOOLEAN.toString())) {
+                                        final String param_node_val_ltrue = param_node_val.getString("ltrue");
+                                        final String param_node_val_lfalse = param_node_val.getString("lfalse");
+                                        final String l1 = getLabel(actions);
+                                        final String t3 = getTemp(actions);
+                                        write3dir("// **** true");
+                                        write3dir("%s:", param_node_val_ltrue);
+                                        write3dir("%s = 1;", t3);
+                                        write3dir("goto %s;", l1);
+                                        write3dir("// **** false");
+                                        write3dir("%s:", param_node_val_lfalse);
+                                        write3dir("%s = 0;", t3);
+                                        write3dir("%s:", l1);
+                                        write3dir("stack[%s] = %s;", t2, t3);
+
+                                    } else {
+                                        write3dir("stack[%s] = %s;", t2, param_node_val_val);
+                                    }
+                                    params[i] = param_node_val_type;
+                                }
+                                final Object[] method_params = new Object[]{TType.INT, TType.INT, TType.INT, TType.INT, TType.INT, TType.BOOLEAN};
+                                final String params_str = Arrays.toString(params);
+                                final String method_params_str = Arrays.toString(method_params);
+
+                                if (!params_str.equals(method_params_str)) {
+                                    throwException("Se esperaba parametros con tipos de dato -> %s , se recibio -> %s", method_params_str, params_str);
                                 }
 
-                                //  write3dir(poolCommit(actions));
                                 write3dir("p = p + %d;", methodsim.size);
-                                write3dir("call Ovalo();");
+                                write3dir("call %s();", ref_name);
                                 write3dir("p = p - %d;", methodsim.size);
-                                write3dir("// ************ fin llamada a LINEA********* //");
+                                write3dir("// ******** llamada %s ******** //", ref_name);
                                 write3dir(poolCommit(actions));
-                                val.put("val", val_val);
-                                val.put("type", val_type);
-                                return val;
+
+                                return null;
                             }
                         } catch (UnsupportedOperationException exc) {
                             poolRollback(actions);
@@ -3968,6 +4197,10 @@ public class Win extends javax.swing.JFrame {
                             final Object ref_info = ref.get("info");
                             final Dict val = new Dict();
                             try {
+                                if (isDefPhase(phase)) {
+                                    return null;
+                                }
+
                                 if (is3dirPhase(phase)) {
                                     Node l = node.getLeft();
                                     l.exec(actions);
@@ -4003,7 +4236,7 @@ public class Win extends javax.swing.JFrame {
                                     //write3dir(rval_ltrue + ":");
                                     val.put("type", TType.BOOLEAN.toString());
                                     val.put("tags", rtags);
-                                //val.put("ltrue", rval_ltrue);
+                                    //val.put("ltrue", rval_ltrue);
                                     //val.put("lfalse", rval_lfalse);
                                     return val;
                                 }
@@ -4066,7 +4299,7 @@ public class Win extends javax.swing.JFrame {
                                     //write3dir(rval_ltrue + ":");
                                     val.put("type", TType.BOOLEAN.toString());
                                     val.put("tags", rtags);
-                                //val.put("ltrue", rval_ltrue);
+                                    //val.put("ltrue", rval_ltrue);
                                     //val.put("lfalse", rval_lfalse);
                                     return val;
                                 }
@@ -4354,6 +4587,7 @@ public class Win extends javax.swing.JFrame {
                     });
                     //</editor-fold>
 
+
                     //<editor-fold defaultstate="collapsed" desc="PLUS">
                     put(TOperation.PLUS, new Operation() {
                         @Override
@@ -4364,6 +4598,10 @@ public class Win extends javax.swing.JFrame {
                             final Dict ref = node.getDictRef();
                             final Object ref_info = ref.get("info");
                             final Object phase = ca.get("phase");
+                            
+                            final CC cc = (CC) ca.get("cc");
+                            final Stack scope = ca.getStack("scope");
+                            final Sim methodsim = (Sim) scope.peek();
 
                             try {
                                 if (is3dirPhase(phase)) {
@@ -4375,16 +4613,43 @@ public class Win extends javax.swing.JFrame {
                                     int length = 0;
                                     String type;
                                     Object temp = null;
+                                    Object temp_ultimo = null;
                                     Boolean seConcateno = false;
+                                    String tres = null;
                                     switch (ltype) {
                                         case "INT":
                                             switch (rtype) {
                                                 case "INT":
                                                     temp = getTemp(ca);
                                                     type = TType.INT.toString();
+                                                    tres = String.format("%s = %s + %s;", temp, lval, rval);
+                                                    write3dir(tres);
                                                     break;
                                                 case "FLOAT":
+                                                    write3dir("//CAST INT - FLOAT");
+                                                    String t1_i = getTemp(ca);
+                                                    write3dir("%s = p + %d;", t1_i, methodsim.size);
+                                                
+                                                    final String t2_i = getTemp(actions);
+                                                    write3dir("%s = %s + %d;", t2_i, t1_i, 0);
+                                                    write3dir("stack[%s]= %s;", t2_i, lval );
+
+                                                    write3dir("p = p + %d;", methodsim.size);
+                                                    write3dir("call int_to_float();");
+                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    String t_ult_i = getTemp(ca);
+
+                                                    write3dir("%s = p + %d;", t_ult_i, methodsim.size);
+
+                                                    String t4_i = getTemp(ca);
+                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+
+                                                    String t5_i = getTemp(ca);
+                                                    write3dir("%s = stack[%s];", t5_i, t4_i);
+                                                    
                                                     temp = getTemp(ca);
+                                                    tres = String.format("%s = %s + %s;", temp, t5_i, rval);
+                                                    write3dir(tres);
                                                     type = TType.FLOAT.toString();
                                                     break;
                                                 case "BOOLEAN":
@@ -4432,6 +4697,8 @@ public class Win extends javax.swing.JFrame {
                                                 case "CHAR":
                                                     temp = getTemp(ca);
                                                     type = TType.INT.toString();
+                                                    tres = String.format("%s = %s + %s;", temp, lval, rval);
+                                                    write3dir(tres);
                                                     break;
                                                 default:
                                                     throw new UnsupportedOperationException("Tipos incorrectos");
@@ -4440,12 +4707,37 @@ public class Win extends javax.swing.JFrame {
                                         case "FLOAT":
                                             switch (rtype) {
                                                 case "INT":
+                                                    write3dir("//CAST INT - FLOAT");
+                                                    String t1_i = getTemp(ca);
+                                                    write3dir("%s = p + %d;", t1_i, methodsim.size);
+                                                
+                                                    final String t2_i = getTemp(actions);
+                                                    write3dir("%s = %s + %d;", t2_i, t1_i, 0);
+                                                    write3dir("stack[%s]= %s;", t2_i, rval );
+
+                                                    write3dir("p = p + %d;", methodsim.size);
+                                                    write3dir("call int_to_float();");
+                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    String t_ult_i = getTemp(ca);
+
+                                                    write3dir("%s = p + %d;", t_ult_i, methodsim.size);
+
+                                                    String t4_i = getTemp(ca);
+                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+
+                                                    String t5_i = getTemp(ca);
+                                                    write3dir("%s = stack[%s];", t5_i, t4_i);
+                                                    
                                                     temp = getTemp(ca);
+                                                    tres = String.format("%s = %s + %s;", temp, lval, t5_i);
+                                                    write3dir(tres);
                                                     type = TType.FLOAT.toString();
                                                     break;
                                                 case "FLOAT":
                                                     temp = getTemp(ca);
                                                     type = TType.FLOAT.toString();
+                                                    tres = String.format("%s = %s + %s;", temp, lval, rval);
+                                                    write3dir(tres);
                                                     break;
                                                 case "BOOLEAN":
                                                     throw new UnsupportedOperationException("Tipos incorrectos, no se puede convertir INT a BOOLEAN");
@@ -4775,6 +5067,8 @@ public class Win extends javax.swing.JFrame {
                                                 case "INT":
                                                     temp = getTemp(ca);
                                                     type = TType.INT.toString();
+                                                    tres = String.format("%s = %s + %s;", temp, lval, rval);
+                                                    write3dir(tres);
                                                     break;
                                                 case "FLOAT":
                                                     throw new UnsupportedOperationException("Tipos incorrectos, no se puede convertir BOOLEAN a FLOAT");
@@ -4817,7 +5111,11 @@ public class Win extends javax.swing.JFrame {
                                                     seConcateno = true;
                                                     break;
                                                 case "CHAR":
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s + %s;", temp, lval, rval);
+                                                    write3dir(tres);
                                                     type = TType.CHAR.toString();
+                                                    break;
                                                 default:
                                                     throw new UnsupportedOperationException("Tipos incorrectos");
                                             }
@@ -4826,11 +5124,10 @@ public class Win extends javax.swing.JFrame {
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
 
-                                    if (seConcateno == false) {
+                                    /*if (seConcateno == false) {
                                         //Si no es concatenacion ejecutar lo siguiente
-                                        String tres = String.format("%s = %s + %s;", temp, lval, rval);
-                                        write3dir(tres);
-                                    }
+                                        
+                                    }*/
                                     return new Dict("val", temp, "type", type, "length", length);
                                 }
                             } catch (UnsupportedOperationException exc) {
@@ -4849,6 +5146,10 @@ public class Win extends javax.swing.JFrame {
                             final Dict ref = node.getDictRef();
                             final Object ref_info = ref.get("info");
                             final Object phase = ca.get("phase");
+                            
+                            final CC cc = (CC) ca.get("cc");
+                            final Stack scope = ca.getStack("scope");
+                            final Sim methodsim = (Sim) scope.peek();
 
                             try {
                                 if (is3dirPhase(phase)) {
@@ -4859,14 +5160,42 @@ public class Win extends javax.swing.JFrame {
                                     String rtype = node.getRight().getDictVal().getString("type");
 
                                     String type;
-                                    Object temp = getTemp(ca);
+                                    Object temp = null;
+                                    String tres = null;
                                     switch (ltype) {
                                         case "INT":
                                             switch (rtype) {
                                                 case "INT":
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s - %s;", temp, lval, rval);
+                                                    write3dir(tres);
                                                     type = TType.INT.toString();
                                                     break;
                                                 case "FLOAT":
+                                                    write3dir("//CAST INT - FLOAT");
+                                                    String t1_i = getTemp(ca);
+                                                    write3dir("%s = p + %d;", t1_i, methodsim.size);
+                                                
+                                                    final String t2_i = getTemp(actions);
+                                                    write3dir("%s = %s + %d;", t2_i, t1_i, 0);
+                                                    write3dir("stack[%s]= %s;", t2_i, lval );
+
+                                                    write3dir("p = p + %d;", methodsim.size);
+                                                    write3dir("call int_to_float();");
+                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    String t_ult_i = getTemp(ca);
+
+                                                    write3dir("%s = p + %d;", t_ult_i, methodsim.size);
+
+                                                    String t4_i = getTemp(ca);
+                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+
+                                                    String t5_i = getTemp(ca);
+                                                    write3dir("%s = stack[%s];", t5_i, t4_i);
+                                                    
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s - %s;", temp, t5_i, rval);
+                                                    write3dir(tres);
                                                     type = TType.FLOAT.toString();
                                                     break;
                                                 case "BOOLEAN":
@@ -4874,6 +5203,9 @@ public class Win extends javax.swing.JFrame {
                                                 case "STRING":
                                                     throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                                 case "CHAR":
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s - %s;", temp, lval, rval);
+                                                    write3dir(tres);
                                                     type = TType.INT.toString();
                                                     break;
                                                 default:
@@ -4883,9 +5215,36 @@ public class Win extends javax.swing.JFrame {
                                         case "FLOAT":
                                             switch (rtype) {
                                                 case "INT":
+                                                    write3dir("//CAST INT - FLOAT");
+                                                    String t1_i = getTemp(ca);
+                                                    write3dir("%s = p + %d;", t1_i, methodsim.size);
+                                                
+                                                    final String t2_i = getTemp(actions);
+                                                    write3dir("%s = %s + %d;", t2_i, t1_i, 0);
+                                                    write3dir("stack[%s]= %s;", t2_i, rval );
+
+                                                    write3dir("p = p + %d;", methodsim.size);
+                                                    write3dir("call int_to_float();");
+                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    String t_ult_i = getTemp(ca);
+
+                                                    write3dir("%s = p + %d;", t_ult_i, methodsim.size);
+
+                                                    String t4_i = getTemp(ca);
+                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+
+                                                    String t5_i = getTemp(ca);
+                                                    write3dir("%s = stack[%s];", t5_i, t4_i);
+                                                    
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s - %s;", temp, lval, t5_i);
+                                                    write3dir(tres);
                                                     type = TType.FLOAT.toString();
                                                     break;
                                                 case "FLOAT":
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s - %s;", temp, lval, rval);
+                                                    write3dir(tres);
                                                     type = TType.FLOAT.toString();
                                                     break;
                                                 case "BOOLEAN":
@@ -4893,7 +5252,32 @@ public class Win extends javax.swing.JFrame {
                                                 case "STRING":
                                                     throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                                 case "CHAR":
+                                                    write3dir("//CAST CHAR - FLOAT");
+                                                    String t1_c = getTemp(ca);
+                                                    write3dir("%s = p + %d;", t1_c, methodsim.size);
+                                                
+                                                    final String t2_c = getTemp(actions);
+                                                    write3dir("%s = %s + %d;", t2_c, t1_c, 0);
+                                                    write3dir("stack[%s]= %s;", t2_c, rval );
+
+                                                    write3dir("p = p + %d;", methodsim.size);
+                                                    write3dir("call int_to_float();");
+                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    String t_ult_c = getTemp(ca);
+
+                                                    write3dir("%s = p + %d;", t_ult_c, methodsim.size);
+
+                                                    String t4_c = getTemp(ca);
+                                                    write3dir("%s = %s + %d;", t4_c,t_ult_c,0);
+
+                                                    String t5_c = getTemp(ca);
+                                                    write3dir("%s = stack[%s];", t5_c, t4_c);
+                                                    
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s - %s;", temp, lval, t5_c);
+                                                    write3dir(tres);
                                                     type = TType.FLOAT.toString();
+                                                    break;
                                                 default:
                                                     throw new UnsupportedOperationException("Tipos incorrectos");
                                             }
@@ -4901,9 +5285,36 @@ public class Win extends javax.swing.JFrame {
                                         case "CHAR":
                                             switch (rtype) {
                                                 case "INT":
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s - %s;", temp, lval, rval);
+                                                    write3dir(tres);
                                                     type = TType.INT.toString();
                                                     break;
                                                 case "FLOAT":
+                                                    write3dir("//CAST INT - FLOAT");
+                                                    String t1_i = getTemp(ca);
+                                                    write3dir("%s = p + %d;", t1_i, methodsim.size);
+                                                
+                                                    final String t2_i = getTemp(actions);
+                                                    write3dir("%s = %s + %d;", t2_i, t1_i, 0);
+                                                    write3dir("stack[%s]= %s;", t2_i, lval );
+
+                                                    write3dir("p = p + %d;", methodsim.size);
+                                                    write3dir("call int_to_float();");
+                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    String t_ult_i = getTemp(ca);
+
+                                                    write3dir("%s = p + %d;", t_ult_i, methodsim.size);
+
+                                                    String t4_i = getTemp(ca);
+                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+
+                                                    String t5_i = getTemp(ca);
+                                                    write3dir("%s = stack[%s];", t5_i, t4_i);
+                                                    
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s - %s;", temp, t5_i, rval);
+                                                    write3dir(tres);
                                                     type = TType.FLOAT.toString();
                                                     break;
                                                 case "BOOLEAN":
@@ -4911,7 +5322,10 @@ public class Win extends javax.swing.JFrame {
                                                 case "STRING":
                                                     throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                                 case "CHAR":
-                                                    type = TType.INT.toString();
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s - %s;", temp, lval, rval);
+                                                    write3dir(tres);
+                                                    type = TType.CHAR.toString();
                                                     break;
                                                 default:
                                                     throw new UnsupportedOperationException("Tipos incorrectos");
@@ -4921,8 +5335,7 @@ public class Win extends javax.swing.JFrame {
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
 
-                                    String tres = String.format("%s = %s - %s;", temp, lval, rval);
-                                    write3dir(tres);
+                                    
                                     return new Dict("val", temp, "type", type);
                                 }
                             } catch (UnsupportedOperationException exc) {
@@ -4938,14 +5351,16 @@ public class Win extends javax.swing.JFrame {
                         @Override
                         public Object exec(Node node, Object actions) {
                             final Dict ca = (Dict) actions;
-
                             final Dict ref = node.getDictRef();
                             final Object ref_info = ref.get("info");
                             final Object phase = ca.get("phase");
+                            
+                            final CC cc = (CC) ca.get("cc");
+                            final Stack scope = ca.getStack("scope");
+                            final Sim methodsim = (Sim) scope.peek();
 
                             try {
                                 if (is3dirPhase(phase)) {
-
                                     String lval = node.getLeft().getDictVal().getString("val");
                                     String rval = node.getRight().getDictVal().getString("val");
 
@@ -4953,14 +5368,42 @@ public class Win extends javax.swing.JFrame {
                                     String rtype = node.getRight().getDictVal().getString("type");
 
                                     String type;
-                                    Object temp = getTemp(ca);
+                                    Object temp = null;
+                                    String tres = null;
                                     switch (ltype) {
                                         case "INT":
                                             switch (rtype) {
                                                 case "INT":
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s * %s;", temp, lval, rval);
+                                                    write3dir(tres);
                                                     type = TType.INT.toString();
                                                     break;
                                                 case "FLOAT":
+                                                    write3dir("//CAST INT - FLOAT");
+                                                    String t1_i = getTemp(ca);
+                                                    write3dir("%s = p + %d;", t1_i, methodsim.size);
+                                                
+                                                    final String t2_i = getTemp(actions);
+                                                    write3dir("%s = %s + %d;", t2_i, t1_i, 0);
+                                                    write3dir("stack[%s]= %s;", t2_i, lval );
+
+                                                    write3dir("p = p + %d;", methodsim.size);
+                                                    write3dir("call int_to_float();");
+                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    String t_ult_i = getTemp(ca);
+
+                                                    write3dir("%s = p + %d;", t_ult_i, methodsim.size);
+
+                                                    String t4_i = getTemp(ca);
+                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+
+                                                    String t5_i = getTemp(ca);
+                                                    write3dir("%s = stack[%s];", t5_i, t4_i);
+                                                    
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s * %s;", temp, t5_i, rval);
+                                                    write3dir(tres);
                                                     type = TType.FLOAT.toString();
                                                     break;
                                                 case "BOOLEAN":
@@ -4968,6 +5411,9 @@ public class Win extends javax.swing.JFrame {
                                                 case "STRING":
                                                     throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                                 case "CHAR":
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s * %s;", temp, lval, rval);
+                                                    write3dir(tres);
                                                     type = TType.INT.toString();
                                                     break;
                                                 default:
@@ -4977,9 +5423,36 @@ public class Win extends javax.swing.JFrame {
                                         case "FLOAT":
                                             switch (rtype) {
                                                 case "INT":
+                                                    write3dir("//CAST INT - FLOAT");
+                                                    String t1_i = getTemp(ca);
+                                                    write3dir("%s = p + %d;", t1_i, methodsim.size);
+                                                
+                                                    final String t2_i = getTemp(actions);
+                                                    write3dir("%s = %s + %d;", t2_i, t1_i, 0);
+                                                    write3dir("stack[%s]= %s;", t2_i, rval );
+
+                                                    write3dir("p = p + %d;", methodsim.size);
+                                                    write3dir("call int_to_float();");
+                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    String t_ult_i = getTemp(ca);
+
+                                                    write3dir("%s = p + %d;", t_ult_i, methodsim.size);
+
+                                                    String t4_i = getTemp(ca);
+                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+
+                                                    String t5_i = getTemp(ca);
+                                                    write3dir("%s = stack[%s];", t5_i, t4_i);
+                                                    
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s * %s;", temp, lval, t5_i);
+                                                    write3dir(tres);
                                                     type = TType.FLOAT.toString();
                                                     break;
                                                 case "FLOAT":
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s * %s;", temp, lval, rval);
+                                                    write3dir(tres);
                                                     type = TType.FLOAT.toString();
                                                     break;
                                                 case "BOOLEAN":
@@ -4987,7 +5460,32 @@ public class Win extends javax.swing.JFrame {
                                                 case "STRING":
                                                     throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                                 case "CHAR":
+                                                    write3dir("//CAST CHAR - FLOAT");
+                                                    String t1_c = getTemp(ca);
+                                                    write3dir("%s = p + %d;", t1_c, methodsim.size);
+                                                
+                                                    final String t2_c = getTemp(actions);
+                                                    write3dir("%s = %s + %d;", t2_c, t1_c, 0);
+                                                    write3dir("stack[%s]= %s;", t2_c, rval );
+
+                                                    write3dir("p = p + %d;", methodsim.size);
+                                                    write3dir("call int_to_float();");
+                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    String t_ult_c = getTemp(ca);
+
+                                                    write3dir("%s = p + %d;", t_ult_c, methodsim.size);
+
+                                                    String t4_c = getTemp(ca);
+                                                    write3dir("%s = %s + %d;", t4_c,t_ult_c,0);
+
+                                                    String t5_c = getTemp(ca);
+                                                    write3dir("%s = stack[%s];", t5_c, t4_c);
+                                                    
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s * %s;", temp, lval, t5_c);
+                                                    write3dir(tres);
                                                     type = TType.FLOAT.toString();
+                                                    break;
                                                 default:
                                                     throw new UnsupportedOperationException("Tipos incorrectos");
                                             }
@@ -4995,9 +5493,36 @@ public class Win extends javax.swing.JFrame {
                                         case "CHAR":
                                             switch (rtype) {
                                                 case "INT":
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s * %s;", temp, lval, rval);
+                                                    write3dir(tres);
                                                     type = TType.INT.toString();
                                                     break;
                                                 case "FLOAT":
+                                                    write3dir("//CAST INT - FLOAT");
+                                                    String t1_i = getTemp(ca);
+                                                    write3dir("%s = p + %d;", t1_i, methodsim.size);
+                                                
+                                                    final String t2_i = getTemp(actions);
+                                                    write3dir("%s = %s + %d;", t2_i, t1_i, 0);
+                                                    write3dir("stack[%s]= %s;", t2_i, lval );
+
+                                                    write3dir("p = p + %d;", methodsim.size);
+                                                    write3dir("call int_to_float();");
+                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    String t_ult_i = getTemp(ca);
+
+                                                    write3dir("%s = p + %d;", t_ult_i, methodsim.size);
+
+                                                    String t4_i = getTemp(ca);
+                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+
+                                                    String t5_i = getTemp(ca);
+                                                    write3dir("%s = stack[%s];", t5_i, t4_i);
+                                                    
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s * %s;", temp, t5_i, rval);
+                                                    write3dir(tres);
                                                     type = TType.FLOAT.toString();
                                                     break;
                                                 case "BOOLEAN":
@@ -5005,7 +5530,10 @@ public class Win extends javax.swing.JFrame {
                                                 case "STRING":
                                                     throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                                 case "CHAR":
-                                                    type = TType.INT.toString();
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s * %s;", temp, lval, rval);
+                                                    write3dir(tres);
+                                                    type = TType.CHAR.toString();
                                                     break;
                                                 default:
                                                     throw new UnsupportedOperationException("Tipos incorrectos");
@@ -5015,9 +5543,7 @@ public class Win extends javax.swing.JFrame {
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
 
-                                    String tres = String.format("%s = %s * %s;", temp, lval, rval);
-                                    write3dir(tres);
-
+                                    
                                     return new Dict("val", temp, "type", type);
                                 }
                             } catch (UnsupportedOperationException exc) {
@@ -5037,6 +5563,10 @@ public class Win extends javax.swing.JFrame {
                             final Dict ref = node.getDictRef();
                             final Object ref_info = ref.get("info");
                             final Object phase = ca.get("phase");
+                            
+                            final CC cc = (CC) ca.get("cc");
+                            final Stack scope = ca.getStack("scope");
+                            final Sim methodsim = (Sim) scope.peek();
 
                             try {
                                 if (is3dirPhase(phase)) {
@@ -5048,14 +5578,65 @@ public class Win extends javax.swing.JFrame {
                                     String rtype = node.getRight().getDictVal().getString("type");
 
                                     String type;
-                                    Object temp = getTemp(ca);
+                                    Object temp = null;
+                                    String tres = null;
                                     switch (ltype) {
                                         case "INT":
                                             switch (rtype) {
                                                 case "INT":
+                                                    final String t_in = getTemp(ca);                                                    
+                                                    tres = String.format("%s = %s / %s;", t_in, lval, rval);
+                                                    write3dir(tres);
+                                                    //Conversion a float
+                                                    write3dir("//CAST INT - FLOAT");
+                                                    String t1 = getTemp(ca);
+                                                    write3dir("%s = p + %d;", t1, methodsim.size);
+
+                                                    final String t2 = getTemp(actions);
+                                                    write3dir("%s = %s + %d;", t2, t1, 0);
+                                                    write3dir("stack[%s]= %s;", t2, t_in );
+
+                                                    write3dir("p = p + %d;", methodsim.size);
+                                                    write3dir("call int_to_float();");
+                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    String t_ult = getTemp(ca);
+
+                                                    write3dir("%s = p + %d;", t_ult, methodsim.size);
+
+                                                    String t4 = getTemp(ca);
+                                                    write3dir("%s = %s + %d;", t4,t_ult,0);
+
+                                                    String t5 = getTemp(ca);
+                                                    write3dir("%s = stack[%s];", t5, t4);                                                    
+                                                    
+                                                    temp = t5;
                                                     type = TType.FLOAT.toString();
                                                     break;
                                                 case "FLOAT":
+                                                    write3dir("//CAST INT - FLOAT");
+                                                    String t1_i = getTemp(ca);
+                                                    write3dir("%s = p + %d;", t1_i, methodsim.size);
+                                                
+                                                    final String t2_i = getTemp(actions);
+                                                    write3dir("%s = %s + %d;", t2_i, t1_i, 0);
+                                                    write3dir("stack[%s]= %s;", t2_i, lval );
+
+                                                    write3dir("p = p + %d;", methodsim.size);
+                                                    write3dir("call int_to_float();");
+                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    String t_ult_i = getTemp(ca);
+
+                                                    write3dir("%s = p + %d;", t_ult_i, methodsim.size);
+
+                                                    String t4_i = getTemp(ca);
+                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+
+                                                    String t5_i = getTemp(ca);
+                                                    write3dir("%s = stack[%s];", t5_i, t4_i);
+                                                    
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s / %s;", temp, t5_i, rval);
+                                                    write3dir(tres);
                                                     type = TType.FLOAT.toString();
                                                     break;
                                                 case "BOOLEAN":
@@ -5063,6 +5644,32 @@ public class Win extends javax.swing.JFrame {
                                                 case "STRING":
                                                     throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                                 case "CHAR":
+                                                    final String t_in_c = getTemp(ca);                                                    
+                                                    tres = String.format("%s = %s / %s;", t_in_c, lval, rval);
+                                                    write3dir(tres);
+                                                    //Conversion a float
+                                                    write3dir("//CAST INT - FLOAT");
+                                                    String t1_c = getTemp(ca);
+                                                    write3dir("%s = p + %d;", t1_c, methodsim.size);
+
+                                                    final String t2_c = getTemp(actions);
+                                                    write3dir("%s = %s + %d;", t2_c, t1_c, 0);
+                                                    write3dir("stack[%s]= %s;", t2_c, t_in_c );
+
+                                                    write3dir("p = p + %d;", methodsim.size);
+                                                    write3dir("call int_to_float();");
+                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    String t_ult_c = getTemp(ca);
+
+                                                    write3dir("%s = p + %d;", t_ult_c, methodsim.size);
+
+                                                    String t4_c = getTemp(ca);
+                                                    write3dir("%s = %s + %d;", t4_c,t_ult_c,0);
+
+                                                    String t5_c = getTemp(ca);
+                                                    write3dir("%s = stack[%s];", t5_c, t4_c);
+                                                    
+                                                    temp = t5_c;
                                                     type = TType.FLOAT.toString();
                                                     break;
                                                 default:
@@ -5072,9 +5679,36 @@ public class Win extends javax.swing.JFrame {
                                         case "FLOAT":
                                             switch (rtype) {
                                                 case "INT":
+                                                    write3dir("//CAST INT - FLOAT");
+                                                    String t1_i = getTemp(ca);
+                                                    write3dir("%s = p + %d;", t1_i, methodsim.size);
+                                                
+                                                    final String t2_i = getTemp(actions);
+                                                    write3dir("%s = %s + %d;", t2_i, t1_i, 0);
+                                                    write3dir("stack[%s]= %s;", t2_i, rval );
+
+                                                    write3dir("p = p + %d;", methodsim.size);
+                                                    write3dir("call int_to_float();");
+                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    String t_ult_i = getTemp(ca);
+
+                                                    write3dir("%s = p + %d;", t_ult_i, methodsim.size);
+
+                                                    String t4_i = getTemp(ca);
+                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+
+                                                    String t5_i = getTemp(ca);
+                                                    write3dir("%s = stack[%s];", t5_i, t4_i);
+                                                    
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s / %s;", temp, lval, t5_i);
+                                                    write3dir(tres);
                                                     type = TType.FLOAT.toString();
                                                     break;
                                                 case "FLOAT":
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s / %s;", temp, lval, rval);
+                                                    write3dir(tres);
                                                     type = TType.FLOAT.toString();
                                                     break;
                                                 case "BOOLEAN":
@@ -5082,6 +5716,30 @@ public class Win extends javax.swing.JFrame {
                                                 case "STRING":
                                                     throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                                 case "CHAR":
+                                                    write3dir("//CAST CHAR - FLOAT");
+                                                    String t1_c = getTemp(ca);
+                                                    write3dir("%s = p + %d;", t1_c, methodsim.size);
+                                                
+                                                    final String t2_c = getTemp(actions);
+                                                    write3dir("%s = %s + %d;", t2_c, t1_c, 0);
+                                                    write3dir("stack[%s]= %s;", t2_c, rval );
+
+                                                    write3dir("p = p + %d;", methodsim.size);
+                                                    write3dir("call int_to_float();");
+                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    String t_ult_c = getTemp(ca);
+
+                                                    write3dir("%s = p + %d;", t_ult_c, methodsim.size);
+
+                                                    String t4_c = getTemp(ca);
+                                                    write3dir("%s = %s + %d;", t4_c,t_ult_c,0);
+
+                                                    String t5_c = getTemp(ca);
+                                                    write3dir("%s = stack[%s];", t5_c, t4_c);
+                                                    
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s / %s;", temp, lval, t5_c);
+                                                    write3dir(tres);
                                                     type = TType.FLOAT.toString();
                                                 default:
                                                     throw new UnsupportedOperationException("Tipos incorrectos");
@@ -5090,9 +5748,59 @@ public class Win extends javax.swing.JFrame {
                                         case "CHAR":
                                             switch (rtype) {
                                                 case "INT":
+                                                    final String t_in = getTemp(ca);                                                    
+                                                    tres = String.format("%s = %s / %s;", t_in, lval, rval);
+                                                    write3dir(tres);
+                                                    //Conversion a float
+                                                    write3dir("//CAST INT - FLOAT");
+                                                    String t1 = getTemp(ca);
+                                                    write3dir("%s = p + %d;", t1, methodsim.size);
+
+                                                    final String t2 = getTemp(actions);
+                                                    write3dir("%s = %s + %d;", t2, t1, 0);
+                                                    write3dir("stack[%s]= %s;", t2, t_in );
+
+                                                    write3dir("p = p + %d;", methodsim.size);
+                                                    write3dir("call int_to_float();");
+                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    String t_ult = getTemp(ca);
+
+                                                    write3dir("%s = p + %d;", t_ult, methodsim.size);
+
+                                                    String t4 = getTemp(ca);
+                                                    write3dir("%s = %s + %d;", t4,t_ult,0);
+
+                                                    String t5 = getTemp(ca);
+                                                    write3dir("%s = stack[%s];", t5, t4);                                                    
+                                                    
+                                                    temp = t5;
                                                     type = TType.FLOAT.toString();
                                                     break;
                                                 case "FLOAT":
+                                                    write3dir("//CAST INT - FLOAT");
+                                                    String t1_i = getTemp(ca);
+                                                    write3dir("%s = p + %d;", t1_i, methodsim.size);
+                                                
+                                                    final String t2_i = getTemp(actions);
+                                                    write3dir("%s = %s + %d;", t2_i, t1_i, 0);
+                                                    write3dir("stack[%s]= %s;", t2_i, lval );
+
+                                                    write3dir("p = p + %d;", methodsim.size);
+                                                    write3dir("call int_to_float();");
+                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    String t_ult_i = getTemp(ca);
+
+                                                    write3dir("%s = p + %d;", t_ult_i, methodsim.size);
+
+                                                    String t4_i = getTemp(ca);
+                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+
+                                                    String t5_i = getTemp(ca);
+                                                    write3dir("%s = stack[%s];", t5_i, t4_i);
+                                                    
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s / %s;", temp, t5_i, rval);
+                                                    write3dir(tres);
                                                     type = TType.FLOAT.toString();
                                                     break;
                                                 case "BOOLEAN":
@@ -5100,6 +5808,32 @@ public class Win extends javax.swing.JFrame {
                                                 case "STRING":
                                                     throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                                 case "CHAR":
+                                                    final String t_in_c = getTemp(ca);                                                    
+                                                    tres = String.format("%s = %s / %s;", t_in_c, lval, rval);
+                                                    write3dir(tres);
+                                                    //Conversion a float
+                                                    write3dir("//CAST INT - FLOAT");
+                                                    String t1_c = getTemp(ca);
+                                                    write3dir("%s = p + %d;", t1_c, methodsim.size);
+
+                                                    final String t2_c = getTemp(actions);
+                                                    write3dir("%s = %s + %d;", t2_c, t1_c, 0);
+                                                    write3dir("stack[%s]= %s;", t2_c, t_in_c );
+
+                                                    write3dir("p = p + %d;", methodsim.size);
+                                                    write3dir("call int_to_float();");
+                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    String t_ult_c = getTemp(ca);
+
+                                                    write3dir("%s = p + %d;", t_ult_c, methodsim.size);
+
+                                                    String t4_c = getTemp(ca);
+                                                    write3dir("%s = %s + %d;", t4_c,t_ult_c,0);
+
+                                                    String t5_c = getTemp(ca);
+                                                    write3dir("%s = stack[%s];", t5_c, t4_c);
+                                                    
+                                                    temp = t5_c;
                                                     type = TType.FLOAT.toString();
                                                     break;
                                                 default:
@@ -5109,10 +5843,7 @@ public class Win extends javax.swing.JFrame {
                                         default:
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
-
-                                    String tres = String.format("%s = %s / %s;", temp, lval, rval);
-                                    write3dir(tres);
-
+                                    
                                     return new Dict("val", temp, "type", type);
                                 }
                             } catch (UnsupportedOperationException exc) {
@@ -5128,10 +5859,13 @@ public class Win extends javax.swing.JFrame {
                         @Override
                         public Object exec(Node node, Object actions) {
                             final Dict ca = (Dict) actions;
-
                             final Dict ref = node.getDictRef();
                             final Object ref_info = ref.get("info");
                             final Object phase = ca.get("phase");
+                            
+                            final CC cc = (CC) ca.get("cc");
+                            final Stack scope = ca.getStack("scope");
+                            final Sim methodsim = (Sim) scope.peek();
 
                             try {
                                 if (is3dirPhase(phase)) {
@@ -5142,14 +5876,42 @@ public class Win extends javax.swing.JFrame {
                                     String rtype = node.getRight().getDictVal().getString("type");
 
                                     String type;
-                                    Object temp = getTemp(ca);
+                                    Object temp = null;
+                                    String tres = null;
                                     switch (ltype) {
                                         case "INT":
                                             switch (rtype) {
                                                 case "INT":
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s ^ %s;", temp, lval, rval);
+                                                    write3dir(tres);
                                                     type = TType.INT.toString();
                                                     break;
                                                 case "FLOAT":
+                                                    write3dir("//CAST INT - FLOAT");
+                                                    String t1_i = getTemp(ca);
+                                                    write3dir("%s = p + %d;", t1_i, methodsim.size);
+                                                
+                                                    final String t2_i = getTemp(actions);
+                                                    write3dir("%s = %s + %d;", t2_i, t1_i, 0);
+                                                    write3dir("stack[%s]= %s;", t2_i, lval );
+
+                                                    write3dir("p = p + %d;", methodsim.size);
+                                                    write3dir("call int_to_float();");
+                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    String t_ult_i = getTemp(ca);
+
+                                                    write3dir("%s = p + %d;", t_ult_i, methodsim.size);
+
+                                                    String t4_i = getTemp(ca);
+                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+
+                                                    String t5_i = getTemp(ca);
+                                                    write3dir("%s = stack[%s];", t5_i, t4_i);
+                                                    
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s ^ %s;", temp, t5_i, rval);
+                                                    write3dir(tres);
                                                     type = TType.FLOAT.toString();
                                                     break;
                                                 case "BOOLEAN":
@@ -5157,6 +5919,9 @@ public class Win extends javax.swing.JFrame {
                                                 case "STRING":
                                                     throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                                 case "CHAR":
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s ^ %s;", temp, lval, rval);
+                                                    write3dir(tres);
                                                     type = TType.INT.toString();
                                                     break;
                                                 default:
@@ -5166,9 +5931,36 @@ public class Win extends javax.swing.JFrame {
                                         case "FLOAT":
                                             switch (rtype) {
                                                 case "INT":
+                                                    write3dir("//CAST INT - FLOAT");
+                                                    String t1_i = getTemp(ca);
+                                                    write3dir("%s = p + %d;", t1_i, methodsim.size);
+                                                
+                                                    final String t2_i = getTemp(actions);
+                                                    write3dir("%s = %s + %d;", t2_i, t1_i, 0);
+                                                    write3dir("stack[%s]= %s;", t2_i, rval );
+
+                                                    write3dir("p = p + %d;", methodsim.size);
+                                                    write3dir("call int_to_float();");
+                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    String t_ult_i = getTemp(ca);
+
+                                                    write3dir("%s = p + %d;", t_ult_i, methodsim.size);
+
+                                                    String t4_i = getTemp(ca);
+                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+
+                                                    String t5_i = getTemp(ca);
+                                                    write3dir("%s = stack[%s];", t5_i, t4_i);
+                                                    
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s ^ %s;", temp, lval, t5_i);
+                                                    write3dir(tres);
                                                     type = TType.FLOAT.toString();
                                                     break;
                                                 case "FLOAT":
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s ^ %s;", temp, lval, rval);
+                                                    write3dir(tres);
                                                     type = TType.FLOAT.toString();
                                                     break;
                                                 case "BOOLEAN":
@@ -5176,7 +5968,32 @@ public class Win extends javax.swing.JFrame {
                                                 case "STRING":
                                                     throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                                 case "CHAR":
+                                                    write3dir("//CAST CHAR - FLOAT");
+                                                    String t1_c = getTemp(ca);
+                                                    write3dir("%s = p + %d;", t1_c, methodsim.size);
+                                                
+                                                    final String t2_c = getTemp(actions);
+                                                    write3dir("%s = %s + %d;", t2_c, t1_c, 0);
+                                                    write3dir("stack[%s]= %s;", t2_c, rval );
+
+                                                    write3dir("p = p + %d;", methodsim.size);
+                                                    write3dir("call int_to_float();");
+                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    String t_ult_c = getTemp(ca);
+
+                                                    write3dir("%s = p + %d;", t_ult_c, methodsim.size);
+
+                                                    String t4_c = getTemp(ca);
+                                                    write3dir("%s = %s + %d;", t4_c,t_ult_c,0);
+
+                                                    String t5_c = getTemp(ca);
+                                                    write3dir("%s = stack[%s];", t5_c, t4_c);
+                                                    
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s ^ %s;", temp, lval, t5_c);
+                                                    write3dir(tres);
                                                     type = TType.FLOAT.toString();
+                                                    break;
                                                 default:
                                                     throw new UnsupportedOperationException("Tipos incorrectos");
                                             }
@@ -5184,9 +6001,36 @@ public class Win extends javax.swing.JFrame {
                                         case "CHAR":
                                             switch (rtype) {
                                                 case "INT":
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s ^ %s;", temp, lval, rval);
+                                                    write3dir(tres);
                                                     type = TType.INT.toString();
                                                     break;
                                                 case "FLOAT":
+                                                    write3dir("//CAST INT - FLOAT");
+                                                    String t1_i = getTemp(ca);
+                                                    write3dir("%s = p + %d;", t1_i, methodsim.size);
+                                                
+                                                    final String t2_i = getTemp(actions);
+                                                    write3dir("%s = %s + %d;", t2_i, t1_i, 0);
+                                                    write3dir("stack[%s]= %s;", t2_i, lval );
+
+                                                    write3dir("p = p + %d;", methodsim.size);
+                                                    write3dir("call int_to_float();");
+                                                    write3dir("p = p - %d;", methodsim.size);                                                
+                                                    String t_ult_i = getTemp(ca);
+
+                                                    write3dir("%s = p + %d;", t_ult_i, methodsim.size);
+
+                                                    String t4_i = getTemp(ca);
+                                                    write3dir("%s = %s + %d;", t4_i,t_ult_i,0);
+
+                                                    String t5_i = getTemp(ca);
+                                                    write3dir("%s = stack[%s];", t5_i, t4_i);
+                                                    
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s ^ %s;", temp, t5_i, rval);
+                                                    write3dir(tres);
                                                     type = TType.FLOAT.toString();
                                                     break;
                                                 case "BOOLEAN":
@@ -5194,7 +6038,10 @@ public class Win extends javax.swing.JFrame {
                                                 case "STRING":
                                                     throw new UnsupportedOperationException("Tipos incorrectos, no se puede operar");
                                                 case "CHAR":
-                                                    type = TType.INT.toString();
+                                                    temp = getTemp(ca);
+                                                    tres = String.format("%s = %s ^ %s;", temp, lval, rval);
+                                                    write3dir(tres);
+                                                    type = TType.CHAR.toString();
                                                     break;
                                                 default:
                                                     throw new UnsupportedOperationException("Tipos incorrectos");
@@ -5204,9 +6051,7 @@ public class Win extends javax.swing.JFrame {
                                             throw new UnsupportedOperationException("Tipos incorrectos");
                                     }
 
-                                    String tres = String.format("%s = %s ^ %s;", temp, lval, rval);
-                                    write3dir(tres);
-
+                                    
                                     return new Dict("val", temp, "type", type);
                                 }
                             } catch (UnsupportedOperationException exc) {
@@ -5259,7 +6104,7 @@ public class Win extends javax.swing.JFrame {
                                                 
                                                 final String t2 = getTemp(actions);
                                                 write3dir("%s = %s + %d;", t2, t1, 0);
-                                                write3dir("pila[%s]= %s;", t2, lval );
+                                                write3dir("stack[%s]= %s;", t2, lval );
                                                 
                                                 write3dir("p = p + %d;", methodsim.size);
                                                 write3dir("call int_to_float();");
@@ -5272,7 +6117,7 @@ public class Win extends javax.swing.JFrame {
                                                 write3dir("%s = %s + %d;", t4,t_ult,0);
                                                 
                                                 String t5 = getTemp(ca);
-                                                write3dir("%s = pila[%s]", t5, t4);
+                                                write3dir("%s = stack[%s];", t5, t4);
                                                 
                                                 tipo = TType.FLOAT.toString();
                                                 temp = t5;
@@ -5308,7 +6153,7 @@ public class Win extends javax.swing.JFrame {
                                                 
                                                 final String t2_c = getTemp(actions);
                                                 write3dir("%s = %s + %d;", t2_c, t1_c, 0);
-                                                write3dir("pila[%s]= %s;", t2_c, lval );
+                                                write3dir("stack[%s]= %s;", t2_c, lval );
                                                 
                                                 write3dir("p = p + %d;", methodsim.size);
                                                 write3dir("call int_to_char();");
@@ -5321,7 +6166,7 @@ public class Win extends javax.swing.JFrame {
                                                 write3dir("%s = %s + %d;", t4_c,t_ult_c,0);
                                                 
                                                 String t5_c = getTemp(ca);
-                                                write3dir("%s = pila[%s]", t5_c, t4_c);
+                                                write3dir("%s = stack[%s];", t5_c, t4_c);
                                                 
                                                 tipo = TType.CHAR.toString();
                                                 temp = t5_c;
@@ -5339,7 +6184,7 @@ public class Win extends javax.swing.JFrame {
                                                 
                                                 final String t2 = getTemp(actions);
                                                 write3dir("%s = %s + %d;", t2, t1, 0);
-                                                write3dir("pila[%s]= %s;", t2, lval );
+                                                write3dir("stack[%s]= %s;", t2, lval );
                                                 
                                                 write3dir("p = p + %d;", methodsim.size);
                                                 write3dir("call float_to_int();");
@@ -5352,7 +6197,7 @@ public class Win extends javax.swing.JFrame {
                                                 write3dir("%s = %s + %d;", t4,t_ult,0);
                                                 
                                                 String t5 = getTemp(ca);
-                                                write3dir("%s = pila[%s]", t5, t4);                                                
+                                                write3dir("%s = stack[%s];", t5, t4);                                                
                                                 
                                                 tipo = TType.INT.toString();
                                                 temp = t5;
@@ -5438,7 +6283,7 @@ public class Win extends javax.swing.JFrame {
                                                 
                                                 final String t2 = getTemp(actions);
                                                 write3dir("%s = %s + %d;", t2, t1, 0);
-                                                write3dir("pila[%s]= %s;", t2, lval );
+                                                write3dir("stack[%s]= %s;", t2, lval );
                                                 
                                                 write3dir("p = p + %d;", methodsim.size);
                                                 write3dir("call string_to_int();");
@@ -5451,7 +6296,7 @@ public class Win extends javax.swing.JFrame {
                                                 write3dir("%s = %s + %d;", t4,t_ult,0);
                                                 
                                                 String t5 = getTemp(ca);
-                                                write3dir("%s = pila[%s]", t5, t4);                                                
+                                                write3dir("%s = stack[%s];", t5, t4);                                                
                                                 
                                                 tipo = TType.INT.toString();
                                                 temp = t5;
@@ -5463,7 +6308,7 @@ public class Win extends javax.swing.JFrame {
                                                 
                                                 final String t2_f = getTemp(actions);
                                                 write3dir("%s = %s + %d;", t2_f, t1_f, 0);
-                                                write3dir("pila[%s]= %s;", t2_f, lval );
+                                                write3dir("stack[%s]= %s;", t2_f, lval );
                                                 
                                                 write3dir("p = p + %d;", methodsim.size);
                                                 write3dir("call string_to_float();");
@@ -5476,7 +6321,7 @@ public class Win extends javax.swing.JFrame {
                                                 write3dir("%s = %s + %d;", t4_f,t_ult_f,0);
                                                 
                                                 String t5_f = getTemp(ca);
-                                                write3dir("%s = pila[%s]", t5_f, t4_f);
+                                                write3dir("%s = stack[%s];", t5_f, t4_f);
                                                 
                                                 tipo = TType.FLOAT.toString();
                                                 temp = t5_f;
@@ -5488,7 +6333,7 @@ public class Win extends javax.swing.JFrame {
                                                 
                                                 final String t2_b = getTemp(actions);
                                                 write3dir("%s = %s + %d;", t2_b, t1_b, 0);
-                                                write3dir("pila[%s]= %s;", t2_b, lval );
+                                                write3dir("stack[%s]= %s;", t2_b, lval );
                                                 
                                                 write3dir("p = p + %d;", methodsim.size);
                                                 write3dir("call string_to_int();");
@@ -5501,7 +6346,7 @@ public class Win extends javax.swing.JFrame {
                                                 write3dir("%s = %s + %d;", t4_b,t_ult_b,0);
                                                 
                                                 String t5_b = getTemp(ca);
-                                                write3dir("%s = pila[%s]", t5_b, t4_b);                                                
+                                                write3dir("%s = stack[%s];", t5_b, t4_b);                                                
                                                 
                                                 tipo = TType.INT.toString();
                                                 temp = t5_b;
@@ -5517,7 +6362,7 @@ public class Win extends javax.swing.JFrame {
                                                 
                                                 final String t2_c = getTemp(actions);
                                                 write3dir("%s = %s + %d;", t2_c, t1_c, 0);
-                                                write3dir("pila[%s]= %s;", t2_c, lval );
+                                                write3dir("stack[%s]= %s;", t2_c, lval );
                                                 
                                                 write3dir("p = p + %d;", methodsim.size);
                                                 write3dir("call string_to_float();");
@@ -5530,7 +6375,7 @@ public class Win extends javax.swing.JFrame {
                                                 write3dir("%s = %s + %d;", t4_c,t_ult_c,0);
                                                 
                                                 String t5_c = getTemp(ca);
-                                                write3dir("%s = pila[%s]", t5_c, t4_c);
+                                                write3dir("%s = stack[%s];", t5_c, t4_c);
                                                 
                                                 tipo = TType.CHAR.toString();
                                                 temp = t5_c;
@@ -5548,7 +6393,7 @@ public class Win extends javax.swing.JFrame {
                                                 
                                                 final String t2 = getTemp(actions);
                                                 write3dir("%s = %s + %d;", t2, t1, 0);
-                                                write3dir("pila[%s]= %s;", t2, lval );
+                                                write3dir("stack[%s]= %s;", t2, lval );
                                                 
                                                 write3dir("p = p + %d;", methodsim.size);
                                                 write3dir("call char_to_int();");
@@ -5561,7 +6406,7 @@ public class Win extends javax.swing.JFrame {
                                                 write3dir("%s = %s + %d;", t4,t_ult,0);
                                                 
                                                 String t5 = getTemp(ca);
-                                                write3dir("%s = pila[%s]", t5, t4);                                                
+                                                write3dir("%s = stack[%s];", t5, t4);                                                
                                                 
                                                 tipo = TType.INT.toString();
                                                 temp = t5;
@@ -5610,7 +6455,8 @@ public class Win extends javax.swing.JFrame {
                     });
                     //</editor-fold>
 
-
+                    
+                    
                     //<editor-fold defaultstate="collapsed" desc="LEAF">
                     put(TOperation.LEAF, (Operation) (Node node, Object actions) -> {
 
@@ -5709,7 +6555,7 @@ public class Win extends javax.swing.JFrame {
 
                                             if (ref_pointer == null || !ref_pointer) {
                                                 final String t2 = getTemp(ca);
-                                                write3dir(String.format("%s = pila[%s];", t2, t1));
+                                                write3dir(String.format("%s = stack[%s];", t2, t1));
                                                 val_val = t2;
                                                 val_type = id_sim.type;
                                             }
@@ -5748,13 +6594,19 @@ public class Win extends javax.swing.JFrame {
                                         val_val = t1;
                                     } else if (temp_type == TType.BOOLEAN) {
                                         Object t1 = getTemp(ca);
-                                        Object l1 = getLabel(ca);
-                                        Object l2 = getLabel(ca);
+                                        String l1 = getLabel(ca);
+                                        String l2 = getLabel(ca);
                                         write3dir("// boolean -> " + ref_val);
                                         write3dir(String.format("%s = %d;", t1, Boolean.parseBoolean(ref_val.toString()) ? 1 : 0));
-                                        write3dir(String.format("if (%s == 1) goto %s;", t1, l1));
+                                        write3dir(String.format("if %s == 1 then goto %s;", t1, l1));
                                         write3dir(String.format("goto %s;", l2));
 
+                                        val.put("tags", new BloqueCondicion() {
+                                            {
+                                                this.etqFalso = l2;
+                                                this.etqVerdad = l1;
+                                            }
+                                        });
                                         val.put("ltrue", l1);
                                         val.put("lfalse", l2);
                                         val_val = t1;
@@ -5783,10 +6635,10 @@ public class Win extends javax.swing.JFrame {
                                         }
 
                                         val_val = t1;
-                                        val.put("length", ref_val_chars.length);
+//                                        val.put("length", ref_val_chars.length);
                                     } else {
                                         Object temp = getTemp(ca);
-                                        write3dir("int,float -> " + ref_val);
+                                        write3dir("// int,float -> " + ref_val);
                                         write3dir(String.format("%s = %s;", temp, ref_val));
                                         val_val = temp;
                                     }
@@ -5869,7 +6721,7 @@ public class Win extends javax.swing.JFrame {
                                     write3dir("h = h + %d;", classsim.size);
                                     write3dir("// parametro -> 0 (this)");
                                     write3dir("%s = %s + 0;", t3, t1);
-                                    write3dir("pila[%s] = %s;", t3, t2);
+                                    write3dir("stack[%s] = %s;", t3, t2);
 
                                     ArrayList<Dict> param_list = ref_params.getDictArrayList("list");
                                     Object[] params = new Object[param_list.size()];
@@ -5885,13 +6737,13 @@ public class Win extends javax.swing.JFrame {
                                         final String param_nodo_val_type = param_nodo_val.getString("type");
                                         final String param_nodo_val_val = param_nodo_val.getString("val");
                                         params[i] = param_nodo_val_type;
-                                        write3dir("pila[%s] = %s;", t4, param_nodo_val_val);
+                                        write3dir("stack[%s] = %s;", t4, param_nodo_val_val);
                                     }
                                     final Sim constructorsim = cc.getSims().getConstructor(classsim.name, params);
 
                                     write3dir(poolCommit(actions));
                                     write3dir("p = p + %d;", methodsim.size);
-                                    write3dir("new_%s();", classsim.name);
+                                    write3dir("call %s();", getMethodName(constructorsim));
                                     write3dir("p = p - %d;", methodsim.size);
 
                                     val.put("type", classsim.name);
@@ -5913,36 +6765,43 @@ public class Win extends javax.swing.JFrame {
                     //<editor-fold defaultstate="collapsed" desc="SET_VAR">
                     put(TOperation.SET_VAR, (Operation) (Node node, Object actions) -> {
                         final Dict ca = (Dict) actions;
-                        final CC cc = (CC) ca.get("cc");
-                        final Stack scope = ca.getStack("scope");
-                        final Sim methodsim = (Sim) scope.peek();
-                        final Object phase = ca.get("phase");
+                        final CC ca_cc = (CC) ca.get("cc");
+                        final Stack ca_scope = ca.getStack("scope");
+                        final Sim methodsim = (Sim) ca_scope.peek();
+                        final Object ca_phase = ca.get("phase");
 
                         final Dict ref = node.getDictRef();
-                        final Object ref_info = ref.get("info");
                         final Dict ref_name = ref.getDict("name");
                         final Dict ref_val = ref.getDict("val");
                         final Dict ref_operator = ref.getDict("operator");
+                        final Object ref_operator_info = ref_operator.get("info");
+
+                        Object info = ref_operator_info;
+
                         final Dict val = new Dict();
-                        Object info = ref_operator.get("info");
                         Object val_val = null;
                         Object val_type = null;
 
                         try {
-                            if (is3dirPhase(phase)) {
+                            if (isDefPhase(ca_phase)) {
+                                return null;
+                            }
 
+                            if (is3dirPhase(ca_phase)) {
+
+                                poolOn(actions);
+                                write3dir("// $$$$$$$$ asignacion $$$$$$$$ //");
+                                write3dir("// $$$$ variable");
                                 final ArrayList<Dict> name_list = ref_name.getDictArrayList("list");
-
-                                write3dir("// >> ASIGANCION A VARIABLE <<");
                                 for (int i = 0; i < name_list.size(); i++) {
                                     final Dict name = name_list.get(i);
                                     final String name_val = name.getString("val");
                                     final Object name_info = name.get("info");
                                     info = name_info;
-                                    if (i == 0) {
-                                        final Sim localvarsim = cc.getSims().getLocalvar(methodsim.name, name_val, methodsim.getDictOthers().getObjArray("overload"));
 
-                                        String t1 = getTemp(actions);
+                                    if (i == 0) {
+                                        final Sim localvarsim = ca_cc.getSims().getLocalvar(methodsim.name, name_val, methodsim.getDictOthers().getObjArray("overload"));
+                                        final String t1 = getTemp(actions);
 
                                         write3dir("%s = p + %d;", t1, localvarsim.position);
                                         val_val = t1;
@@ -5955,35 +6814,46 @@ public class Win extends javax.swing.JFrame {
                                         }
                                         continue;
                                     }
-                                    Sim fieldsim = cc.getSims().getPublicField(val_type, name_val);
+
+                                    Sim fieldsim = ca_cc.getSims().getPublicField(val_type, name_val);
                                     String t1 = getTemp(actions);
                                     String t2 = getTemp(actions);
                                     if (i == 1) {
-                                        write3dir("%s = pila[%s];", t1, val_val);
+                                        write3dir("%s = stack[%s];", t1, val_val);
                                     } else {
                                         write3dir("%s = heap[%s];", t1, val_val);
                                     }
 
                                     write3dir("%s = %s + %d;", t2, t1, fieldsim.position);
+
                                     val_val = t2;
                                     val_type = fieldsim.type;
                                 }
 
-                                String operator_val = ref_operator.getString("val");
-                                Node ref_val_nodo = ref_val.getNode("nodo");
-                                ref_val_nodo.exec(actions);
-                                String ref_val_nodo_val = ref_val_nodo.getDictVal().getString("val");
-                                String ref_val_nodo_type = ref_val_nodo.getDictVal().getString("type");
+                                write3dir("// $$$$ valor");
+                                final String operator_val = ref_operator.getString("val");
+                                final Node ref_val_node = ref_val.getNode("nodo");
+                                ref_val_node.exec(actions);
+                                final Dict ref_val_node_val = ref_val_node.getDictVal();
+                                if (ref_val_node_val == null) {
+                                    throwException("No se pudo obtener el valor...");
+                                }
+                                final String ref_val_nodo_val = ref_val_node_val.getString("val");
+                                final String ref_val_nodo_type = ref_val_node_val.getString("type");
 
-                                if (!val_type.equals(ref_val_nodo_type)) {
+                                if (!val_type.toString().equals(ref_val_nodo_type)) {
                                     throwException("Tipos incompatibles -> %s = %s ", val_type, ref_val_nodo_type);
                                 }
 
-                                if (isPrimitiveType(val_type)) {
-                                    write3dir("pila[%s] = %s;", val_val, ref_val_nodo_val);
+                                write3dir("// $$$$ asignacion");
+                                if (isPrimitiveType(val_type) && name_list.size() == 1) {
+                                    write3dir("stack[%s] = %s;", val_val, ref_val_nodo_val);
                                 } else {
                                     write3dir("heap[%s] = %s;", val_val, ref_val_nodo_val);
                                 }
+
+                                write3dir("// $$$$$$$$ asignacion $$$$$$$$ //");
+                                write3dir(poolCommit(actions));
 
                                 val_val = ref_val_nodo_val;
 
@@ -5992,6 +6862,7 @@ public class Win extends javax.swing.JFrame {
                                 return val;
                             }
                         } catch (UnsupportedOperationException exc) {
+                            poolRollback(actions);
                             compiler_error(exc, TErr.SEMANTICO, info, actions);
                         }
 
@@ -6126,46 +6997,6 @@ public class Win extends javax.swing.JFrame {
 
                     //<editor-fold defaultstate="collapsed" desc="WHILE">
                     put(TOperation.STMT_WHILE, (Operation) (Node node, Object actions) -> {
-                        //<editor-fold defaultstate="collapsed" desc="old sam">
-//                        System.out.println("while");
-//                        final Dict ca = (Dict) actions;
-//                        //final CC cc = (CC) ca.get("cc");
-//                        //final Stack scope = ca.getStack("scope");
-//                        //final Sim method_sim = (Sim) scope.peek();
-//                        final Object phase = ca.get("phase");
-//                        
-//                        final Dict ref = node.getDictRef();
-//                        //final Object ref_info = ref.get("info");
-//                        final Object conditions = ref.getDict("condition").getNode("nodo");
-//                        final Object stmts = ref.getDict("stmts").getNode("nodo");
-//                        final Dict val = new Dict();
-//                        
-//                        //try {
-//                        //if (is3dirPhase(phase)) {
-//                        Node l = (Node) conditions;
-//                        Object temp = getLabel(ca);
-//                        //Etiqueta de inicio generar etiqueta inicio
-//                        String tres = temp + "\n";
-//                        write3dir(tres);
-//                        //Ejecutar codigo de condicion
-//                        l.exec(actions);
-//                        Dict lval = l.getDictVal();
-//                        BloqueCondicion ltags = lval.getTags("tags");
-//                        //Etiqueta verdadero viene de la condicion
-//                        tres = ltags.etqVerdad + "\n";
-//                        write3dir(tres);
-//                        //Ir a ejecutar sentencias
-//                        Node r = (Node) stmts;
-//                        r.exec(actions);
-//                        //Etiqueta salto inicio while, etiqueta generada al inicio
-//                        tres = "goto " + temp;
-//                        write3dir(tres);
-//                        //Etiqueta falso viene de la condicion
-//                        tres = ltags.etqFalso;
-//                        write3dir(tres);
-//                        val.put("tags", ltags);
-//                        return val;
-                        //</editor-fold>
 
                         final Dict ca = (Dict) actions;
                         final CC cc = (CC) ca.get("cc");
@@ -6630,11 +7461,13 @@ public class Win extends javax.swing.JFrame {
                         return noActionsProcessed(TOperation.BREAK);
                     });
                     //</editor-fold>
+
                     //<editor-fold defaultstate="collapsed" desc="CONTINUE">
                     put(TOperation.CONTINUE, (Operation) (Node node, Object actions) -> {
                         return noActionsProcessed(TOperation.CONTINUE);
                     });
                     //</editor-fold>
+
                     //<editor-fold defaultstate="collapsed" desc="RETURN">
                     put(TOperation.RETURN, (Operation) (Node node, Object actions) -> {
                         final Dict ca = (Dict) actions;
@@ -6743,19 +7576,44 @@ public class Win extends javax.swing.JFrame {
                                         write3dir("call printChar();");
                                         write3dir("p = p - %d;", methodsim.size);
                                     } else if (param_node_val_type.equals(TType.STRING.toString())) {
-                                        final int param_node_val_length = param_node_val.getInt("length");
-                                        write3dir("// .... string (%d)", param_node_val_length);
+                                        final Integer param_node_val_length = param_node_val.getInteger("length");
 
-                                        for (int j = 0; j < param_node_val_length; j++) {
+                                        write3dir("// .... string (%d)", param_node_val_length);
+                                        if (param_node_val_length == null) {
+                                            final String li = getLabel(actions);
+                                            final String lv = getLabel(actions);
+                                            final String lf = getLabel(actions);
+                                            final String tc = getTemp(actions);
                                             final String t3 = getTemp(actions);
                                             final String t4 = getTemp(actions);
-                                            write3dir("// .... char (%d)", j);
-                                            write3dir("%s = %s + %d;", t3, param_node_val_val, j);
+                                            write3dir("%s = 0;", tc);
+                                            write3dir("%s:", li);
+                                            write3dir("%s = %s + %s;", t3, param_node_val_val, tc);
                                             write3dir("%s = heap[%s];", t4, t3);
+                                            write3dir("if %s != -1 then goto %s;",t4, lv);
+                                            write3dir("goto %s;", lf);
+                                            write3dir("%s:", lv);
+
+                                            write3dir("// .... char");
                                             write3dir("stack[%s] = %s;", t2, t4);
                                             write3dir("p = p + %d;", methodsim.size);
                                             write3dir("call printChar();");
                                             write3dir("p = p - %d;", methodsim.size);
+                                            write3dir("%s = %s + 1;", tc, tc);
+                                            write3dir("goto %s;", li);
+                                            write3dir("%s:", lf);
+                                        } else {
+                                            for (int j = 0; j < param_node_val_length; j++) {
+                                                final String t3 = getTemp(actions);
+                                                final String t4 = getTemp(actions);
+                                                write3dir("// .... char (%d)", j);
+                                                write3dir("%s = %s + %d;", t3, param_node_val_val, j);
+                                                write3dir("%s = heap[%s];", t4, t3);
+                                                write3dir("stack[%s] = %s;", t2, t4);
+                                                write3dir("p = p + %d;", methodsim.size);
+                                                write3dir("call printChar();");
+                                                write3dir("p = p - %d;", methodsim.size);
+                                            }
                                         }
 
                                     } else {
