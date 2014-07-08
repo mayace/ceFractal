@@ -1,8 +1,7 @@
 
 
-package Figuras;
+package com.github.ceFractal.graphic;
 
-import Metodos_dibujar.Dibujos;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -14,12 +13,12 @@ import java.util.ArrayList;
 import javax.swing.JPanel;
 
 
-public class Figuras extends javax.swing.JPanel implements Dibujos ,Serializable{
+public class Shape extends javax.swing.JPanel implements IShape ,Serializable{
     
             
     @Override
     public void FLinea(int x1, int y1, int x2, int y2,int r1,int g1,int b1,Graphics2D g,ArrayList lista) {
-        Nodo_figura linea = new Nodo_figura();
+        ConsShape linea = new ConsShape();
         linea.tipo = 1;
         linea.line_x1 = x1;
         linea.line_y1 = y1;
@@ -37,7 +36,7 @@ public class Figuras extends javax.swing.JPanel implements Dibujos ,Serializable
     public void FTexto(String Cadena, int x1, int y1, int r2, int g2, int b2, Graphics2D g,ArrayList lista) {
         
         Font fuente=new Font("Monospaced", Font.BOLD, 36);
-        Nodo_figura texto = new Nodo_figura();
+        ConsShape texto = new ConsShape();
         texto.funte = fuente;
         texto.txt_x1c = x1;
         texto.txt_y1c = y1;
@@ -55,7 +54,7 @@ public class Figuras extends javax.swing.JPanel implements Dibujos ,Serializable
 
     @Override
     public void FArco(int x, int y, int alto, int ancho, int ang_ini, int grados, int r3, int g3, int b3, Boolean fill, Graphics2D g,ArrayList lista) {
-        Nodo_figura arco = new Nodo_figura();
+        ConsShape arco = new ConsShape();
         arco.tipo = 3;
         arco.arcox = x;
         arco.arcoy = y;
@@ -84,7 +83,7 @@ public class Figuras extends javax.swing.JPanel implements Dibujos ,Serializable
 
     @Override
     public void FRectangulo(int x, int y, int alto, int ancho, int r4, int g4, int b4, Boolean fill, Graphics2D g,ArrayList lista) {
-        Nodo_figura rectan = new Nodo_figura();
+        ConsShape rectan = new ConsShape();
         rectan.tipo=4;
         rectan.rectan_x = x;
         rectan.rectan_y = y;
@@ -107,8 +106,7 @@ public class Figuras extends javax.swing.JPanel implements Dibujos ,Serializable
     @Override
     public void FOvalo(int x, int y, int ancho,int alto,int r5,int g5,int b5,Boolean fill, Graphics2D g,ArrayList lista) {
         
-        System.out.println("llegando");
-      Nodo_figura ovalo = new Nodo_figura();
+      ConsShape ovalo = new ConsShape();
       ovalo.tipo =5;
       ovalo.ovalo_tem =Color.MAGENTA;
       ovalo.ovalo_x1=x;
@@ -131,7 +129,7 @@ public class Figuras extends javax.swing.JPanel implements Dibujos ,Serializable
 
     @Override
     public void FPoligono(int[] x, int[] y, int r6, int g6, int b6, Boolean fill, Graphics2D g,ArrayList lista) {
-        Nodo_figura polig = new Nodo_figura();
+        ConsShape polig = new ConsShape();
         polig.tipo = 6;
         polig.polig_x = x;
         polig.polig_y = y;
@@ -152,7 +150,7 @@ public class Figuras extends javax.swing.JPanel implements Dibujos ,Serializable
     }
     @Override
     public void Flienzo(int x, int y, int r,int g, int b,ArrayList lista){
-        Nodo_figura lienzo = new Nodo_figura();
+        ConsShape lienzo = new ConsShape();
         lienzo.tipo = 7;
         lienzo.lien_ancho = x;
         lienzo.lien_alto = y;
@@ -162,7 +160,7 @@ public class Figuras extends javax.swing.JPanel implements Dibujos ,Serializable
         lista.add(lienzo);
     }
 
-    public Figuras() {
+    public Shape() {
     repaint();
     }
     

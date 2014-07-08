@@ -4,10 +4,10 @@
  * and open the template in the editor.
  */
 
-package prueba_pintar;
+package com.github.ceFractal.graphic.gui;
 
-import Figuras.Figuras;
-import Figuras.Nodo_figura;
+import com.github.ceFractal.graphic.Shape;
+import com.github.ceFractal.graphic.ConsShape;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -28,20 +28,20 @@ import javax.swing.filechooser.FileNameExtensionFilter;
  *
  * @author erick
  */
-public class Ventana_paint extends javax.swing.JFrame {
+public class Win extends javax.swing.JFrame {
 
     /**
      * Creates new form Ventana_paint
      */
    
-    ArrayList<Nodo_figura> listagm;
-    ArrayList<Nodo_figura> biene;
-    public Ventana_paint(ArrayList<Nodo_figura> fignew) {
+    ArrayList<ConsShape> listagm;
+    ArrayList<ConsShape> biene;
+    public Win(ArrayList<ConsShape> fignew) {
         super("Ejemplo de dibujo");
         initComponents();
         Dimension ven = Toolkit.getDefaultToolkit().getScreenSize();
         this.setBounds((ven.width - this.getWidth())/2, (ven.height - this.getHeight())/2, this.getWidth(), this.getHeight());
-        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         listagm = new ArrayList();
         this.biene = fignew;
         
@@ -50,40 +50,40 @@ public class Ventana_paint extends javax.swing.JFrame {
         this.repaint();
     }
     
-    public void pintar_fig(ArrayList<Nodo_figura> todo){
+    public void pintar_fig(ArrayList<ConsShape> todo){
         
         
         for(int j =0; j<todo.size(); j++){
             
-            Nodo_figura tem = todo.get(j);
+            ConsShape tem = todo.get(j);
             if(tem !=null){
                 switch (tem.tipo){
                     case 1:
                         //dibuja linea
-                        Figuras linea = new Figuras();
+                        Shape linea = new Shape();
                         linea.FLinea(tem.line_x1,tem.line_y1,tem.line_x2,tem.line_y2,tem.line_r,tem.line_g,tem.line_b,(Graphics2D)jPanel1.getGraphics(),listagm);
                         break;
                     case 2:
                         //aqui se dibuja el texto
-                       Figuras texto = new Figuras();
+                       Shape texto = new Shape();
                        texto.FTexto(tem.txt_Cadena, tem.txt_x1c,tem.txt_y1c,tem.txt_r,tem.txt_g,tem.txt_b,(Graphics2D)jPanel1.getGraphics(), listagm);
                         break;
                     case 3:
                         //aqui se dibuja arco
-                        Figuras arco = new Figuras();
+                        Shape arco = new Shape();
                         arco.FArco(tem.arcox,tem.arcoy, tem.arcoalto,tem.arcoancho,tem.arco_ang_ini,tem.arco_grados,tem.arco_r,tem.arco_g,tem.arco_b,tem.arco_fill,(Graphics2D)jPanel1.getGraphics(), listagm);
                         break;
                     case 4:
                         //aqui dibujo rectangulo
-                        Figuras rectan = new Figuras();
+                        Shape rectan = new Shape();
                         rectan.FRectangulo(tem.rectan_x,tem.rectan_y,tem.rectan_alto,tem.rectan_ancho, tem.rectan_r,tem.rectan_g,tem.rectan_b,tem.recta_fill,(Graphics2D)jPanel1.getGraphics(), listagm);
                         break;
                     case 5:
-                        Figuras ovalo = new Figuras();
+                        Shape ovalo = new Shape();
                         ovalo.FOvalo(tem.ovalo_x1,tem.ovalo_y1,tem.ovalo_ancho,tem.ovalo_alto,tem.ovalo_r,tem.ovalo_g,tem.ovalo_b, tem.ovalo_fill,(Graphics2D)jPanel1.getGraphics(), listagm);
                         break;
                     case 6:
-                        Figuras poligono = new Figuras();
+                        Shape poligono = new Shape();
                         poligono.FPoligono(tem.polig_x,tem.polig_y,tem.polig_r, tem.polig_g,tem.arco_b, tem.polig_fill,(Graphics2D)jPanel1.getGraphics(), listagm);
                         break;
                      case 7:
@@ -110,64 +110,48 @@ public class Ventana_paint extends javax.swing.JFrame {
     private void initComponents() {
 
         jPanel1 = new javax.swing.JPanel();
+        jToolBar1 = new javax.swing.JToolBar();
         jButton1 = new javax.swing.JButton();
         jButton6 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("LIENZO");
+        setType(java.awt.Window.Type.POPUP);
 
-        jPanel1.setBackground(new java.awt.Color(153, 153, 153));
+        jPanel1.setBackground(new java.awt.Color(255, 255, 255));
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 845, Short.MAX_VALUE)
+            .addGap(0, 493, Short.MAX_VALUE)
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
+            .addGap(0, 258, Short.MAX_VALUE)
         );
 
-        jButton1.setText("Mostrar imagen");
+        getContentPane().add(jPanel1, java.awt.BorderLayout.CENTER);
+
+        jToolBar1.setRollover(true);
+
+        jButton1.setText("Show Image");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton1ActionPerformed(evt);
             }
         });
+        jToolBar1.add(jButton1);
 
-        jButton6.setText("Guardar");
+        jButton6.setText("Save as JPG");
         jButton6.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton6ActionPerformed(evt);
             }
         });
+        jToolBar1.add(jButton6);
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jButton1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jButton6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(23, 23, 23))
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
-            .addGroup(layout.createSequentialGroup()
-                .addGap(33, 33, 33)
-                .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 28, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(jButton6)
-                .addContainerGap(417, Short.MAX_VALUE))
-        );
+        getContentPane().add(jToolBar1, java.awt.BorderLayout.PAGE_START);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -189,9 +173,9 @@ public class Ventana_paint extends javax.swing.JFrame {
         Graphics2D g2;
         //g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
         Boolean agregarf = false;
-        Nodo_figura tmpe = null;
+        ConsShape tmpe = null;
         for(int i = 0; i<listagm.size(); i++){
-            Nodo_figura tr = listagm.get(i);
+            ConsShape tr = listagm.get(i);
             if(tr.tipo ==7){
                 agregarf =true;
                 tmpe = tr;
@@ -213,8 +197,8 @@ public class Ventana_paint extends javax.swing.JFrame {
         //Color fondo=new Color(205,205,205);
         
         //g2.fillRect(0, 0, 1000,1000);
-        Nodo_figura tem=null;
-        for (Nodo_figura listaf1 : listagm) {
+        ConsShape tem=null;
+        for (ConsShape listaf1 : listagm) {
             tem = listaf1;
             if(tem !=null){
                 //g2.setColor(fondo);
@@ -226,7 +210,7 @@ public class Ventana_paint extends javax.swing.JFrame {
         return bufferedImage;
 
 }
-public void Crear_figura(Graphics2D g,Nodo_figura tem){
+public void Crear_figura(Graphics2D g,ConsShape tem){
     
     switch(tem.tipo){
         case 1:
@@ -349,5 +333,6 @@ public void Crear_figura(Graphics2D g,Nodo_figura tem){
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton6;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JToolBar jToolBar1;
     // End of variables declaration//GEN-END:variables
 }

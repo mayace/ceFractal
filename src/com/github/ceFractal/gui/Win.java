@@ -1,6 +1,6 @@
 package com.github.ceFractal.gui;
 
-import Figuras.Nodo_figura;
+import com.github.ceFractal.graphic.ConsShape;
 import com.github.ceFractal.compiler.fractal.Scanner.SSymbol;
 import com.github.ceFractal.compiler.fractal.Sym;
 import com.github.ceFractal.compiler.pj.Parser;
@@ -15,10 +15,11 @@ import com.github.gg.TErr;
 import com.github.gg.TModifier;
 import com.github.gg.TOperation;
 import com.github.gg.TType;
-import com.github.gg.BloqueCondicion;
+import com.github.gg.TagSet;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
+import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -85,7 +86,6 @@ import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
-import prueba_pintar.Ventana_paint;
 
 /**
  *
@@ -671,6 +671,8 @@ public class Win extends javax.swing.JFrame {
             frc_def(tinfo.getString("text"), actions);
             // generacion codigo 3dir
             frc_3dir(actions);
+            
+            file_open(Paths.get("gg.3dir"), jtabbedp_tab);
         }
     }//GEN-LAST:event_jmitem_compileActionPerformed
 
@@ -767,7 +769,7 @@ public class Win extends javax.swing.JFrame {
             actions.put("phase", "exec");
             frc_compiler_stmts_exec(app.getDict("stmts"), actions);
             notificar("3dir file proceeded...");
-            tmpty = new Ventana_paint(listaf1);
+            tmpty = new com.github.ceFractal.graphic.gui.Win(listaf1);
             tmpty.setVisible(true);
 
         } catch (Exception exc) {
@@ -941,6 +943,8 @@ public class Win extends javax.swing.JFrame {
             }
 
         });
+    
+        
     }
 
     private Symbol pj_compile(Path path) throws FileNotFoundException, Exception {
@@ -953,9 +957,9 @@ public class Win extends javax.swing.JFrame {
 
         return p.parse();
 
+    }
 //        System.out.println("Stmts -> " + ((Dict) res.value).getDictArrayList("list").size());
 //        pj_process(res);
-    }
 
     private void file_open(Path fpath, JTabbedPane panel) {
 
@@ -963,7 +967,8 @@ public class Win extends javax.swing.JFrame {
         final JScrollPane scroll = new JScrollPane(editor);
         final JTextArea lines = new JTextArea("1");
         scroll.setRowHeaderView(lines);
-        editor.setFont(new Font("consolas", Font.PLAIN, 16));
+        editor.setFont(getpPFont());
+        editor.setBackground(Color.decode("#F8F8FF"));
 //        setTabSize(editor, 4);
         lines.setBackground(Color.LIGHT_GRAY);
         lines.setFont(editor.getFont());
@@ -1108,7 +1113,7 @@ public class Win extends javax.swing.JFrame {
                             getStyle(attrs, Color.BLUE, false, false, false);
                             break;
                         case Sym.ID:
-                            getStyle(attrs, Color.BLACK, true, false, false);
+                            getStyle(attrs, Color.BLACK, false, true, false);
                             break;
                         case Sym.ERROR:
                             getStyle(attrs, Color.RED, false, false, true);
@@ -1198,28 +1203,28 @@ public class Win extends javax.swing.JFrame {
                             getKWStyle2(attrs);
                             break;
                         case Sym.KW_LINEA:
-                            getStyle(attrs, Color.decode("#DAA520"), false, false, false);
+                            getStyle(attrs, Color.decode("#191970"), false, false, false);
                             break;
                         case Sym.KW_TEXTO:
-                            getStyle(attrs, Color.decode("#DAA520"), false, false, false);
+                            getStyle(attrs, Color.decode("#191970"), false, false, false);
                             break;
                         case Sym.KW_ARCO:
-                            getStyle(attrs, Color.decode("#DAA520"), false, false, false);
+                            getStyle(attrs, Color.decode("#191970"), false, false, false);
                             break;
                         case Sym.KW_RECTANGULO:
-                            getStyle(attrs, Color.decode("#DAA520"), false, false, false);
+                            getStyle(attrs, Color.decode("#191970"), false, false, false);
                             break;
                         case Sym.KW_OVALO:
-                            getStyle(attrs, Color.decode("#DAA520"), false, false, false);
+                            getStyle(attrs, Color.decode("#191970"), false, false, false);
                             break;
                         case Sym.KW_POLIGONO:
-                            getStyle(attrs, Color.decode("#DAA520"), false, false, false);
+                            getStyle(attrs, Color.decode("#191970"), false, false, false);
                             break;
                         case Sym.KW_LIENZO:
-                            getStyle(attrs, Color.decode("#DAA520"), false, false, false);
+                            getStyle(attrs, Color.decode("#191970"), false, false, false);
                             break;
                         case Sym.PRINT:
-                            getStyle(attrs, Color.decode("#DAA520"), false, false, false);
+                            getStyle(attrs, Color.decode("#191970"), false, false, false);
                             break;
                         default:
                             getStyle(attrs, Color.BLACK, false, false, false);
@@ -1229,11 +1234,11 @@ public class Win extends javax.swing.JFrame {
                 }
 
                 private void getKWStyle2(SimpleAttributeSet attrs) {
-                    getStyle(attrs, Color.decode("#00008B"), false, false, false);
+                    getStyle(attrs, Color.decode("#228B22"), false, false, false);
                 }
 
                 private void getKWStyle(SimpleAttributeSet attrs) {
-                    getStyle(attrs, Color.decode("#FF8C00"), false, false, false);
+                    getStyle(attrs, Color.decode("#8B4513"), false, false, false);
                 }
 
                 private void getStyle(SimpleAttributeSet attrs, Color foreground, boolean bold, boolean italic, boolean underline) {
@@ -1246,6 +1251,16 @@ public class Win extends javax.swing.JFrame {
             );
 
         }
+    }
+
+    private Font getpPFont() {
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        final String[] fonts = ge.getAvailableFontFamilyNames();
+        for (int i = 0; i < fonts.length; i++) {
+            final String f = fonts[i];
+
+        }
+        return new Font("Ubuntu Mono", Font.PLAIN, 16);
     }
 
     private String file_text(Path fpath) {
@@ -1483,7 +1498,7 @@ public class Win extends javax.swing.JFrame {
                             }
 
                             if (isExecPhase(ca_phase)) {
-                                System.out.println(node_ref);
+//                                System.out.println(node_ref);
                                 return null;
                             }
 
@@ -1859,7 +1874,6 @@ public class Win extends javax.swing.JFrame {
                     });
                     //</editor-fold>
 
-                    
                     //<editor-fold defaultstate="collapsed" desc="NM_LINEA">
                     put(TOperation.NM_LINEA, (Operation) (Node node, Object actions) -> {
                         final Dict ca = (Dict) actions;
@@ -1876,43 +1890,43 @@ public class Win extends javax.swing.JFrame {
                             }
 
                             if (isExecPhase(ca_phase)) {
-                                int v1 =0;
-                                int v2=0;
-                                int v3=0;
-                                int v4=0;
-                                int v5=0;
-                                int v6=0;
-                                int v7=0;
-                               
-                                for(int i = 0; i<7; i++){
-                                    
-                                    switch (i){
+                                int v1 = 0;
+                                int v2 = 0;
+                                int v3 = 0;
+                                int v4 = 0;
+                                int v5 = 0;
+                                int v6 = 0;
+                                int v7 = 0;
+
+                                for (int i = 0; i < 7; i++) {
+
+                                    switch (i) {
                                         case 0:
-                                           v1= (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            v1 = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 1:
-                                            v2=(int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            v2 = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 2:
-                                            v3=(int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            v3 = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 3:
-                                            v4 =(int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            v4 = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 4:
-                                            v5=(int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            v5 = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 5:
-                                           v6=(int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            v6 = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 6:
-                                            v7 =(int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            v7 = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
-                                        
+
                                     }
-                                    
+
                                 }
-                                Nodo_figura linea = new Nodo_figura();
+                                ConsShape linea = new ConsShape();
                                 linea.tipo = 1;
                                 linea.line_x1 = v1;
                                 linea.line_y1 = v2;
@@ -1922,6 +1936,7 @@ public class Win extends javax.swing.JFrame {
                                 linea.line_g = v6;
                                 linea.line_b = v7;
                                 listaf1.add(linea);
+                                notificar("ok... linea");
                                 return null;
                             }
 
@@ -1949,56 +1964,56 @@ public class Win extends javax.swing.JFrame {
                             }
 
                             if (isExecPhase(ca_phase)) {
-                                String cadena ="";
+                                String cadena = "";
                                 int x = 0;
                                 int y = 0;
                                 int r = 0;
                                 int g = 0;
                                 int b = 0;
-                                for(int i=0; i<6; i++){
-                                    
-                                   switch(i){
-                                       case 0:
-                                            int contador =0;
-                                            int pos_heap =(int)ca_cc.getStack()[ca_cc.getP()+i];
-                                            while (contador!=-1) {
+                                for (int i = 0; i < 6; i++) {
 
-                                                contador = (int)ca_cc.getHeap()[pos_heap];
-                                                if(contador !=-1){
-                                                  cadena+=((char)contador);
+                                    switch (i) {
+                                        case 0:
+                                            int contador = 0;
+                                            int pos_heap = (int) ca_cc.getStack()[ca_cc.getP() + i];
+                                            while (contador != -1) {
+
+                                                contador = (int) ca_cc.getHeap()[pos_heap];
+                                                if (contador != -1) {
+                                                    cadena += ((char) contador);
                                                 }
 
                                                 pos_heap++;
                                             }
-                                            System.out.println(cadena);
-                                           break;
-                                       case 1:
-                                           x = (int)ca_cc.getStack()[ca_cc.getP()+i];
-                                           break;
-                                       case 2:
-                                           y = (int)ca_cc.getStack()[ca_cc.getP()+i];
-                                           break;
-                                       case 3:
-                                           r = (int)ca_cc.getStack()[ca_cc.getP()+i];
-                                           break;
-                                       case 4:
-                                           g = (int)ca_cc.getStack()[ca_cc.getP()+i];
-                                           break;
-                                       case 5:
-                                           b = (int)ca_cc.getStack()[ca_cc.getP()+i];
-                                           break;
-                                   }
-                                Nodo_figura texto = new Nodo_figura();
-                                texto.txt_x1c = x;
-                                texto.txt_y1c = y;
-                                texto.txt_Cadena = cadena;
-                                texto.txt_r = r;
-                                texto.txt_g = g;
-                                texto.txt_b = b;
-                                texto.tipo = 2;
-                                listaf1.add(texto);
+                                            notificar(cadena);
+                                            break;
+                                        case 1:
+                                            x = (int) ca_cc.getStack()[ca_cc.getP() + i];
+                                            break;
+                                        case 2:
+                                            y = (int) ca_cc.getStack()[ca_cc.getP() + i];
+                                            break;
+                                        case 3:
+                                            r = (int) ca_cc.getStack()[ca_cc.getP() + i];
+                                            break;
+                                        case 4:
+                                            g = (int) ca_cc.getStack()[ca_cc.getP() + i];
+                                            break;
+                                        case 5:
+                                            b = (int) ca_cc.getStack()[ca_cc.getP() + i];
+                                            break;
+                                    }
+                                    ConsShape texto = new ConsShape();
+                                    texto.txt_x1c = x;
+                                    texto.txt_y1c = y;
+                                    texto.txt_Cadena = cadena;
+                                    texto.txt_r = r;
+                                    texto.txt_g = g;
+                                    texto.txt_b = b;
+                                    texto.tipo = 2;
+                                    listaf1.add(texto);
                                 }
-                                
+                                notificar("ok... texto");
                                 return null;
                             }
 
@@ -2036,43 +2051,43 @@ public class Win extends javax.swing.JFrame {
                                 int g = 0;
                                 int b = 0;
                                 Boolean fill = false;
-                                for(int i=0; i<10; i++){
+                                for (int i = 0; i < 10; i++) {
                                     //System.out.println(ca_cc.getStack()[ca_cc.getP()+i]);
-                                    switch(i){
+                                    switch (i) {
                                         case 0:
-                                            x = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            x = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 1:
-                                            y = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            y = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 2:
-                                            alto = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            alto = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 3:
-                                            ancho = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            ancho = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 4:
-                                            ang_ini = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            ang_ini = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 5:
-                                            grados = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            grados = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 6:
-                                            r = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            r = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 7:
-                                            g = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            g = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 8:
-                                            b = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            b = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 9:
-                                            fill = ((int)(ca_cc.getStack()[ca_cc.getP()+i]))==1? true :false;
+                                            fill = ((int) (ca_cc.getStack()[ca_cc.getP() + i])) == 1 ? true : false;
                                             break;
-                                        
+
                                     }
                                 }
-                                Nodo_figura arco = new Nodo_figura();
+                                ConsShape arco = new ConsShape();
                                 arco.tipo = 3;
                                 arco.arcox = x;
                                 arco.arcoy = y;
@@ -2085,6 +2100,7 @@ public class Win extends javax.swing.JFrame {
                                 arco.arco_b = b;
                                 arco.arco_fill = fill;
                                 listaf1.add(arco);
+                                notificar("ok... arco");
                                 return null;
                             }
 
@@ -2120,38 +2136,38 @@ public class Win extends javax.swing.JFrame {
                                 int g = 0;
                                 int b = 0;
                                 Boolean fill = false;
-                                for(int i=0; i<8; i++){
+                                for (int i = 0; i < 8; i++) {
                                     //System.out.println(ca_cc.getStack()[ca_cc.getP()+i]);
-                                    switch(i){
+                                    switch (i) {
                                         case 0:
-                                            x = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            x = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 1:
-                                            y = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            y = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 2:
-                                            alto = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            alto = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 3:
-                                            ancho = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            ancho = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 4:
-                                            r = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            r = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 5:
-                                            g = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            g = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 6:
-                                            b = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            b = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 7:
-                                            fill = ((int)(ca_cc.getStack()[ca_cc.getP()+i]))==1? true :false;
+                                            fill = ((int) (ca_cc.getStack()[ca_cc.getP() + i])) == 1 ? true : false;
                                             break;
-                                        
+
                                     }
                                 }
-                                Nodo_figura rectangulo = new Nodo_figura();
-                                rectangulo.tipo = 4 ;
+                                ConsShape rectangulo = new ConsShape();
+                                rectangulo.tipo = 4;
                                 rectangulo.rectan_x = x;
                                 rectangulo.rectan_y = y;
                                 rectangulo.rectan_alto = alto;
@@ -2161,6 +2177,7 @@ public class Win extends javax.swing.JFrame {
                                 rectangulo.rectan_b = b;
                                 rectangulo.recta_fill = fill;
                                 listaf1.add(rectangulo);
+                                notificar("ok... rectangulo");
                                 return null;
                             }
 
@@ -2188,7 +2205,7 @@ public class Win extends javax.swing.JFrame {
                             }
 
                             if (isExecPhase(ca_phase)) {
-                                
+
                                 int x = 0;
                                 int y = 0;
                                 int alto = 0;
@@ -2197,38 +2214,38 @@ public class Win extends javax.swing.JFrame {
                                 int g = 0;
                                 int b = 0;
                                 Boolean fill = false;
-                                for(int i=0; i<8; i++){
+                                for (int i = 0; i < 8; i++) {
                                     //System.out.println(ca_cc.getStack()[ca_cc.getP()+i]);
-                                    switch(i){
+                                    switch (i) {
                                         case 0:
-                                            x = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            x = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 1:
-                                            y = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            y = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 2:
-                                            alto = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            alto = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 3:
-                                            ancho = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            ancho = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 4:
-                                            r = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            r = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 5:
-                                            g = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            g = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 6:
-                                            b = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            b = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 7:
-                                            fill = ((int)(ca_cc.getStack()[ca_cc.getP()+i]))==1? true :false;
+                                            fill = ((int) (ca_cc.getStack()[ca_cc.getP() + i])) == 1 ? true : false;
                                             break;
-                                        
+
                                     }
                                 }
-                                Nodo_figura ovalo = new Nodo_figura();
-                                ovalo.tipo = 5 ;
+                                ConsShape ovalo = new ConsShape();
+                                ovalo.tipo = 5;
                                 ovalo.ovalo_x1 = x;
                                 ovalo.ovalo_y1 = y;
                                 ovalo.ovalo_alto = alto;
@@ -2237,8 +2254,9 @@ public class Win extends javax.swing.JFrame {
                                 ovalo.ovalo_g = g;
                                 ovalo.ovalo_b = b;
                                 ovalo.ovalo_fill = fill;
-                                System.out.println("entro a 3d");
+//                                System.out.println("entro a 3d");
                                 listaf1.add(ovalo);
+                                notificar("ok ... ovalo ");
                                 return null;
                             }
 
@@ -2272,44 +2290,43 @@ public class Win extends javax.swing.JFrame {
                                 int g = 0;
                                 int b = 0;
                                 Boolean fill = false;
-                                for(int i=0; i<6; i++){
+                                for (int i = 0; i < 6; i++) {
                                     //System.out.println(ca_cc.getStack()[ca_cc.getP()+i]);
-                                    switch(i){
+                                    switch (i) {
                                         case 0:
-                                            x = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            x = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 1:
-                                            y = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            y = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 2:
-                                            r = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            r = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 3:
-                                            g = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            g = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 4:
-                                            b = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            b = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 5:
-                                            fill = ((int)(ca_cc.getStack()[ca_cc.getP()+i]))==1? true :false;
+                                            fill = ((int) (ca_cc.getStack()[ca_cc.getP() + i])) == 1 ? true : false;
                                             break;
-                                        
-                                        
+
                                     }
                                 }
-                                Nodo_figura poligono = new Nodo_figura();
-                                poligono.tipo = 6 ;
+                                ConsShape poligono = new ConsShape();
+                                poligono.tipo = 6;
                                 //esta parte hay q modifica ya que esta solo de prueba
                                 int arrx[] = new int[3];
                                 int arry[] = new int[3];
-                                arrx[0] = x+(int)(Math.random()*25+1);
-                                arry[0] = y+(int)(Math.random()*25+1);
+                                arrx[0] = x + (int) (Math.random() * 25 + 1);
+                                arry[0] = y + (int) (Math.random() * 25 + 1);
 
-                                arrx[1] = x+(int)(Math.random()*25+1);
-                                arry[1] = y+(int)(Math.random()*25+1);
+                                arrx[1] = x + (int) (Math.random() * 25 + 1);
+                                arry[1] = y + (int) (Math.random() * 25 + 1);
 
-                                arrx[2] = x+(int)(Math.random()*25+1);
-                                arry[2] = y+(int)(Math.random()*25+1);
+                                arrx[2] = x + (int) (Math.random() * 25 + 1);
+                                arry[2] = y + (int) (Math.random() * 25 + 1);
                                 //modificar despues
                                 poligono.polig_x = arrx;
                                 poligono.polig_y = arry;
@@ -2318,6 +2335,7 @@ public class Win extends javax.swing.JFrame {
                                 poligono.polig_b = b;
                                 poligono.ovalo_fill = fill;
                                 listaf1.add(poligono);
+                                notificar("ok... poligono");
                                 return null;
                             }
 
@@ -2350,37 +2368,38 @@ public class Win extends javax.swing.JFrame {
                                 int r = 0;
                                 int g = 0;
                                 int b = 0;
-                                
-                                for(int i=0; i<6; i++){
+
+                                for (int i = 0; i < 6; i++) {
                                     //System.out.println(ca_cc.getStack()[ca_cc.getP()+i]);
-                                    switch(i){
+                                    switch (i) {
                                         case 0:
-                                            ancho = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            ancho = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 1:
-                                            alto = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            alto = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 2:
-                                            r = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            r = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 3:
-                                            g = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            g = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
                                         case 4:
-                                            b = (int)ca_cc.getStack()[ca_cc.getP()+i];
+                                            b = (int) ca_cc.getStack()[ca_cc.getP() + i];
                                             break;
-                                                                               
+
                                     }
                                 }
-                                Nodo_figura lienzo = new Nodo_figura();
-                                lienzo.tipo = 7 ;
-                                
+                                ConsShape lienzo = new ConsShape();
+                                lienzo.tipo = 7;
+
                                 lienzo.lien_ancho = ancho;
                                 lienzo.lien_alto = alto;
                                 lienzo.lien_r = r;
                                 lienzo.lien_g = g;
                                 lienzo.lien_g = b;
                                 listaf1.add(lienzo);
+                                notificar("ok ... lienzo");
                                 return null;
                             }
 
@@ -2391,8 +2410,6 @@ public class Win extends javax.swing.JFrame {
                         return noActionsProcessed(TOperation.NM_LIENZO);
                     });
                     //</editor-fold>
-
-                    
 
                     //<editor-fold defaultstate="collapsed" desc="PRINT_BOOLEAN">
                     put(TOperation.PRINT_BOOLEAN, (Operation) (Node node, Object actions) -> {
@@ -3487,8 +3504,8 @@ public class Win extends javax.swing.JFrame {
                 }
             }
     );
-    ArrayList<Nodo_figura> listaf1;
-    Ventana_paint tmpty;
+    ArrayList<ConsShape> listaf1;
+    com.github.ceFractal.graphic.gui.Win tmpty;
     Dict compiler_actions = new Dict(
             "cc", new com.github.gg.CC(),
             "operations", new HashMap<TOperation, Operation>() {
@@ -3526,7 +3543,7 @@ public class Win extends javax.swing.JFrame {
                                 }
                                 final String ref_condition_node_val_type = ref_condition_node_val.getString("type");
                                 final String ref_condition_node_val_val = ref_condition_node_val.getString("val");
-                                final BloqueCondicion ref_condition_node_val_tags = ref_condition_node_val.getTags("tags");
+                                final TagSet ref_condition_node_val_tags = ref_condition_node_val.getTags("tags");
 
                                 if (!ref_condition_node_val_type.equals(TType.BOOLEAN.toString())) {
                                     throwException("Se esperaba tipo de dato -> %s, se obtuvo -> %s", TType.BOOLEAN, ref_condition_node_val_type);
@@ -4656,7 +4673,7 @@ public class Win extends javax.swing.JFrame {
                                     Dict lval = l.getDictVal();
 
                                     String lval_type = lval.getString("type");
-                                    BloqueCondicion ltags = lval.getTags("tags");
+                                    TagSet ltags = lval.getTags("tags");
                                     String lval_ltrue = ltags.etqVerdad;
                                     String lval_lfalse = ltags.etqFalso;
 
@@ -4671,7 +4688,7 @@ public class Win extends javax.swing.JFrame {
                                     r.exec(actions);
                                     Dict rval = r.getDictVal();
                                     String rval_type = rval.getString("type");
-                                    BloqueCondicion rtags = rval.getTags("tags");
+                                    TagSet rtags = rval.getTags("tags");
                                     String rval_ltrue = rtags.etqVerdad;
                                     String rval_lfalse = rtags.etqFalso;
 
@@ -4719,7 +4736,7 @@ public class Win extends javax.swing.JFrame {
                                     Dict lval = l.getDictVal();
 
                                     String lval_type = lval.getString("type");
-                                    BloqueCondicion ltags = lval.getTags("tags");
+                                    TagSet ltags = lval.getTags("tags");
                                     String lval_ltrue = ltags.etqVerdad;
                                     String lval_lfalse = ltags.etqFalso;
 
@@ -4734,7 +4751,7 @@ public class Win extends javax.swing.JFrame {
                                     r.exec(actions);
                                     Dict rval = r.getDictVal();
                                     String rval_type = rval.getString("type");
-                                    BloqueCondicion rtags = rval.getTags("tags");
+                                    TagSet rtags = rval.getTags("tags");
                                     String rval_ltrue = rtags.etqVerdad;
                                     String rval_lfalse = rtags.etqFalso;
 
@@ -4782,11 +4799,11 @@ public class Win extends javax.swing.JFrame {
                                 l.exec(actions);
                                 Dict lval = l.getDictVal();
                                 String lval_type = lval.getString("type");
-                                BloqueCondicion ltags = lval.getTags("tags");
+                                TagSet ltags = lval.getTags("tags");
                                 if (!lval_type.equals(TType.BOOLEAN.toString())) {
                                     throwException(String.format("Se esperaba tipo -> %s en -> %s || expr", TType.BOOLEAN, lval_type));
                                 }
-                                BloqueCondicion rtags = new BloqueCondicion();
+                                TagSet rtags = new TagSet();
                                 rtags.etqFalso = ltags.etqVerdad;
                                 rtags.etqVerdad = ltags.etqFalso;
                                 System.out.println(rtags.etqFalso + "-" + rtags.etqVerdad + "-" + ltags.etqVerdad + "-" + ltags.etqFalso);
@@ -4825,7 +4842,7 @@ public class Win extends javax.swing.JFrame {
                                         throwException("No se puede comparar la expresiÃƒÂ³n, se esperaba INT, FLOAT O CHAR");
                                     }
 
-                                    BloqueCondicion etqs = new BloqueCondicion();
+                                    TagSet etqs = new TagSet();
                                     etqs.etqVerdad = getLabel(ca);
                                     etqs.etqFalso = getLabel(ca);
                                     String tres = "\tif " + lval + "<" + rval + " then goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
@@ -4865,7 +4882,7 @@ public class Win extends javax.swing.JFrame {
                                         throwException("No se puede comparar la expresiÃƒÂ³n, se esperaba INT, FLOAT O CHAR");
                                     }
 
-                                    BloqueCondicion etqs = new BloqueCondicion();
+                                    TagSet etqs = new TagSet();
                                     etqs.etqVerdad = getLabel(ca);
                                     etqs.etqFalso = getLabel(ca);
                                     String tres = "\tif " + lval + "<=" + rval + " then goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
@@ -4904,7 +4921,7 @@ public class Win extends javax.swing.JFrame {
                                         throwException("No se puede comparar la expresiÃƒÂ³n, se esperaba INT, FLOAT O CHAR");
                                     }
 
-                                    BloqueCondicion etqs = new BloqueCondicion();
+                                    TagSet etqs = new TagSet();
                                     etqs.etqVerdad = getLabel(ca);
                                     etqs.etqFalso = getLabel(ca);
                                     String tres = "\tif " + lval + ">" + rval + " then goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
@@ -4943,7 +4960,7 @@ public class Win extends javax.swing.JFrame {
                                         throwException("No se puede comparar la expresiÃƒÂ³n, se esperaba INT, FLOAT O CHAR");
                                     }
 
-                                    BloqueCondicion etqs = new BloqueCondicion();
+                                    TagSet etqs = new TagSet();
                                     etqs.etqVerdad = getLabel(ca);
                                     etqs.etqFalso = getLabel(ca);
                                     String tres = "\tif " + lval + ">=" + rval + " then goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
@@ -4981,7 +4998,7 @@ public class Win extends javax.swing.JFrame {
                                     /*if(!(ltype.equals(TType.INT.toString())||!ltype.equals(TType.FLOAT.toString()))&&(!rtype.equals(TType.INT.toString())||!rtype.equals(TType.FLOAT.toString()))){
                                      throwException("No se puede comparar la expresiÃƒÂ³n, se esperaba INT, FLOAT O CHAR");
                                      }*/
-                                    BloqueCondicion etqs = new BloqueCondicion();
+                                    TagSet etqs = new TagSet();
                                     etqs.etqVerdad = getLabel(ca);
                                     etqs.etqFalso = getLabel(ca);
                                     String tres = "\tif " + lval + "==" + rval + " then goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
@@ -5020,7 +5037,7 @@ public class Win extends javax.swing.JFrame {
                                         throwException("No se puede comparar la expresiÃƒÂ³n, se esperaba INT, FLOAT O CHAR");
                                     }
 
-                                    BloqueCondicion etqs = new BloqueCondicion();
+                                    TagSet etqs = new TagSet();
                                     etqs.etqVerdad = getLabel(ca);
                                     etqs.etqFalso = getLabel(ca);
                                     String tres = "\tif " + lval + "!=" + rval + " then goto " + etqs.etqVerdad + ";\n" + "\tgoto " + etqs.etqFalso + ";";
@@ -7044,7 +7061,7 @@ public class Win extends javax.swing.JFrame {
                                         write3dir(String.format("if %s == 1 then goto %s;", t1, l1));
                                         write3dir(String.format("goto %s;", l2));
 
-                                        val.put("tags", new BloqueCondicion() {
+                                        val.put("tags", new TagSet() {
                                             {
                                                 this.etqFalso = l2;
                                                 this.etqVerdad = l1;
@@ -7477,7 +7494,7 @@ public class Win extends javax.swing.JFrame {
                                 if (!condition_node_val_type.equals(TType.BOOLEAN.toString())) {
                                     throwException("Se esperaba un tipo de dato -> %s en la condicion no un -> %s...", TType.BOOLEAN, condition_node_val_type);
                                 }
-                                BloqueCondicion etqs = condition_node_val.getTags("tags");
+                                TagSet etqs = condition_node_val.getTags("tags");
                                 //final String condition_node_val_ltrue = condition_node_val.getString("ltrue");
                                 //final String condition_node_val_lfalse = condition_node_val.getString("lfalse");
 
@@ -7557,7 +7574,7 @@ public class Win extends javax.swing.JFrame {
                                 final String condition_node_val_val = condition_node_val.getString("val");
                                 final String condition_node_val_type = condition_node_val.getString("type");
 
-                                BloqueCondicion etqs = condition_node_val.getTags("tags");
+                                TagSet etqs = condition_node_val.getTags("tags");
 
                                 final String condition_node_val_ltrue = etqs.etqVerdad;
                                 final String condition_node_val_lfalse = etqs.etqFalso;
@@ -7652,7 +7669,7 @@ public class Win extends javax.swing.JFrame {
                                 final String condition_node_val_val = condition_node_val.getString("val");
                                 final String condition_node_val_type = condition_node_val.getString("type");
 
-                                BloqueCondicion etqs = condition_node_val.getTags("tags");
+                                TagSet etqs = condition_node_val.getTags("tags");
 
                                 //final String condition_node_val_ltrue = condition_node_val.getString("ltrue");
                                 //final String condition_node_val_lfalse = condition_node_val.getString("lfalse");
@@ -7740,7 +7757,7 @@ public class Win extends javax.swing.JFrame {
                                     final Dict _if_condition_node_val = _if_condition_node.getDictVal();
                                     final String _if_condition_node_val_type = _if_condition_node_val.getString("type");
 
-                                    BloqueCondicion etqs = _if_condition_node_val.getTags("tags");
+                                    TagSet etqs = _if_condition_node_val.getTags("tags");
 
                                     final String _if_condition_node_val_ltrue = etqs.etqVerdad;
                                     final String _if_condition_node_val_lfalse = etqs.etqFalso;
@@ -8273,8 +8290,13 @@ public class Win extends javax.swing.JFrame {
                         return;
                     }
 
-                    System.out.println(text);
-//                                Files.write(cactions.getPath("3dir_path"), $3dir_method.getBytes("utf8"), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+//                    System.out.println(text);
+                    try {
+                        Files.write(Paths.get("gg.3dir"), text.concat("\n").getBytes("utf8"), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+                    } catch (IOException exc) {
+                        notificar(exc.getMessage());
+                    }
+//                    Files.write(cactions.getPath("3dir_path"), $3dir_method.getBytes("utf8"), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
                 }
 
                 private void compiler_error(Exception ex, TErr terr, Object info, Object actions) {

@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package Figuras;
+package com.github.ceFractal.graphic;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -14,7 +14,7 @@ import java.awt.Polygon;
  *
  * 
  */
-public class Nodo_figura {
+public class ConsShape {
    
     /**
      * tipo = 1 linea
@@ -62,7 +62,7 @@ public class Nodo_figura {
     public int lien_ancho,lien_alto = 0;
     public int lien_r,lien_g,lien_b = 0;
 
-    public Nodo_figura() {
+    public ConsShape() {
      polig_ob = new Polygon();
     }
     

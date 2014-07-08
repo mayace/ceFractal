@@ -1,12 +1,12 @@
 
-package Metodos_dibujar;
+package com.github.ceFractal.graphic;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 
 
-public interface Dibujos {
+public interface IShape {
     
         public void FLinea(int x1, int y1, int x2, int y2,int r1,int g1,int b1,Graphics2D g,ArrayList lista);
         public void FTexto(String Cadena,int x, int y, int r2, int g2,int b2,Graphics2D g,ArrayList lista);
