@@ -1,15 +1,17 @@
 package com.github.ceFractal.gui;
 
-import com.github.ceFractal.graphic.ConsShape;
 import com.github.ceFractal.compiler.fractal.Scanner.SSymbol;
 import com.github.ceFractal.compiler.fractal.Sym;
 import com.github.ceFractal.compiler.pj.Parser;
 import com.github.ceFractal.compiler.pj.Scanner;
+import com.github.ceFractal.graphic.ConsShape;
 import com.github.gg.CC;
 import com.github.gg.Dict;
 import com.github.gg.Err;
 import com.github.gg.Node;
 import com.github.gg.Operation;
+import com.github.gg.OptAssign;
+import com.github.gg.OptExpr;
 import com.github.gg.Sim;
 import com.github.gg.TErr;
 import com.github.gg.TModifier;
@@ -40,7 +42,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -139,11 +143,10 @@ public class Win extends javax.swing.JFrame {
         exitMenuItem = new javax.swing.JMenuItem();
         comilerMenu = new javax.swing.JMenu();
         jmitem_compile = new javax.swing.JMenuItem();
-        jmitem_tabsim = new javax.swing.JMenuItem();
-        jSeparator5 = new javax.swing.JPopupMenu.Separator();
         jmitem_exec = new javax.swing.JMenuItem();
-        jMenuItem2 = new javax.swing.JMenuItem();
-        jMenuItem4 = new javax.swing.JMenuItem();
+        jmitem_opt = new javax.swing.JMenuItem();
+        jSeparator5 = new javax.swing.JPopupMenu.Separator();
+        jmitem_tabsim = new javax.swing.JMenuItem();
         jSeparator4 = new javax.swing.JPopupMenu.Separator();
         jmitem_errores = new javax.swing.JMenuItem();
         jMenuItem5 = new javax.swing.JMenuItem();
@@ -267,15 +270,6 @@ public class Win extends javax.swing.JFrame {
         });
         comilerMenu.add(jmitem_compile);
 
-        jmitem_tabsim.setText("Tabla de Simbolos");
-        jmitem_tabsim.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jmitem_tabsimActionPerformed(evt);
-            }
-        });
-        comilerMenu.add(jmitem_tabsim);
-        comilerMenu.add(jSeparator5);
-
         jmitem_exec.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_R, java.awt.event.InputEvent.CTRL_MASK));
         jmitem_exec.setText("Ejecutar");
         jmitem_exec.addActionListener(new java.awt.event.ActionListener() {
@@ -285,16 +279,23 @@ public class Win extends javax.swing.JFrame {
         });
         comilerMenu.add(jmitem_exec);
 
-        jMenuItem2.setText("Generar Codigo");
-        jMenuItem2.addActionListener(new java.awt.event.ActionListener() {
+        jmitem_opt.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_T, java.awt.event.InputEvent.CTRL_MASK));
+        jmitem_opt.setText("Optimizar");
+        jmitem_opt.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem2ActionPerformed(evt);
+                jmitem_optActionPerformed(evt);
             }
         });
-        comilerMenu.add(jMenuItem2);
+        comilerMenu.add(jmitem_opt);
+        comilerMenu.add(jSeparator5);
 
-        jMenuItem4.setText("Optimizar");
-        comilerMenu.add(jMenuItem4);
+        jmitem_tabsim.setText("Tabla de Simbolos");
+        jmitem_tabsim.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jmitem_tabsimActionPerformed(evt);
+            }
+        });
+        comilerMenu.add(jmitem_tabsim);
         comilerMenu.add(jSeparator4);
 
         jmitem_errores.setText("Errores");
@@ -393,10 +394,6 @@ public class Win extends javax.swing.JFrame {
         DefaultTableModel model = (DefaultTableModel) table.getModel();
         model.setDataVector(data, headers);
     }
-
-    private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jMenuItem2ActionPerformed
 
     private void jMenuItem5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem5ActionPerformed
         // TODO add your handling code here:
@@ -671,7 +668,7 @@ public class Win extends javax.swing.JFrame {
             frc_def(tinfo.getString("text"), actions);
             // generacion codigo 3dir
             frc_3dir(actions);
-            
+
             file_open(Paths.get("gg.3dir"), jtabbedp_tab);
         }
     }//GEN-LAST:event_jmitem_compileActionPerformed
@@ -777,6 +774,32 @@ public class Win extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jmitem_execActionPerformed
 
+    private void jmitem_optActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jmitem_optActionPerformed
+        // TODO add your handling code here:
+        final Dict tab = getSelectedTabInfo();
+        final String input = tab == null ? "" : tab.getString("text");
+        final com.github.gg.compiler.tres.Scanner s = new com.github.gg.compiler.tres.Scanner(new StringReader(input));
+        final com.github.gg.compiler.tres.Parser p = new com.github.gg.compiler.tres.Parser(s);
+        try {
+            final Symbol sym = p.parse();
+            notificar("3dir file compiled...");
+            final Dict app = sym.value == null ? new Dict("list", new ArrayList<>()) : (Dict) sym.value;
+            final Dict actions = actions_3dir;
+
+            frc_compiler_clear(actions);
+
+            actions.put("phase", "opt");
+            frc_compiler_stmts_exec(app.getDict("stmts"), actions);
+
+            final String methods = optimizar(actions.get("methods"));
+
+            notificar("3dir file proceeded...");
+
+        } catch (Exception exc) {
+            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, exc);
+        }
+    }//GEN-LAST:event_jmitem_optActionPerformed
+
     private DefaultTreeModel getTreeModel() {
         return (DefaultTreeModel) jtree_tree.getModel();
     }
@@ -831,8 +854,6 @@ public class Win extends javax.swing.JFrame {
     private javax.swing.JMenuItem exitMenuItem;
     private javax.swing.JMenu fileMenu;
     private javax.swing.JMenu helpMenu;
-    private javax.swing.JMenuItem jMenuItem2;
-    private javax.swing.JMenuItem jMenuItem4;
     private javax.swing.JMenuItem jMenuItem5;
     private javax.swing.JMenuItem jMenuItem6;
     private javax.swing.JMenuItem jMenuItem7;
@@ -846,6 +867,7 @@ public class Win extends javax.swing.JFrame {
     private javax.swing.JMenuItem jmitem_compile;
     private javax.swing.JMenuItem jmitem_errores;
     private javax.swing.JMenuItem jmitem_exec;
+    private javax.swing.JMenuItem jmitem_opt;
     private javax.swing.JMenuItem jmitem_setactive;
     private javax.swing.JMenuItem jmitem_tabsim;
     private javax.swing.JPopupMenu jpumenu_pumenu;
@@ -943,8 +965,7 @@ public class Win extends javax.swing.JFrame {
             }
 
         });
-    
-        
+
     }
 
     private Symbol pj_compile(Path path) throws FileNotFoundException, Exception {
@@ -2839,18 +2860,28 @@ public class Win extends javax.swing.JFrame {
                         final Object ca_phase = ca.get("phase");
                         final CC ca_cc = (CC) ca.get("cc");
                         final Stack ca_scope = ca.getStack("scope");
-                        final String ca_scope_peek = ca_scope.peek().toString();
 
                         final Dict node_ref = node.getDictRef();
                         final Object node_ref_info = node_ref.get("info");
 
                         try {
 
+                            if (isOptPhase(ca_phase)) {
+                                final Dict node_ref_name = node_ref.getDict("name");
+                                final Node node_ref_name_node = node_ref_name.getNode("nodo");
+                                final Dict node_ref_name_node_ref = node_ref_name_node.getDictRef();
+                                final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
+//                                opt_addStmt(new OptGoto(node_ref_name_node_ref_val), actions);
+                                return null;
+                            }
+
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
 
                             if (isExecPhase(ca_phase)) {
+                                final String ca_scope_peek = ca_scope.peek().toString();
+
                                 final Dict node_ref_name = node_ref.getDict("name");
                                 final Node node_ref_name_node = node_ref_name.getNode("nodo");
                                 final Dict node_ref_name_node_ref = node_ref_name_node.getDictRef();
@@ -2884,7 +2915,6 @@ public class Win extends javax.swing.JFrame {
                         final Object ca_phase = ca.get("phase");
                         final CC ca_cc = (CC) ca.get("cc");
                         final Stack ca_scope = ca.getStack("scope");
-                        final String ca_scope_peek = ca_scope.peek().toString();
 
                         final Dict node_ref = node.getDictRef();
                         final Object node_ref_info = node_ref.get("info");
@@ -2892,7 +2922,17 @@ public class Win extends javax.swing.JFrame {
                         final int node_ref_position = node_ref.getInt("position");
 
                         try {
+
+                            if (isOptPhase(ca_phase)) {
+                                final Dict node_ref_name_node_ref = node_ref_name.getNode("nodo").getDictRef();
+                                final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
+                                opt_registerLabel(node_ref_name_node_ref_val, actions);
+                                return null;
+                            }
+
                             if (isDefPhase(ca_phase)) {
+                                final String ca_scope_peek = ca_scope.peek().toString();
+
                                 final Dict node_ref_name_node_ref = node_ref_name.getNode("nodo").getDictRef();
                                 final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
                                 final Dict method = ca_cc.getMethods().get(ca_scope_peek);
@@ -2930,6 +2970,13 @@ public class Win extends javax.swing.JFrame {
                             final Dict node_ref_name_node_ref = node_ref_name_node.getDictRef();
                             final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
                             final Dict node_ref_stmts = node_ref.getDict("stmts");
+
+                            if (isOptPhase(ca_phase)) {
+
+                                frc_compiler_stmts_exec(node_ref_stmts, ca);
+                                opt_registerMethod(node_ref_name_node_ref_val, actions);
+                                return null;
+                            }
 
                             if (isDefPhase(ca_phase)) {
                                 ca_cc.getMethods().put(node_ref_name_node_ref_val, new Dict("stmts", node_ref_stmts, "labels", new Dict()));
@@ -2973,6 +3020,18 @@ public class Win extends javax.swing.JFrame {
                         final Object node_ref_info = node_ref.get("info");
 
                         try {
+
+                            if (isOptPhase(ca_phase)) {
+                                final Dict node_l_val = node.getLeft().getDictVal();
+                                final String node_l_val_val = node_l_val.getString("val");
+                                final Dict node_r_val = node.getRight().getDictVal();
+                                final Object node_r_val_val = node_r_val.get("val");
+
+                                opt_addStmt(new OptAssign(node_l_val_val, node_r_val_val), actions);
+
+                                return null;
+                            }
+
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
@@ -3043,6 +3102,12 @@ public class Win extends javax.swing.JFrame {
                         final Object node_ref_info = node_ref.get("info");
 
                         try {
+                            if (isOptPhase(ca_phase)) {
+                                final String node_l_val_val = node.getLeft().getDictVal().getString("val");
+
+                                return new Dict("val", "-" + node_l_val_val);
+                            }
+
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
@@ -3079,6 +3144,19 @@ public class Win extends javax.swing.JFrame {
                         final Object node_ref_info = node_ref.get("info");
 
                         try {
+
+                            if (isOptPhase(ca_phase)) {
+                                final String node_l_val_val = node.getLeft().getDictVal().getString("val");
+                                final String node_r_val_val = node.getRight().getDictVal().getString("val");
+
+                                return new Dict("val", new OptExpr() {
+                                    {
+                                        this.o = "+";
+                                        this.l = node_l_val_val;
+                                        this.r = node_r_val_val;
+                                    }
+                                });
+                            }
 
                             if (isDefPhase(ca_phase)) {
                                 return null;
@@ -3122,6 +3200,19 @@ public class Win extends javax.swing.JFrame {
 
                         try {
 
+                            if (isOptPhase(ca_phase)) {
+                                final String node_l_val_val = node.getLeft().getDictVal().getString("val");
+                                final String node_r_val_val = node.getRight().getDictVal().getString("val");
+
+                                return new Dict("val", new OptExpr() {
+                                    {
+                                        this.o = "-";
+                                        this.l = node_l_val_val;
+                                        this.r = node_r_val_val;
+                                    }
+                                });
+                            }
+
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
@@ -3163,6 +3254,19 @@ public class Win extends javax.swing.JFrame {
 
                         try {
 
+                            if (isOptPhase(ca_phase)) {
+                                final String node_l_val_val = node.getLeft().getDictVal().getString("val");
+                                final String node_r_val_val = node.getRight().getDictVal().getString("val");
+
+                                return new Dict("val", new OptExpr() {
+                                    {
+                                        this.o = "*";
+                                        this.l = node_l_val_val;
+                                        this.r = node_r_val_val;
+                                    }
+                                });
+                            }
+
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
@@ -3202,6 +3306,19 @@ public class Win extends javax.swing.JFrame {
                         final Dict node_ref = node.getDictRef();
                         final Object node_ref_info = node_ref.get("info");
                         try {
+
+                            if (isOptPhase(ca_phase)) {
+                                final String node_l_val_val = node.getLeft().getDictVal().getString("val");
+                                final String node_r_val_val = node.getRight().getDictVal().getString("val");
+
+                                return new Dict("val", new OptExpr() {
+                                    {
+                                        this.o = "/";
+                                        this.l = node_l_val_val;
+                                        this.r = node_r_val_val;
+                                    }
+                                });
+                            }
 
                             if (isDefPhase(ca_phase)) {
                                 return null;
@@ -3324,6 +3441,12 @@ public class Win extends javax.swing.JFrame {
                         final Object node_ref_info = node_ref.get("info");
 
                         try {
+                            if (isOptPhase(ca_phase)) {
+                                final String node_ref_val = node_ref.getString("val");
+
+                                return new Dict("val", node_ref_val);
+                            }
+
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
@@ -3501,6 +3624,90 @@ public class Win extends javax.swing.JFrame {
 
                     cc.getErrs().add(err);
                     System.out.println(err);
+                }
+
+                private boolean isOptPhase(Object phase) {
+                    return phase.toString().equals("opt");
+                }
+
+                private ArrayList opt_getBBlock(Object actions) {
+                    final Dict ca = (Dict) actions;
+                    final String key = "bblock";
+
+                    if (!ca.containsKey(key)) {
+                        ca.put(key, new ArrayList());
+                    }
+                    return ca.getArrayList(key);
+                }
+
+                private Object opt_getLabel(Object actions) {
+                    final Dict ca = (Dict) actions;
+                    final String key = "label";
+
+                    if (!ca.containsKey(key)) {
+                        ca.put(key, "");
+                    }
+                    return ca.get(key);
+                }
+
+                private LinkedHashMap<String, ArrayList> opt_getLabels(Object actions) {
+                    final Dict ca = (Dict) actions;
+                    final String key = "bblocks";
+
+                    if (!ca.containsKey(key)) {
+                        ca.put(key, new LinkedHashMap<>());
+                    }
+                    return (LinkedHashMap<String, ArrayList>) ca.get(key);
+                }
+
+                private LinkedHashMap<String, LinkedHashMap> opt_getMethods(Object actions) {
+                    final Dict ca = (Dict) actions;
+                    final String key = "methods";
+
+                    if (!ca.containsKey(key)) {
+                        ca.put(key, new LinkedHashMap<>());
+                    }
+                    return (LinkedHashMap<String, LinkedHashMap>) ca.get(key);
+                }
+
+                private void opt_addStmt(Object stmt, Object actions) {
+                    opt_getBBlock(actions).add(stmt);
+                }
+
+                private void opt_registerLabel(Object label, Object actions) {
+                    final Dict ca = (Dict) actions;
+                    final ArrayList prev_bblock = opt_getBBlock(actions);
+                    final String prev_label = opt_getLabel(actions).toString();
+                    // guardar el bloque anterior
+                    opt_getLabels(actions).put(prev_label, prev_bblock);
+                    // registrar el nuevo
+                    ca.put("label", label);
+                    ca.remove("bblock");
+
+                    System.out.println(prev_label + ":");
+                    System.out.println(opt_ArrayList2String(prev_bblock));
+                }
+
+                private String opt_ArrayList2String(ArrayList list) {
+                    final StringBuilder builder = new StringBuilder();
+                    for (int i = 0; i < list.size(); i++) {
+                        Object item = list.get(i);
+                        builder.append(item);
+                        builder.append("\n");
+                    }
+                    return builder.toString();
+                }
+
+                private void opt_registerMethod(Object name, Object actions) {
+                    final Dict ca = (Dict) actions;
+                    // obtener el ultimo
+                    opt_registerLabel("", actions);
+                    // limpiar
+                    ca.remove("label");
+                    ca.remove("bblock");
+
+                    final LinkedHashMap labels = opt_getLabels(actions);
+                    opt_getMethods(actions).put(name.toString(), labels);
                 }
             }
     );
@@ -8392,4 +8599,53 @@ public class Win extends javax.swing.JFrame {
         frc_compile(input.toString(), actions, true);
     }
 
+    private String optimizar(Object struct) {
+        if (struct instanceof LinkedHashMap) {
+            LinkedHashMap<String, LinkedHashMap> methods = (LinkedHashMap) struct;
+            for (Map.Entry<String, LinkedHashMap> method : methods.entrySet()) {
+                final String method_name = method.getKey();
+                final LinkedHashMap<String, ArrayList> method_labels = method.getValue();
+
+                for (Map.Entry<String, ArrayList> label : method_labels.entrySet()) {
+                    final String label_name = label.getKey();
+                    final ArrayList label_stmts = label.getValue();
+                    optimizar_subexpr(label_stmts);
+                    optimizar_propagcopias(label_stmts);
+                    optimizar_codmuerto(label_stmts);
+
+                    optimizar_constantes(label_stmts);
+                    optimizar_identidad(label_stmts);
+                    optimizar_intensidad(label_stmts);
+                }
+
+            }
+
+        }
+
+        return "//gg";
+    }
+
+    private void optimizar_subexpr(ArrayList label_stmts) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    private void optimizar_propagcopias(ArrayList label_stmts) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    private void optimizar_codmuerto(ArrayList label_stmts) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    private void optimizar_constantes(ArrayList label_stmts) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    private void optimizar_identidad(ArrayList label_stmts) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    private void optimizar_intensidad(ArrayList label_stmts) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }
