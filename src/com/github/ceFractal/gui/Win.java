@@ -10,8 +10,10 @@ import com.github.gg.Dict;
 import com.github.gg.Err;
 import com.github.gg.Node;
 import com.github.gg.Operation;
+import com.github.gg.Opt;
 import com.github.gg.OptAssign;
 import com.github.gg.OptExpr;
+import com.github.gg.OptMemory;
 import com.github.gg.Sim;
 import com.github.gg.TErr;
 import com.github.gg.TModifier;
@@ -791,7 +793,11 @@ public class Win extends javax.swing.JFrame {
             actions.put("phase", "opt");
             frc_compiler_stmts_exec(app.getDict("stmts"), actions);
 
-            final String methods = optimizar(actions.get("methods"));
+            final String res = optimizar(actions.get("methods"));
+
+            Path optfile = Paths.get("opt.cpp");
+            Files.write(optfile, res.getBytes());
+            file_open(optfile, jtabbedp_tab);
 
             notificar("3dir file proceeded...");
 
@@ -3149,13 +3155,7 @@ public class Win extends javax.swing.JFrame {
                                 final String node_l_val_val = node.getLeft().getDictVal().getString("val");
                                 final String node_r_val_val = node.getRight().getDictVal().getString("val");
 
-                                return new Dict("val", new OptExpr() {
-                                    {
-                                        this.o = "+";
-                                        this.l = node_l_val_val;
-                                        this.r = node_r_val_val;
-                                    }
-                                });
+                                return new Dict("val", new OptExpr("+", node_l_val_val, node_r_val_val));
                             }
 
                             if (isDefPhase(ca_phase)) {
@@ -3204,13 +3204,7 @@ public class Win extends javax.swing.JFrame {
                                 final String node_l_val_val = node.getLeft().getDictVal().getString("val");
                                 final String node_r_val_val = node.getRight().getDictVal().getString("val");
 
-                                return new Dict("val", new OptExpr() {
-                                    {
-                                        this.o = "-";
-                                        this.l = node_l_val_val;
-                                        this.r = node_r_val_val;
-                                    }
-                                });
+                                return new Dict("val", new OptExpr("-", node_l_val_val, node_r_val_val));
                             }
 
                             if (isDefPhase(ca_phase)) {
@@ -3258,13 +3252,7 @@ public class Win extends javax.swing.JFrame {
                                 final String node_l_val_val = node.getLeft().getDictVal().getString("val");
                                 final String node_r_val_val = node.getRight().getDictVal().getString("val");
 
-                                return new Dict("val", new OptExpr() {
-                                    {
-                                        this.o = "*";
-                                        this.l = node_l_val_val;
-                                        this.r = node_r_val_val;
-                                    }
-                                });
+                                return new Dict("val", new OptExpr("*", node_l_val_val, node_r_val_val));
                             }
 
                             if (isDefPhase(ca_phase)) {
@@ -3298,297 +3286,318 @@ public class Win extends javax.swing.JFrame {
                     //</editor-fold>
 
                     //<editor-fold defaultstate="collapsed" desc="DIV">
-                    put(TOperation.DIV, (Operation) (Node node, Object actions) -> {
-                        final Dict ca = (Dict) actions;
-                        final Object ca_phase = ca.get("phase");
-                        final CC ca_cc = (CC) ca.get("cc");
+                    put(TOperation.DIV,
+                            (Operation) (Node node, Object actions) -> {
+                                final Dict ca = (Dict) actions;
+                                final Object ca_phase = ca.get("phase");
+                                final CC ca_cc = (CC) ca.get("cc");
 
-                        final Dict node_ref = node.getDictRef();
-                        final Object node_ref_info = node_ref.get("info");
-                        try {
+                                final Dict node_ref = node.getDictRef();
+                                final Object node_ref_info = node_ref.get("info");
+                                try {
 
-                            if (isOptPhase(ca_phase)) {
-                                final String node_l_val_val = node.getLeft().getDictVal().getString("val");
-                                final String node_r_val_val = node.getRight().getDictVal().getString("val");
+                                    if (isOptPhase(ca_phase)) {
+                                        final String node_l_val_val = node.getLeft().getDictVal().getString("val");
+                                        final String node_r_val_val = node.getRight().getDictVal().getString("val");
 
-                                return new Dict("val", new OptExpr() {
-                                    {
-                                        this.o = "/";
-                                        this.l = node_l_val_val;
-                                        this.r = node_r_val_val;
+                                        return new Dict("val", new OptExpr("/", node_l_val_val, node_r_val_val));
                                     }
-                                });
+
+                                    if (isDefPhase(ca_phase)) {
+                                        return null;
+                                    }
+                                    final Node node_l = node.getLeft();
+                                    final Node node_r = node.getRight();
+                                    final Dict node_l_val = node_l.getDictVal();
+                                    final Dict node_r_val = node_r.getDictVal();
+                                    final float node_l_val_val = node_l_val.getFloat("val");
+                                    final float node_r_val_val = node_r_val.getFloat("val");
+
+                                    final Dict node_val = new Dict();
+                                    float node_val_val = -1;
+
+                                    if (isExecPhase(ca_phase)) {
+
+                                        node_val_val = node_l_val_val / node_r_val_val;
+
+                                        node_val.put("val", node_val_val);
+
+                                        return node_val;
+                                    }
+
+                                } catch (UnsupportedOperationException exc) {
+                                    compiler_error(exc, TErr.SEMANTICO, node_ref_info, actions);
+                                }
+
+                                return noActionsProcessed(TOperation.DIV);
                             }
-
-                            if (isDefPhase(ca_phase)) {
-                                return null;
-                            }
-                            final Node node_l = node.getLeft();
-                            final Node node_r = node.getRight();
-                            final Dict node_l_val = node_l.getDictVal();
-                            final Dict node_r_val = node_r.getDictVal();
-                            final float node_l_val_val = node_l_val.getFloat("val");
-                            final float node_r_val_val = node_r_val.getFloat("val");
-
-                            final Dict node_val = new Dict();
-                            float node_val_val = -1;
-
-                            if (isExecPhase(ca_phase)) {
-
-                                node_val_val = node_l_val_val / node_r_val_val;
-
-                                node_val.put("val", node_val_val);
-
-                                return node_val;
-                            }
-
-                        } catch (UnsupportedOperationException exc) {
-                            compiler_error(exc, TErr.SEMANTICO, node_ref_info, actions);
-                        }
-
-                        return noActionsProcessed(TOperation.DIV);
-                    });
+                    );
                     //</editor-fold>
 
                     //<editor-fold defaultstate="collapsed" desc="MOD">
-                    put(TOperation.MOD, (Operation) (Node node, Object actions) -> {
-                        final Dict ca = (Dict) actions;
-                        final Object ca_phase = ca.get("phase");
-                        final CC ca_cc = (CC) ca.get("cc");
+                    put(TOperation.MOD,
+                            (Operation) (Node node, Object actions) -> {
+                                final Dict ca = (Dict) actions;
+                                final Object ca_phase = ca.get("phase");
+                                final CC ca_cc = (CC) ca.get("cc");
 
-                        final Dict node_ref = node.getDictRef();
-                        final Object node_ref_info = node_ref.get("info");
+                                final Dict node_ref = node.getDictRef();
+                                final Object node_ref_info = node_ref.get("info");
 
-                        try {
+                                try {
 
-                            if (isDefPhase(ca_phase)) {
-                                return null;
+                                    if (isDefPhase(ca_phase)) {
+                                        return null;
+                                    }
+                                    final Node node_l = node.getLeft();
+                                    final Node node_r = node.getRight();
+                                    final Dict node_l_val = node_l.getDictVal();
+                                    final Dict node_r_val = node_r.getDictVal();
+                                    final float node_l_val_val = node_l_val.getFloat("val");
+                                    final float node_r_val_val = node_r_val.getFloat("val");
+
+                                    final Dict node_val = new Dict();
+                                    float node_val_val = -1;
+
+                                    if (isExecPhase(ca_phase)) {
+
+                                        node_val_val = node_l_val_val % node_r_val_val;
+
+                                        node_val.put("val", node_val_val);
+
+                                        return node_val;
+                                    }
+
+                                } catch (UnsupportedOperationException exc) {
+                                    compiler_error(exc, TErr.SEMANTICO, node_ref_info, actions);
+                                }
+
+                                return noActionsProcessed(TOperation.MOD);
                             }
-                            final Node node_l = node.getLeft();
-                            final Node node_r = node.getRight();
-                            final Dict node_l_val = node_l.getDictVal();
-                            final Dict node_r_val = node_r.getDictVal();
-                            final float node_l_val_val = node_l_val.getFloat("val");
-                            final float node_r_val_val = node_r_val.getFloat("val");
-
-                            final Dict node_val = new Dict();
-                            float node_val_val = -1;
-
-                            if (isExecPhase(ca_phase)) {
-
-                                node_val_val = node_l_val_val % node_r_val_val;
-
-                                node_val.put("val", node_val_val);
-
-                                return node_val;
-                            }
-
-                        } catch (UnsupportedOperationException exc) {
-                            compiler_error(exc, TErr.SEMANTICO, node_ref_info, actions);
-                        }
-
-                        return noActionsProcessed(TOperation.MOD);
-                    });
+                    );
                     //</editor-fold>
 
                     //<editor-fold defaultstate="collapsed" desc="EXPONENTE">
-                    put(TOperation.EXP, (Operation) (Node node, Object actions) -> {
-                        final Dict ca = (Dict) actions;
-                        final Object ca_phase = ca.get("phase");
-                        final CC ca_cc = (CC) ca.get("cc");
+                    put(TOperation.EXP,
+                            (Operation) (Node node, Object actions) -> {
+                                final Dict ca = (Dict) actions;
+                                final Object ca_phase = ca.get("phase");
+                                final CC ca_cc = (CC) ca.get("cc");
 
-                        final Dict node_ref = node.getDictRef();
-                        final Object node_ref_info = node_ref.get("info");
+                                final Dict node_ref = node.getDictRef();
+                                final Object node_ref_info = node_ref.get("info");
 
-                        try {
-                            if (isDefPhase(ca_phase)) {
-                                return null;
+                                try {
+                                    if (isDefPhase(ca_phase)) {
+                                        return null;
+                                    }
+                                    final Node node_l = node.getLeft();
+                                    final Node node_r = node.getRight();
+                                    final Dict node_l_val = node_l.getDictVal();
+                                    final Dict node_r_val = node_r.getDictVal();
+                                    final float node_l_val_val = node_l_val.getFloat("val");
+                                    final float node_r_val_val = node_r_val.getFloat("val");
+
+                                    final Dict node_val = new Dict();
+                                    float node_val_val = -1;
+
+                                    if (isExecPhase(ca_phase)) {
+
+                                        node_val_val = node_l_val_val * node_r_val_val;
+
+                                        node_val.put("val", node_val_val);
+
+                                        return node_val;
+                                    }
+
+                                } catch (UnsupportedOperationException exc) {
+                                    compiler_error(exc, TErr.SEMANTICO, node_ref_info, actions);
+                                }
+
+                                return noActionsProcessed(TOperation.EXP);
                             }
-                            final Node node_l = node.getLeft();
-                            final Node node_r = node.getRight();
-                            final Dict node_l_val = node_l.getDictVal();
-                            final Dict node_r_val = node_r.getDictVal();
-                            final float node_l_val_val = node_l_val.getFloat("val");
-                            final float node_r_val_val = node_r_val.getFloat("val");
-
-                            final Dict node_val = new Dict();
-                            float node_val_val = -1;
-
-                            if (isExecPhase(ca_phase)) {
-
-                                node_val_val = node_l_val_val * node_r_val_val;
-
-                                node_val.put("val", node_val_val);
-
-                                return node_val;
-                            }
-
-                        } catch (UnsupportedOperationException exc) {
-                            compiler_error(exc, TErr.SEMANTICO, node_ref_info, actions);
-                        }
-
-                        return noActionsProcessed(TOperation.EXP);
-                    });
+                    );
                     //</editor-fold>
 
                     //<editor-fold defaultstate="collapsed" desc="LEAF">
-                    put(TOperation.LEAF, (Operation) (Node node, Object actions) -> {
-                        final Dict ca = (Dict) actions;
-                        final Object ca_phase = ca.get("phase");
-                        final CC ca_cc = (CC) ca.get("cc");
+                    put(TOperation.LEAF,
+                            (Operation) (Node node, Object actions) -> {
+                                final Dict ca = (Dict) actions;
+                                final Object ca_phase = ca.get("phase");
+                                final CC ca_cc = (CC) ca.get("cc");
 
-                        final Dict node_ref = node.getDictRef();
-                        final Object node_ref_info = node_ref.get("info");
+                                final Dict node_ref = node.getDictRef();
+                                final Object node_ref_info = node_ref.get("info");
 
-                        try {
-                            if (isOptPhase(ca_phase)) {
-                                final String node_ref_val = node_ref.getString("val");
+                                try {
+                                    if (isOptPhase(ca_phase)) {
+                                        final String node_ref_val = node_ref.getString("val");
+                                        final String node_ref_type = node_ref.getString("type");
 
-                                return new Dict("val", node_ref_val);
-                            }
+                                        if (node_ref_type.equals("memory")) {
+                                            final int node_ref_memory = node_ref.getInt("memory");
+                                            final String node_ref_name = node_ref.getString("name");
+                                            final Dict node_ref_position = node_ref.getDict("position");
+                                            final Node node_ref_position_node = node_ref_position.getNode("nodo");
+                                            node_ref_position_node.exec(actions);
+                                            final Dict node_ref_position_node_val = node_ref_position_node.getDictVal();
+                                            final Object node_ref_position_node_val_val = node_ref_position_node_val.getString("val");
 
-                            if (isDefPhase(ca_phase)) {
-                                return null;
-                            }
+                                            return new Dict("val", new OptMemory(node_ref_name, node_ref_position_node_val_val));
 
-                            final String node_ref_val = node_ref.getString("val");
-                            final String node_ref_type = node_ref.getString("type");
-
-                            final Dict node_val = new Dict();
-                            float node_val_val = -1.0f;
-                            Object node_val_valp = node_ref_val;
-                            final String node_val_valt = node_ref_type;
-
-                            if (isExecPhase(ca_phase)) {
-
-                                if (node_ref_type.equals(TType.INT.toString())) {
-                                    node_val_val = Float.parseFloat(node_ref_val);
-                                } else if (node_ref_type.equals(TType.FLOAT.toString())) {
-                                    node_val_val = Float.parseFloat(node_ref_val);
-                                } else if (node_ref_type.equals(TType.REF.toString())) {
-                                    node_val_val = ca_cc.getTemps().containsKey(node_ref_val) ? ca_cc.getTemps().get(node_ref_val) : -1.0f;
-                                } else if (node_ref_type.equals("memory")) {
-                                    final int node_ref_memory = node_ref.getInt("memory");
-                                    final Dict node_ref_position = node_ref.getDict("position");
-                                    final Node node_ref_position_node = node_ref_position.getNode("nodo");
-                                    node_ref_position_node.exec(actions);
-                                    final Dict node_ref_position_node_val = node_ref_position_node.getDictVal();
-                                    final int node_ref_position_node_val_val = (int) node_ref_position_node_val.getFloat("val");
-
-                                    switch (node_ref_memory) {
-                                        case com.github.gg.compiler.tres.Sym.STACK:
-                                            node_val_val = ca_cc.getStack()[node_ref_position_node_val_val];
-                                            break;
-                                        case com.github.gg.compiler.tres.Sym.HEAP:
-                                            node_val_val = ca_cc.getHeap()[node_ref_position_node_val_val];
-                                            break;
-                                        default:
-                                            throwException("wtf %s", TOperation.LEAF);
-                                    }
-                                    node_val_valp = node_ref_position_node_val_val;
-
-                                } else if (node_ref_type.equals("pointer")) {
-                                    final int node_ref_pointer = node_ref.getInt("pointer");
-                                    switch (node_ref_pointer) {
-                                        case com.github.gg.compiler.tres.Sym.P:
-                                            node_val_val = ca_cc.getP();
-                                            break;
-                                        case com.github.gg.compiler.tres.Sym.H:
-                                            node_val_val = ca_cc.getH();
-                                            break;
-                                        default:
-                                            throwException("Puntero no reconocido -> %d = %s", node_ref_pointer, node_ref_val);
+                                        }
+                                        return new Dict("val", node_ref_val);
                                     }
 
-                                } else {
-                                    throwException("Tipo %s no reconocido...", node_ref_type);
+                                    if (isDefPhase(ca_phase)) {
+                                        return null;
+                                    }
+
+                                    final String node_ref_val = node_ref.getString("val");
+                                    final String node_ref_type = node_ref.getString("type");
+
+                                    final Dict node_val = new Dict();
+                                    float node_val_val = -1.0f;
+                                    Object node_val_valp = node_ref_val;
+                                    final String node_val_valt = node_ref_type;
+
+                                    if (isExecPhase(ca_phase)) {
+
+                                        if (node_ref_type.equals(TType.INT.toString())) {
+                                            node_val_val = Float.parseFloat(node_ref_val);
+                                        } else if (node_ref_type.equals(TType.FLOAT.toString())) {
+                                            node_val_val = Float.parseFloat(node_ref_val);
+                                        } else if (node_ref_type.equals(TType.REF.toString())) {
+                                            node_val_val = ca_cc.getTemps().containsKey(node_ref_val) ? ca_cc.getTemps().get(node_ref_val) : -1.0f;
+                                        } else if (node_ref_type.equals("memory")) {
+                                            final int node_ref_memory = node_ref.getInt("memory");
+                                            final Dict node_ref_position = node_ref.getDict("position");
+                                            final Node node_ref_position_node = node_ref_position.getNode("nodo");
+                                            node_ref_position_node.exec(actions);
+                                            final Dict node_ref_position_node_val = node_ref_position_node.getDictVal();
+                                            final int node_ref_position_node_val_val = (int) node_ref_position_node_val.getFloat("val");
+
+                                            switch (node_ref_memory) {
+                                                case com.github.gg.compiler.tres.Sym.STACK:
+                                                    node_val_val = ca_cc.getStack()[node_ref_position_node_val_val];
+                                                    break;
+                                                case com.github.gg.compiler.tres.Sym.HEAP:
+                                                    node_val_val = ca_cc.getHeap()[node_ref_position_node_val_val];
+                                                    break;
+                                                default:
+                                                    throwException("wtf %s", TOperation.LEAF);
+                                            }
+                                            node_val_valp = node_ref_position_node_val_val;
+
+                                        } else if (node_ref_type.equals("pointer")) {
+                                            final int node_ref_pointer = node_ref.getInt("pointer");
+                                            switch (node_ref_pointer) {
+                                                case com.github.gg.compiler.tres.Sym.P:
+                                                    node_val_val = ca_cc.getP();
+                                                    break;
+                                                case com.github.gg.compiler.tres.Sym.H:
+                                                    node_val_val = ca_cc.getH();
+                                                    break;
+                                                default:
+                                                    throwException("Puntero no reconocido -> %d = %s", node_ref_pointer, node_ref_val);
+                                            }
+
+                                        } else {
+                                            throwException("Tipo %s no reconocido...", node_ref_type);
+                                        }
+
+                                        node_val.put("val", node_val_val);
+                                        node_val.put("valp", node_val_valp);
+                                        node_val.put("valt", node_val_valt);
+
+                                        return node_val;
+                                    }
+
+                                } catch (UnsupportedOperationException exc) {
+                                    compiler_error(exc, TErr.SEMANTICO, node_ref_info, actions);
                                 }
 
-                                node_val.put("val", node_val_val);
-                                node_val.put("valp", node_val_valp);
-                                node_val.put("valt", node_val_valt);
-
-                                return node_val;
+                                return noActionsProcessed(TOperation.LEAF);
                             }
-
-                        } catch (UnsupportedOperationException exc) {
-                            compiler_error(exc, TErr.SEMANTICO, node_ref_info, actions);
-                        }
-
-                        return noActionsProcessed(TOperation.LEAF);
-                    });
+                    );
                     //</editor-fold>
 
                     //<editor-fold defaultstate="collapsed" desc="ERROR_LEXICO">
-                    put(TOperation.ERROR_LEXICO, (Operation) (Node node, Object actions) -> {
-                        final Dict ca = (Dict) actions;
-                        final Object ca_phase = ca.get("phase");
+                    put(TOperation.ERROR_LEXICO,
+                            (Operation) (Node node, Object actions) -> {
+                                final Dict ca = (Dict) actions;
+                                final Object ca_phase = ca.get("phase");
 
-                        final Dict node_ref = node.getDictRef();
-                        final Object node_ref_info = node_ref.get("info");
+                                final Dict node_ref = node.getDictRef();
+                                final Object node_ref_info = node_ref.get("info");
 
-                        try {
+                                try {
 
-                            if (isDefPhase(ca_phase)) {
-                                throwException("Caracter no reconocido...");
-                                return null;
+                                    if (isDefPhase(ca_phase)) {
+                                        throwException("Caracter no reconocido...");
+                                        return null;
+                                    }
+
+                                    if (isExecPhase(ca_phase)) {
+
+                                        return null;
+                                    }
+                                } catch (UnsupportedOperationException exc) {
+                                    compiler_error(exc, TErr.LEXICO, node_ref_info, actions);
+                                }
+
+                                return noActionsProcessed(TOperation.ERROR_LEXICO);
                             }
-
-                            if (isExecPhase(ca_phase)) {
-
-                                return null;
-                            }
-                        } catch (UnsupportedOperationException exc) {
-                            compiler_error(exc, TErr.LEXICO, node_ref_info, actions);
-                        }
-
-                        return noActionsProcessed(TOperation.ERROR_LEXICO);
-                    });
+                    );
                     //</editor-fold>
 
                     //<editor-fold defaultstate="collapsed" desc="ERROR_SINTACTICO">
-                    put(TOperation.ERROR_SINTACTICO, (Operation) (Node node, Object actions) -> {
-                        final Dict ca = (Dict) actions;
-                        final Object ca_phase = ca.get("phase");
+                    put(TOperation.ERROR_SINTACTICO,
+                            (Operation) (Node node, Object actions) -> {
+                                final Dict ca = (Dict) actions;
+                                final Object ca_phase = ca.get("phase");
 
-                        final Dict node_ref = node.getDictRef();
-                        final Object node_ref_info = node_ref.get("info");
-                        try {
+                                final Dict node_ref = node.getDictRef();
+                                final Object node_ref_info = node_ref.get("info");
+                                try {
 
-                            if (isDefPhase(ca_phase)) {
-                                throwException("Error de sintaxis...");
-                                return null;
-                            }
-                            if (isExecPhase(ca_phase)) {
+                                    if (isDefPhase(ca_phase)) {
+                                        throwException("Error de sintaxis...");
+                                        return null;
+                                    }
+                                    if (isExecPhase(ca_phase)) {
 //                                throwException("Error de sintaxis...");
-                                return null;
+                                        return null;
+                                    }
+
+                                } catch (UnsupportedOperationException exc) {
+                                    compiler_error(exc, TErr.SINTACTICO, node_ref_info, actions);
+                                }
+
+                                return noActionsProcessed(TOperation.ERROR_SINTACTICO);
                             }
-
-                        } catch (UnsupportedOperationException exc) {
-                            compiler_error(exc, TErr.SINTACTICO, node_ref_info, actions);
-                        }
-
-                        return noActionsProcessed(TOperation.ERROR_SINTACTICO);
-                    });
+                    );
                     //</editor-fold>
 
                     //<editor-fold defaultstate="collapsed" desc="COMENTARIO">
-                    put(TOperation.COMMENT, (Operation) (Node node, Object actions) -> {
-                        final Dict ca = (Dict) actions;
-                        final Object ca_phase = ca.get("phase");
+                    put(TOperation.COMMENT,
+                            (Operation) (Node node, Object actions) -> {
+                                final Dict ca = (Dict) actions;
+                                final Object ca_phase = ca.get("phase");
 
-                        final Dict node_ref = node.getDictRef();
-                        final Object node_ref_info = node_ref.get("info");
+                                final Dict node_ref = node.getDictRef();
+                                final Object node_ref_info = node_ref.get("info");
 
-                        try {
+                                try {
 
-                            return null;
-                        } catch (UnsupportedOperationException exc) {
-                            compiler_error(exc, TErr.LEXICO, node_ref_info, actions);
-                        }
+                                    return null;
+                                } catch (UnsupportedOperationException exc) {
+                                    compiler_error(exc, TErr.LEXICO, node_ref_info, actions);
+                                }
 
-                        return noActionsProcessed(TOperation.COMMENT);
-                    });
+                                return noActionsProcessed(TOperation.COMMENT);
+                            }
+                    );
                     //</editor-fold>
 
                 }
@@ -3684,8 +3693,8 @@ public class Win extends javax.swing.JFrame {
                     ca.put("label", label);
                     ca.remove("bblock");
 
-                    System.out.println(prev_label + ":");
-                    System.out.println(opt_ArrayList2String(prev_bblock));
+//                    System.out.println(prev_label + ":");
+//                    System.out.println(opt_ArrayList2String(prev_bblock));
                 }
 
                 private String opt_ArrayList2String(ArrayList list) {
@@ -8599,53 +8608,10 @@ public class Win extends javax.swing.JFrame {
         frc_compile(input.toString(), actions, true);
     }
 
-    private String optimizar(Object struct) {
-        if (struct instanceof LinkedHashMap) {
-            LinkedHashMap<String, LinkedHashMap> methods = (LinkedHashMap) struct;
-            for (Map.Entry<String, LinkedHashMap> method : methods.entrySet()) {
-                final String method_name = method.getKey();
-                final LinkedHashMap<String, ArrayList> method_labels = method.getValue();
+    private String optimizar(Object app) {
+        final Opt optimizador = new Opt(app);
 
-                for (Map.Entry<String, ArrayList> label : method_labels.entrySet()) {
-                    final String label_name = label.getKey();
-                    final ArrayList label_stmts = label.getValue();
-                    optimizar_subexpr(label_stmts);
-                    optimizar_propagcopias(label_stmts);
-                    optimizar_codmuerto(label_stmts);
-
-                    optimizar_constantes(label_stmts);
-                    optimizar_identidad(label_stmts);
-                    optimizar_intensidad(label_stmts);
-                }
-
-            }
-
-        }
-
-        return "//gg";
+        return optimizador.getString(optimizador.opt());
     }
 
-    private void optimizar_subexpr(ArrayList label_stmts) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    private void optimizar_propagcopias(ArrayList label_stmts) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    private void optimizar_codmuerto(ArrayList label_stmts) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    private void optimizar_constantes(ArrayList label_stmts) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    private void optimizar_identidad(ArrayList label_stmts) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    private void optimizar_intensidad(ArrayList label_stmts) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
 }
