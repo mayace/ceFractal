@@ -13,6 +13,7 @@ import com.github.gg.Operation;
 import com.github.gg.Opt;
 import com.github.gg.OptAssign;
 import com.github.gg.OptExpr;
+import com.github.gg.OptMCall;
 import com.github.gg.OptMemory;
 import com.github.gg.Sim;
 import com.github.gg.TErr;
@@ -25,7 +26,6 @@ import java.awt.Component;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
@@ -46,7 +46,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -66,27 +65,15 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
-import javax.swing.text.BoxView;
-import javax.swing.text.ComponentView;
 import javax.swing.text.DefaultStyledDocument;
-import javax.swing.text.Document;
-import javax.swing.text.Element;
-import javax.swing.text.IconView;
-import javax.swing.text.LabelView;
-import javax.swing.text.ParagraphView;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
-import javax.swing.text.StyledEditorKit;
 import javax.swing.text.TabSet;
 import javax.swing.text.TabStop;
-import javax.swing.text.View;
-import javax.swing.text.ViewFactory;
-import javax.swing.text.html.HTML;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
@@ -2541,6 +2528,15 @@ public class Win extends javax.swing.JFrame {
 
                         try {
 
+                            if (isOptPhase(ca_phase)) {
+                                final Node node_ref_name_node = node_ref_name.getNode("nodo");
+                                final Dict node_ref_name_node_ref = node_ref_name_node.getDictRef();
+                                final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
+
+                                opt_addStmt(new OptMCall(node_ref_name_node_ref_val), actions);
+                                return null;
+                            }
+
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
@@ -2582,6 +2578,9 @@ public class Win extends javax.swing.JFrame {
 
                         try {
 
+                            if (isOptPhase(ca_phase)) {
+                                return null;
+                            }
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
@@ -2618,6 +2617,13 @@ public class Win extends javax.swing.JFrame {
                         final Object node_ref_info = node_ref.get("info");
 
                         try {
+
+                            if (isOptPhase(ca_phase)) {
+                                final String node_l_val_val = node.getLeft().getDictVal().getString("val");
+                                final String node_r_val_val = node.getRight().getDictVal().getString("val");
+
+                                return new Dict("val", new OptExpr("<", node_l_val_val, node_r_val_val));
+                            }
 
                             if (isDefPhase(ca_phase)) {
                                 return null;
@@ -2661,6 +2667,13 @@ public class Win extends javax.swing.JFrame {
 
                         try {
 
+                            if (isOptPhase(ca_phase)) {
+                                final String node_l_val_val = node.getLeft().getDictVal().getString("val");
+                                final String node_r_val_val = node.getRight().getDictVal().getString("val");
+
+                                return new Dict("val", new OptExpr("<=", node_l_val_val, node_r_val_val));
+                            }
+
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
@@ -2702,6 +2715,13 @@ public class Win extends javax.swing.JFrame {
                         final Object node_ref_info = node_ref.get("info");
 
                         try {
+
+                            if (isOptPhase(ca_phase)) {
+                                final String node_l_val_val = node.getLeft().getDictVal().getString("val");
+                                final String node_r_val_val = node.getRight().getDictVal().getString("val");
+
+                                return new Dict("val", new OptExpr(">", node_l_val_val, node_r_val_val));
+                            }
 
                             if (isDefPhase(ca_phase)) {
                                 return null;
@@ -2745,6 +2765,13 @@ public class Win extends javax.swing.JFrame {
 
                         try {
 
+                            if (isOptPhase(ca_phase)) {
+                                final String node_l_val_val = node.getLeft().getDictVal().getString("val");
+                                final String node_r_val_val = node.getRight().getDictVal().getString("val");
+
+                                return new Dict("val", new OptExpr(">=", node_l_val_val, node_r_val_val));
+                            }
+
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
@@ -2787,6 +2814,13 @@ public class Win extends javax.swing.JFrame {
 
                         try {
 
+                            if (isOptPhase(ca_phase)) {
+                                final String node_l_val_val = node.getLeft().getDictVal().getString("val");
+                                final String node_r_val_val = node.getRight().getDictVal().getString("val");
+
+                                return new Dict("val", new OptExpr("==", node_l_val_val, node_r_val_val));
+                            }
+
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
@@ -2828,6 +2862,13 @@ public class Win extends javax.swing.JFrame {
                         final Object node_ref_info = node_ref.get("info");
 
                         try {
+
+                            if (isOptPhase(ca_phase)) {
+                                final String node_l_val_val = node.getLeft().getDictVal().getString("val");
+                                final String node_r_val_val = node.getRight().getDictVal().getString("val");
+
+                                return new Dict("val", new OptExpr("!=", node_l_val_val, node_r_val_val));
+                            }
 
                             if (isDefPhase(ca_phase)) {
                                 return null;
@@ -3029,7 +3070,7 @@ public class Win extends javax.swing.JFrame {
 
                             if (isOptPhase(ca_phase)) {
                                 final Dict node_l_val = node.getLeft().getDictVal();
-                                final String node_l_val_val = node_l_val.getString("val");
+                                final Object node_l_val_val = node_l_val.get("val");
                                 final Dict node_r_val = node.getRight().getDictVal();
                                 final Object node_r_val_val = node_r_val.get("val");
 
