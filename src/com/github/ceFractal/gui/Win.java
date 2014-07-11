@@ -13,6 +13,8 @@ import com.github.gg.Operation;
 import com.github.gg.Opt;
 import com.github.gg.OptAssign;
 import com.github.gg.OptExpr;
+import com.github.gg.OptGoto;
+import com.github.gg.OptIf;
 import com.github.gg.OptMCall;
 import com.github.gg.OptMemory;
 import com.github.gg.Sim;
@@ -780,8 +782,11 @@ public class Win extends javax.swing.JFrame {
             actions.put("phase", "opt");
             frc_compiler_stmts_exec(app.getDict("stmts"), actions);
 
-            final String res = optimizar(actions.get("methods"));
+            final Object methods = actions.get("methods");
 
+            final String res = optimizar(methods);
+//            System.err.println(res);
+//
             Path optfile = Paths.get("opt.cpp");
             Files.write(optfile, res.getBytes());
             file_open(optfile, jtabbedp_tab);
@@ -1898,7 +1903,15 @@ public class Win extends javax.swing.JFrame {
                         final Object node_ref_info = node_ref.get("info");
 
                         try {
+                            
+                            if (isOptPhase(ca_phase)) {
+                                final Dict node_ref_name_node_ref = node_ref.getDict("name");
+                                final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
 
+                                opt_addStmt(new OptMCall(node_ref_name_node_ref_val), actions);
+                                return null;
+                            }
+                            
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
@@ -1972,6 +1985,14 @@ public class Win extends javax.swing.JFrame {
                         final Object node_ref_info = node_ref.get("info");
 
                         try {
+                            
+                            if (isOptPhase(ca_phase)) {
+                                final Dict node_ref_name_node_ref = node_ref.getDict("name");
+                                final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
+
+                                opt_addStmt(new OptMCall(node_ref_name_node_ref_val), actions);
+                                return null;
+                            }
 
                             if (isDefPhase(ca_phase)) {
                                 return null;
@@ -2050,6 +2071,15 @@ public class Win extends javax.swing.JFrame {
 
                         try {
 
+                            if (isOptPhase(ca_phase)) {
+                                final Dict node_ref_name_node_ref = node_ref.getDict("name");
+                                final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
+
+                                opt_addStmt(new OptMCall(node_ref_name_node_ref_val), actions);
+                                return null;
+                            }
+                            
+                            
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
@@ -2137,6 +2167,14 @@ public class Win extends javax.swing.JFrame {
 
                         try {
 
+                            if (isOptPhase(ca_phase)) {
+                                final Dict node_ref_name_node_ref = node_ref.getDict("name");
+                                final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
+
+                                opt_addStmt(new OptMCall(node_ref_name_node_ref_val), actions);
+                                return null;
+                            }
+                            
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
@@ -2213,6 +2251,14 @@ public class Win extends javax.swing.JFrame {
                         final Object node_ref_info = node_ref.get("info");
 
                         try {
+                            
+                            if (isOptPhase(ca_phase)) {
+                                final Dict node_ref_name_node_ref = node_ref.getDict("name");
+                                final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
+
+                                opt_addStmt(new OptMCall(node_ref_name_node_ref_val), actions);
+                                return null;
+                            }
 
                             if (isDefPhase(ca_phase)) {
                                 return null;
@@ -2292,6 +2338,14 @@ public class Win extends javax.swing.JFrame {
                         final Object node_ref_info = node_ref.get("info");
 
                         try {
+                            
+                            if (isOptPhase(ca_phase)) {
+                                final Dict node_ref_name_node_ref = node_ref.getDict("name");
+                                final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
+
+                                opt_addStmt(new OptMCall(node_ref_name_node_ref_val), actions);
+                                return null;
+                            }
 
                             if (isDefPhase(ca_phase)) {
                                 return null;
@@ -2371,6 +2425,14 @@ public class Win extends javax.swing.JFrame {
                         final Object node_ref_info = node_ref.get("info");
 
                         try {
+                            
+                            if (isOptPhase(ca_phase)) {
+                                final Dict node_ref_name_node_ref = node_ref.getDict("name");
+                                final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
+
+                                opt_addStmt(new OptMCall(node_ref_name_node_ref_val), actions);
+                                return null;
+                            }
 
                             if (isDefPhase(ca_phase)) {
                                 return null;
@@ -2436,6 +2498,14 @@ public class Win extends javax.swing.JFrame {
 
                         try {
 
+                            if (isOptPhase(ca_phase)) {
+                                final Dict node_ref_name_node_ref = node_ref.getDict("name");
+                                final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
+
+                                opt_addStmt(new OptMCall(node_ref_name_node_ref_val), actions);
+                                return null;
+                            }
+                            
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
@@ -2466,6 +2536,15 @@ public class Win extends javax.swing.JFrame {
 
                         try {
 
+                            if (isOptPhase(ca_phase)) {
+                                
+                                final Dict node_ref_name_node_ref = node_ref.getDict("name");
+                                final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
+
+                                opt_addStmt(new OptMCall(node_ref_name_node_ref_val), actions);
+                                return null;
+                            }
+                            
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
@@ -2496,6 +2575,14 @@ public class Win extends javax.swing.JFrame {
 
                         try {
 
+                            if (isOptPhase(ca_phase)) {
+                                final Dict node_ref_name_node_ref = node_ref.getDict("name");
+                                final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
+
+                                opt_addStmt(new OptMCall(node_ref_name_node_ref_val), actions);
+                                return null;
+                            }
+                            
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
@@ -2579,6 +2666,19 @@ public class Win extends javax.swing.JFrame {
                         try {
 
                             if (isOptPhase(ca_phase)) {
+                                final Node node_l = node.getLeft();
+                                final Dict node_l_val = node_l.getDictVal();
+                                final Object node_l_val_val = node_l_val.get("val");
+
+                                final Dict node_ref_goto = node_ref.getDict("goto");
+                                final Node node_ref_goto_node = node_ref_goto.getNode("nodo");
+                                final Dict nodo_ref_goto_node_ref = node_ref_goto_node.getDictRef();
+                                final Dict node_ref_goto_node_ref_name = nodo_ref_goto_node_ref.getDict("name");
+                                final Node node_ref_goto_node_ref_name_node = node_ref_goto_node_ref_name.getNode("nodo");
+                                final Dict node_ref_goto_node_ref_name_node_ref = node_ref_goto_node_ref_name_node.getDictRef();
+                                final Object node_ref_goto_node_ref_name_node_ref_val = node_ref_goto_node_ref_name_node_ref.get("val");
+
+                                opt_addStmt(new OptIf(node_l_val_val, new OptGoto(node_ref_goto_node_ref_name_node_ref_val)), actions);
                                 return null;
                             }
                             if (isDefPhase(ca_phase)) {
@@ -2918,7 +3018,8 @@ public class Win extends javax.swing.JFrame {
                                 final Node node_ref_name_node = node_ref_name.getNode("nodo");
                                 final Dict node_ref_name_node_ref = node_ref_name_node.getDictRef();
                                 final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
-//                                opt_addStmt(new OptGoto(node_ref_name_node_ref_val), actions);
+
+                                opt_addStmt(new OptGoto(node_ref_name_node_ref_val), actions);
                                 return null;
                             }
 
@@ -8653,6 +8754,7 @@ public class Win extends javax.swing.JFrame {
         final Opt optimizador = new Opt(app);
 
         return optimizador.getString(optimizador.opt());
+//        return optimizador.getString((LinkedHashMap) app);
     }
 
 }
