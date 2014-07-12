@@ -1,49 +1,79 @@
-void void_main_1__1(){
-
-// int,float -> 10
-t0 = 10;
-// int,float -> 10
-t1 = 10;
-// $$$$$$$$ asignacion $$$$$$$$ //
-// $$$$ variable
-t2 = p + 0;
-// $$$$ valor
-// int,float -> 888
-t3 = 888;
-// $$$$ asignacion
-stack[t2] = t3;
-// $$$$$$$$ asignacion $$$$$$$$ //
-
-//*** ASINGACION VARIABLE... ***//
-// Obtener puntero
-t4 = p + 100;
-// Obtener valor
-t5 = p + 0;
-// int,float -> 0
-t6 = 0;
-t7 = t5 + t6;
-t8 = t7 - 0;
-t9 = stack[t5];
-// asignacion
-stack[t4] = t9;
-//........ llamada imprimir ........ //
-t10 = p + 101;
-// .... parametro 0
-t11 = t10 + 0;
-// .... paremtro val 0
-t12 = p + 0;
-// int,float -> 9
-t13 = 9;
-t14 = t12 + t13;
-t15 = t14 - 0;
-t16 = stack[t12];
-stack[t11] = t16;
-p = p + 101;
-call printNum();
-p = p - 101;
-//........ llamada imprimir ........ //
+void opt_opt_1__1(){
 
 // ==== method - salida
 l0:
+
+}
+void void_main_1__1(){
+
+// >>>>>>>> for <<<<<<<< //
+// >>>> for - contador
+t0 = p + 0;
+// int,float -> 0
+t1 = 0;
+stack[t0] = t1;
+// >>>> for - label
+l2:
+// >>>> for - condicion
+t2 = p + 0;
+t3 = stack[t2];
+// int,float -> 10
+t4 = 10;
+	if t3<t4 then goto l4;
+	goto l5;
+// >>>> for - true
+l4:
+// >>>> for - sentencias
+//........ llamada imprimir ........ //
+t5 = p + 1;
+// .... parametro 0
+t6 = t5 + 0;
+// .... paremtro val 0
+t7 = p + 0;
+t8 = stack[t7];
+stack[t6] = t8;
+p = p + 1;
+call printNum();
+p = p - 1;
+//........ llamada imprimir ........ //
+
+//........ llamada imprimir ........ //
+t9 = p + 1;
+// .... parametro 0
+t10 = t9 + 0;
+// .... paremtro val 0
+// string -> 
+
+t11 = h;
+h = h + 2;
+t12 = t11 + 0;
+heap[t12] = 10;
+t13 = t11 + 1;
+heap[t13] = -1;
+// .... string (1)
+// .... char (0)
+t14 = t11 + 0;
+t15 = heap[t14];
+stack[t10] = t15;
+p = p + 1;
+call printChar();
+p = p - 1;
+//........ llamada imprimir ........ //
+
+// >>>> for - increment
+t16 = p + 0;
+t17 = stack[t16];
+t18 = t17 + 1; //++
+stack[t16] = t18;
+// >>>> for - label return
+goto l2;
+// >>>> for - false
+l5:
+// >>>> for - label salida
+l3:
+// >>>>>>>> for <<<<<<<< //
+
+// ==== method - salida
+l1:
 
 }

@@ -785,8 +785,7 @@ public class Win extends javax.swing.JFrame {
             final Object methods = actions.get("methods");
 
             final String res = optimizar(methods);
-//            System.err.println(res);
-//
+
             Path optfile = Paths.get("opt.cpp");
             Files.write(optfile, res.getBytes());
             file_open(optfile, jtabbedp_tab);
@@ -1903,7 +1902,7 @@ public class Win extends javax.swing.JFrame {
                         final Object node_ref_info = node_ref.get("info");
 
                         try {
-                            
+
                             if (isOptPhase(ca_phase)) {
                                 final Dict node_ref_name_node_ref = node_ref.getDict("name");
                                 final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
@@ -1911,7 +1910,7 @@ public class Win extends javax.swing.JFrame {
                                 opt_addStmt(new OptMCall(node_ref_name_node_ref_val), actions);
                                 return null;
                             }
-                            
+
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
@@ -1985,7 +1984,7 @@ public class Win extends javax.swing.JFrame {
                         final Object node_ref_info = node_ref.get("info");
 
                         try {
-                            
+
                             if (isOptPhase(ca_phase)) {
                                 final Dict node_ref_name_node_ref = node_ref.getDict("name");
                                 final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
@@ -2078,8 +2077,7 @@ public class Win extends javax.swing.JFrame {
                                 opt_addStmt(new OptMCall(node_ref_name_node_ref_val), actions);
                                 return null;
                             }
-                            
-                            
+
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
@@ -2174,7 +2172,7 @@ public class Win extends javax.swing.JFrame {
                                 opt_addStmt(new OptMCall(node_ref_name_node_ref_val), actions);
                                 return null;
                             }
-                            
+
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
@@ -2251,7 +2249,7 @@ public class Win extends javax.swing.JFrame {
                         final Object node_ref_info = node_ref.get("info");
 
                         try {
-                            
+
                             if (isOptPhase(ca_phase)) {
                                 final Dict node_ref_name_node_ref = node_ref.getDict("name");
                                 final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
@@ -2338,7 +2336,7 @@ public class Win extends javax.swing.JFrame {
                         final Object node_ref_info = node_ref.get("info");
 
                         try {
-                            
+
                             if (isOptPhase(ca_phase)) {
                                 final Dict node_ref_name_node_ref = node_ref.getDict("name");
                                 final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
@@ -2425,7 +2423,7 @@ public class Win extends javax.swing.JFrame {
                         final Object node_ref_info = node_ref.get("info");
 
                         try {
-                            
+
                             if (isOptPhase(ca_phase)) {
                                 final Dict node_ref_name_node_ref = node_ref.getDict("name");
                                 final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
@@ -2505,7 +2503,7 @@ public class Win extends javax.swing.JFrame {
                                 opt_addStmt(new OptMCall(node_ref_name_node_ref_val), actions);
                                 return null;
                             }
-                            
+
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
@@ -2537,14 +2535,14 @@ public class Win extends javax.swing.JFrame {
                         try {
 
                             if (isOptPhase(ca_phase)) {
-                                
+
                                 final Dict node_ref_name_node_ref = node_ref.getDict("name");
                                 final String node_ref_name_node_ref_val = node_ref_name_node_ref.getString("val");
 
                                 opt_addStmt(new OptMCall(node_ref_name_node_ref_val), actions);
                                 return null;
                             }
-                            
+
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
@@ -2582,7 +2580,7 @@ public class Win extends javax.swing.JFrame {
                                 opt_addStmt(new OptMCall(node_ref_name_node_ref_val), actions);
                                 return null;
                             }
-                            
+
                             if (isDefPhase(ca_phase)) {
                                 return null;
                             }
@@ -3859,6 +3857,8 @@ public class Win extends javax.swing.JFrame {
 
                     final LinkedHashMap labels = opt_getLabels(actions);
                     opt_getMethods(actions).put(name.toString(), labels);
+
+                    ca.remove("bblocks");
                 }
             }
     );
@@ -8753,7 +8753,10 @@ public class Win extends javax.swing.JFrame {
     private String optimizar(Object app) {
         final Opt optimizador = new Opt(app);
 
-        return optimizador.getString(optimizador.opt());
+        final LinkedHashMap opt_bb = optimizador.opt();
+        final LinkedHashMap opt_global = optimizador.BloqueGlobal(opt_bb);
+
+        return Opt.getString((new Opt(opt_global)).opt());
 //        return optimizador.getString((LinkedHashMap) app);
     }
 
