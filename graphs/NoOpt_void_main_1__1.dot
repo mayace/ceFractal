@@ -1,0 +1,15 @@
+digraph G {
+graph [rankdir = "LR"];
+none [ shape = "record" label = "<f0>none|<f1>t0 = p + 0;|<f2>t1 = 0;|<f3>stack[t0] = t1;"];
+l2 [ shape = "record" label = "<f0>l2|<f1>t2 = p + 0;|<f2>t3 = stack[t2];|<f3>t4 = 10;|<f4>if t3 < t4 then goto l4;|<f5>goto l5;"];
+l4 [ shape = "record" label = "<f0>l4|<f1>t5 = p + 1;|<f2>t6 = t5 + 0;|<f3>t7 = p + 0;|<f4>t8 = stack[t7];|<f5>stack[t6] = t8;|<f6>p = p + 1;|<f7>call printNum();|<f8>p = p - 1;|<f9>t9 = p + 1;|<f10>t10 = t9 + 0;|<f11>t11 = h;|<f12>h = h + 2;|<f13>t12 = t11 + 0;|<f14>heap[t12] = 10;|<f15>t13 = t11 + 1;|<f16>heap[t13] = -1;|<f17>t14 = t11 + 0;|<f18>t15 = heap[t14];|<f19>stack[t10] = t15;|<f20>p = p + 1;|<f21>call printChar();|<f22>p = p - 1;|<f23>t16 = p + 0;|<f24>t17 = stack[t16];|<f25>t18 = t17 + 1;|<f26>stack[t16] = t18;|<f27>goto l2;"];
+l5 [ shape = "record" label = "<f0>l5"];
+l3 [ shape = "record" label = "<f0>l3"];
+l1 [ shape = "record" label = "<f0>l1"];
+
+l2:f0 -> l4:f0 ;
+l2:f0 -> l5:f0 ;
+l4:f0 -> l2:f0 ;
+
+
+}

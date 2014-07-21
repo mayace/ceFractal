@@ -48,6 +48,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -8754,10 +8755,111 @@ public class Win extends javax.swing.JFrame {
         final Opt optimizador = new Opt(app);
 
         final LinkedHashMap opt_bb = optimizador.opt();
-        final LinkedHashMap opt_global = optimizador.BloqueGlobal(opt_bb);
+        notificar("optimizacion bloques basicos finalizado...");
+        final LinkedHashMap opt_gb = optimizador.opt_global(opt_bb);
+        notificar("optimizacion bloque general finalizado...");
+        
+        // imprimir aqui....
+        // no optimizado
+        graphGen(app, "NoOpt");
+        graphGen(app, "SiOpt");
 
-        return Opt.getString((new Opt(opt_global)).opt());
+        return Opt.getString(opt_gb);
 //        return optimizador.getString((LinkedHashMap) app);
     }
 
+    private void graphGen(Object methods, String fname) {
+        LinkedHashMap<String, LinkedHashMap> app = (LinkedHashMap) methods;
+        for (Map.Entry<String, LinkedHashMap> entry : app.entrySet()) {
+            final StringBuilder dot = new StringBuilder();
+
+            String mname = entry.getKey();
+            LinkedHashMap<String, ArrayList> mlabels = entry.getValue();
+
+            dot.append("digraph G {");
+            dot.append("\n");
+
+            dot.append("graph [rankdir = \"LR\"];");
+            dot.append("\n");
+
+            final StringBuilder moves = new StringBuilder();
+            // crear nodos
+            for (Map.Entry<String, ArrayList> entry1 : mlabels.entrySet()) {
+                String lname = entry1.getKey().isEmpty() ? "none" : entry1.getKey();
+                ArrayList lstmts = entry1.getValue();
+
+                // si no tienen label y nada de contenido... seguir con el siguiente
+                // comun cuando al inicio del metodo inicia con una etiqueta...
+                if (lname.equals("none") && lstmts.isEmpty()) {
+                    continue;
+                }
+
+                dot.append(String.format("%s [ shape = \"record\" ", lname));
+                dot.append("label = \"");
+                dot.append(String.format("<f0>%s", lname));
+
+                for (int i = 0; i < lstmts.size(); i++) {
+                    Object stmt = lstmts.get(i);
+                    dot.append(String.format("|<f%d>%s", i + 1, getCleanString(stmt)));
+
+                    if (i == lstmts.size() - 2) {
+                        if (stmt instanceof OptIf) {
+                            final OptIf optIf = (OptIf) stmt;
+                            final OptGoto optGoto = (OptGoto) optIf.goto_true;
+                            final String move = String.format("%s:f0 -> %s:f0 ;", lname, optGoto.label);
+                            moves.append(move);
+                            moves.append("\n");
+                        }
+                    }
+                    if (i == lstmts.size() - 1) {
+                        if (stmt instanceof OptGoto) {
+                            final OptGoto optGoto = (OptGoto) stmt;
+                            final String move = String.format("%s:f0 -> %s:f0 ;", lname, optGoto.label);
+                            moves.append(move);
+                            moves.append("\n");
+                        }
+                    }
+                }
+                dot.append("\"");
+
+                dot.append("];");
+                dot.append("\n");
+            }
+            // moves......
+
+            dot.append("\n");
+            dot.append(moves);
+            dot.append("\n");
+            dot.append("\n");
+
+            dot.append("}");
+            dot.append("\n");
+
+            try {
+                Path dotpath = Paths.get(String.format("graphs/%s_%s.dot", fname, mname));
+
+                Path imgpath = Paths.get(String.format("graphs/%s_%s.jpg", fname, mname));
+                Files.write(dotpath, dot.toString().getBytes());
+                Runtime cmd = Runtime.getRuntime();
+                final String[] args = new String[]{
+                    "C:\\Program Files (x86)\\Graphviz2.38\\bin\\dot.exe",
+                    "-Tjpg",
+                    dotpath.toAbsolutePath().toString(),
+                    "-o",
+                    imgpath.toAbsolutePath().toString()
+                };
+
+                cmd.exec(args);
+//                System.out.println(Arrays.toString(args));
+            } catch (IOException ex) {
+                Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+        }
+
+    }
+
+    private String getCleanString(Object obj){
+        return obj.toString().replaceAll("<", "\\<").replaceAll(">", "\\>");
+    }
 }

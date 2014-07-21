@@ -1,0 +1,10 @@
+digraph G {
+graph [rankdir = "LR"];
+l0 [ shape = "record" label = "<f0>l0|<f1>t0 = 10;|<f2>t1 = stack[t0];|<f3>stack[t0] = t1;|<f4>if t1 > 0 then goto l1;|<f5>goto l0;"];
+l1 [ shape = "record" label = "<f0>l1"];
+
+l0:f0 -> l1:f0 ;
+l0:f0 -> l0:f0 ;
+
+
+}
